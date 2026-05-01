@@ -1,4 +1,8 @@
+from flask import Blueprint, request
+from app.utils.security import ok, err, validate_pagination
 from app.services.search_service import search_products
+
+search_bp = Blueprint("search", __name__, url_prefix="/search")
 
 @search_bp.route("", methods=["GET"])
 def search():

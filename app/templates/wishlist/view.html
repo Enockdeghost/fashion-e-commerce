@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Wishlist | Fred Vunjabei{% endblock %}
+{% block content %}
+<section style="padding:8rem 5%;">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Your Favorites</div>
+      <h2 class="section-title reveal reveal-delay-1">My<br/><em>Wishlist</em></h2>
+    </div>
+  </div>
+  <div class="products-grid" id="wishlistContainer">
+    <p style="text-align:center;padding:4rem;">Loading your wishlist…</p>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('wishlist_token') || 'wish_' + Math.random().toString(36).substr(2,9);
+  localStorage.setItem('wishlist_token', token);
+
+  fetch('/api/wishlist', {headers:{'X-Cart-Token':token}})
+    .then(r => r.json())
+    .then(d => {
+      const container = document.getElementById('wishlistContainer');
+      if (d.success && d.data && d.data.wishlist && d.data.wishlist.length) {
+        container.innerHTML = d.data.wishlist.map(item => `
+          <div class="prod-card">
+            <div class="prod-img">
+              <img src="${item.product.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&q=85'}" alt="${item.product.name}" style="height:100%;">
+            </div>
+            <div class="prod-brand">${item.product.brand || 'Fred Vunjabei'}</div>
+            <div class="prod-name">${item.product.name}</div>
+            <div class="prod-price">
+              <span class="price-main">TZS ${parseFloat(item.product.base_price).toLocaleString()}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<p style="text-align:center;padding:4rem;">Your wishlist is empty. Start adding pieces you love.</p>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('wishlistContainer').innerHTML = '<p style="text-align:center;padding:4rem;">Could not load wishlist.</p>';
+    });
+</script>
+{% endblock %}

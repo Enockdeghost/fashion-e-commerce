@@ -5,22 +5,24 @@ from .cart import cart_bp
 from .orders import orders_bp
 from .payments import payments_bp
 from .inventory import inventory_bp
-from .search import search_bp
 from .wishlist import wishlist_bp
 from .cms import cms_bp
 from .admin import admin_bp
 from .admin_auth import admin_auth_bp
 from .notification import notifications_bp
+from .frontend import frontend_bp
 
 def register_blueprints(app: Flask):
-    # Products & catalogue
+    # Frontend routes (must be registered first)
+    app.register_blueprint(frontend_bp)
+    
+    # API routes
     app.register_blueprint(products_bp, url_prefix="/api")
     app.register_blueprint(cat_bp, url_prefix="/api")
     app.register_blueprint(brand_bp, url_prefix="/api")
     app.register_blueprint(col_bp, url_prefix="/api")
     app.register_blueprint(tag_bp, url_prefix="/api")
     app.register_blueprint(notifications_bp, url_prefix="/api")
-
 
     app.register_blueprint(cart_bp, url_prefix="/api")
     app.register_blueprint(orders_bp, url_prefix="/api")

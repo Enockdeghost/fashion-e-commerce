@@ -1,0 +1,799 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta_title or 'Fred Vunjabei | Haute Couture' }}{% endblock %}
+
+{% block meta_description %}{{ meta_description or 'Luxury fashion house inspired by Tanzanian heritage.' }}{% endblock %}
+
+{% block head %}
+<style>
+  .monogram-bg {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ctext x='10' y='30' font-family='serif' font-size='22' fill='%23b8933a' opacity='0.07' font-weight='bold'%3EFV%3C/text%3E%3Ctext x='40' y='65' font-family='serif' font-size='22' fill='%23b8933a' opacity='0.07' font-weight='bold'%3EFV%3C/text%3E%3C/svg%3E");
+  }
+
+  .hero {
+    height: 100vh; min-height: 700px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: flex-end;
+  }
+  .hero-media {
+    position: absolute; inset: 0;
+  }
+  .hero-media img {
+    height: 100%; width: 100%;
+    transform: scale(1.05);
+    animation: heroZoom 12s ease-out forwards;
+  }
+  @keyframes heroZoom {
+    from { transform: scale(1.05); }
+    to   { transform: scale(1); }
+  }
+  .hero-media::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(26,15,0,.85) 0%,
+      rgba(26,15,0,.4) 40%,
+      rgba(26,15,0,.15) 100%
+    );
+  }
+  .hero-side-text {
+    position: absolute; right: 4%; top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    transform-origin: center center;
+    font-size: .6rem; letter-spacing: 5px; color: rgba(245,240,232,.6);
+    text-transform: uppercase; z-index: 2;
+    white-space: nowrap;
+  }
+  .hero-scroll-hint {
+    position: absolute; left: 4%; bottom: 10%;
+    display: flex; flex-direction: column; align-items: center; gap: .8rem;
+    z-index: 2;
+  }
+  .hero-scroll-hint span {
+    font-size: .55rem; letter-spacing: 4px; color: rgba(245,240,232,.5);
+    text-transform: uppercase; writing-mode: vertical-rl;
+  }
+  .scroll-line {
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine {
+    0%, 100% { opacity: .3; transform: scaleY(.3) translateY(-50%); }
+    50% { opacity: 1; transform: scaleY(1) translateY(0); }
+  }
+  .hero-content {
+    position: relative; z-index: 3;
+    padding: 0 5% 7rem;
+  }
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 1rem;
+    font-size: .6rem; letter-spacing: 5px;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 1.5rem;
+  }
+  .hero-eyebrow::before {
+    content: ''; width: 50px; height: 1px; background: var(--gold);
+  }
+  .hero h1 {
+    font-size: clamp(4rem, 9vw, 8rem);
+    font-weight: 300; line-height: .95;
+    color: var(--cream); letter-spacing: -1px;
+    margin-bottom: 2.5rem;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold-pale); }
+  .hero h1 .outline {
+    -webkit-text-stroke: 1px var(--cream);
+    color: transparent;
+  }
+  .hero-row {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .hero-desc {
+    max-width: 380px;
+    font-size: .78rem; line-height: 1.9;
+    color: rgba(245,240,232,.65); font-weight: 300;
+  }
+  .hero-actions { display: flex; gap: 1.5rem; align-items: center; }
+  .btn-lv-ghost {
+    display: inline-flex; align-items: center; gap: .8rem;
+    padding: 1rem 0;
+    color: var(--cream);
+    font-size: .62rem; font-weight: 500;
+    letter-spacing: 4px; text-transform: uppercase;
+    border-bottom: 1px solid rgba(245,240,232,.3);
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+  }
+  .btn-lv-ghost:hover { color: var(--gold); border-color: var(--gold); }
+
+  .marquee-strip {
+    background: var(--brown);
+    padding: .9rem 0; overflow: hidden;
+    border-top: 1px solid rgba(184,147,58,.2);
+    border-bottom: 1px solid rgba(184,147,58,.2);
+  }
+  .marquee-track {
+    display: flex; gap: 0;
+    animation: marquee 30s linear infinite;
+    white-space: nowrap; width: max-content;
+  }
+  .marquee-item {
+    display: flex; align-items: center; gap: 2rem;
+    padding: 0 2rem;
+  }
+  .marquee-item span {
+    font-size: .58rem; font-weight: 500;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: var(--parchment);
+  }
+  .marquee-item .diamond {
+    color: var(--gold); font-size: .5rem;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .section-eyebrow {
+    display: flex; align-items: center; gap: 1rem;
+    font-size: .58rem; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.2rem;
+  }
+  .section-eyebrow::before {
+    content: ''; width: 30px; height: 1px; background: var(--gold);
+  }
+  .section-title {
+    font-size: clamp(2.2rem,4.5vw,3.8rem);
+    font-weight: 300; line-height: 1.1;
+    letter-spacing: -.5px; margin-bottom: .8rem;
+  }
+  .section-title em { font-style: italic; color: var(--gold); }
+  .section-sub {
+    font-size: .78rem; color: var(--brown-lt);
+    max-width: 480px; line-height: 1.9; font-weight: 300;
+  }
+  .section-header {
+    display: flex; align-items: flex-end;
+    justify-content: space-between; gap: 2rem;
+    flex-wrap: wrap; margin-bottom: 4rem;
+  }
+  .link-lv {
+    font-size: .6rem; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--gold);
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 2px;
+    display: inline-flex; align-items: center; gap: .5rem;
+    transition: opacity var(--transition-fast);
+  }
+  .link-lv:hover { opacity: .65; }
+
+  .brand-story { display: grid; grid-template-columns: 1fr 1fr; min-height: 80vh; }
+  .brand-story-img { position: relative; overflow: hidden; }
+  .brand-story-img img { height: 100%; min-height: 600px; }
+  .brand-story-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent 80%, var(--cream) 100%);
+  }
+  .brand-story-content {
+    display: flex; flex-direction: column;
+    justify-content: center;
+    padding: 6rem 6% 6rem 5%;
+    background: var(--cream);
+  }
+  .brand-year {
+    position: absolute; bottom: 3rem; right: 4rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 6rem; font-weight: 300;
+    color: rgba(184,147,58,.15); line-height: 1;
+  }
+
+  .categories { padding: 8rem 5%; background: var(--off-white); }
+  .cat-asymmetric {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-rows: 340px 340px;
+    gap: 1rem;
+  }
+  .cat-tile { position: relative; overflow: hidden; }
+  .cat-tile:first-child { grid-row: 1 / 3; }
+  .cat-tile img {
+    height: 100%; width: 100%;
+    transition: transform .8s cubic-bezier(.25,.46,.45,.94);
+    filter: brightness(.92) saturate(.9);
+  }
+  .cat-tile:hover img { transform: scale(1.06); filter: brightness(.85) saturate(.95); }
+  .cat-tile-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(26,15,0,.8) 0%, rgba(26,15,0,.1) 50%, transparent 100%);
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: 2rem;
+  }
+  .cat-tile-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.5rem; font-weight: 300;
+    color: rgba(184,147,58,.25); line-height: 1;
+    margin-bottom: .5rem;
+  }
+  .cat-tile h3 { font-size: 1.5rem; font-weight: 300; color: var(--cream); letter-spacing: 2px; margin-bottom: .3rem; }
+  .cat-tile:first-child h3 { font-size: 2.2rem; }
+  .cat-tile-meta { font-size: .6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-pale); margin-bottom: .8rem; }
+  .cat-tile-btn {
+    display: inline-flex; align-items: center; gap: .6rem;
+    font-size: .58rem; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--cream); border-bottom: 1px solid rgba(245,240,232,.4);
+    padding-bottom: 2px;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .4s ease, transform .4s ease, border-color .3s ease;
+  }
+  .cat-tile:hover .cat-tile-btn { opacity: 1; transform: translateY(0); border-color: var(--gold); color: var(--gold); }
+
+  .products { padding: 8rem 5%; background: var(--cream); }
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .8rem;
+  }
+  .prod-card { cursor: none; }
+  .prod-img {
+    position: relative; overflow: hidden;
+    height: 420px; background: var(--cream-deep);
+    margin-bottom: 1.2rem;
+  }
+  .prod-img img { height: 100%; transition: transform .8s cubic-bezier(.25,.46,.45,.94); }
+  .prod-card:hover .prod-img img { transform: scale(1.04); }
+  .prod-badge {
+    position: absolute; top: 1.2rem; left: 1.2rem;
+    font-size: .55rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    padding: .35rem .9rem; z-index: 1;
+  }
+  .badge-n { background: var(--brown); color: var(--cream); }
+  .badge-e { background: var(--gold); color: var(--brown); }
+  .badge-l { border: 1px solid var(--gold); color: var(--gold); background: transparent; }
+  .prod-actions {
+    position: absolute; bottom: 1.2rem; right: 1.2rem;
+    display: flex; flex-direction: column; gap: .5rem;
+    opacity: 0; transform: translateX(12px);
+    transition: opacity .4s ease, transform .4s ease;
+  }
+  .prod-card:hover .prod-actions { opacity: 1; transform: translateX(0); }
+  .prod-act {
+    width: 40px; height: 40px;
+    background: rgba(245,240,232,.9); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(184,147,58,.2);
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+  }
+  .prod-act:hover { background: var(--brown); border-color: var(--brown); }
+  .prod-act svg { width: 16px; height: 16px; fill: var(--brown); transition: fill var(--transition-fast); }
+  .prod-act:hover svg { fill: var(--gold); }
+  .prod-brand { font-size: .58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: .4rem; }
+  .prod-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem; font-weight: 400; color: var(--brown); margin-bottom: .5rem;
+    transition: color var(--transition-fast);
+  }
+  .prod-card:hover .prod-name { color: var(--gold); }
+  .prod-price { display: flex; align-items: baseline; gap: .6rem; }
+  .price-main { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 500; color: var(--brown); }
+  .price-was { font-size: .75rem; color: var(--parchment); text-decoration: line-through; }
+
+  .editorial-full {
+    position: relative; min-height: 80vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .editorial-full img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(.7);
+  }
+  .editorial-content {
+    position: relative; z-index: 2;
+    text-align: center;
+    padding: 4rem;
+  }
+  .editorial-content h2 {
+    font-size: clamp(2.5rem,5vw,4.5rem);
+    font-weight: 300; color: var(--cream);
+    margin-bottom: 1.5rem;
+  }
+  .editorial-content p {
+    font-size: .85rem; color: rgba(245,240,232,.7);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .editorial-season {
+    position: absolute; bottom: 3rem; right: 4rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 4rem; font-weight: 300;
+    color: rgba(184,147,58,.2);
+  }
+
+  .lookbook { padding: 8rem 5%; background: var(--off-white); }
+  .look-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  .look-cell {
+    position: relative; overflow: hidden;
+    height: 500px;
+  }
+  .look-cell img {
+    height: 100%; width: 100%;
+    transition: transform .8s cubic-bezier(.25,.46,.45,.94);
+  }
+  .look-cell:hover img { transform: scale(1.05); }
+  .look-hover {
+    position: absolute; inset: 0;
+    background: rgba(26,15,0,.6);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .look-cell:hover .look-hover { opacity: 1; }
+  .look-hover-label {
+    font-size: .65rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--cream);
+  }
+
+  .pillars { padding: 8rem 5%; background: var(--cream); }
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem;
+  }
+  .pillar-item {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--off-white);
+    transition: transform var(--transition-fast);
+  }
+  .pillar-item:hover { transform: translateY(-8px); }
+  .pillar-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--gold);
+  }
+  .pillar-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem; font-weight: 300;
+    color: rgba(184,147,58,.2);
+    margin-bottom: 1rem;
+  }
+  .pillar-item h3 {
+    font-size: 1.2rem; font-weight: 400;
+    color: var(--brown); margin-bottom: .8rem;
+  }
+  .pillar-item p {
+    font-size: .75rem; color: var(--brown-lt);
+    line-height: 1.8;
+  }
+
+  .designers { padding: 8rem 5%; background: var(--off-white); }
+  .designers-scroll {
+    display: flex; gap: 2rem;
+    overflow-x: auto;
+    padding-bottom: 2rem;
+    scroll-snap-type: x mandatory;
+  }
+  .designers-scroll::-webkit-scrollbar { height: 3px; }
+  .designers-scroll::-webkit-scrollbar-thumb { background: var(--gold); }
+  .designer-card {
+    min-width: 280px;
+    scroll-snap-align: start;
+  }
+  .designer-img {
+    position: relative; overflow: hidden;
+    height: 380px; margin-bottom: 1.2rem;
+  }
+  .designer-img img { height: 100%; width: 100%; transition: transform .8s ease; }
+  .designer-card:hover .designer-img img { transform: scale(1.05); }
+  .designer-overlay {
+    position: absolute; inset: 0;
+    background: rgba(26,15,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .designer-card:hover .designer-overlay { opacity: 1; }
+  .designer-overlay span {
+    font-size: .6rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--cream);
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 2px;
+  }
+  .designer-brand {
+    font-size: .55rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: .3rem;
+  }
+  .designer-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 400;
+    color: var(--brown); margin-bottom: .3rem;
+  }
+  .designer-origin {
+    font-size: .65rem; color: var(--brown-lt);
+  }
+
+  .press {
+    padding: 4rem 5%;
+    background: var(--cream);
+    text-align: center;
+  }
+  .press-label {
+    font-size: .58rem; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--brown-lt);
+    margin-bottom: 2rem;
+  }
+  .press-logos {
+    display: flex; justify-content: center; gap: 4rem;
+    flex-wrap: wrap;
+  }
+  .press-logo {
+    font-size: 1.2rem; font-weight: 600;
+    color: var(--brown-mid); opacity: .4;
+  }
+
+  .testimonials { padding: 8rem 5%; background: var(--off-white); }
+  .testi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  .testi-card {
+    padding: 2.5rem;
+    background: var(--cream);
+  }
+  .testi-stars { color: var(--gold); margin-bottom: 1.2rem; }
+  .testi-card blockquote {
+    font-size: .85rem; line-height: 1.8;
+    color: var(--brown); font-style: italic;
+    margin-bottom: 1.5rem;
+  }
+  .testi-author {
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .testi-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; font-weight: 600;
+    color: var(--brown);
+  }
+  .testi-name {
+    font-size: .75rem; font-weight: 600;
+    color: var(--brown);
+  }
+  .testi-role {
+    font-size: .6rem; color: var(--brown-lt);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .newsletter {
+    padding: 6rem 5%;
+    background: var(--brown);
+    text-align: center;
+  }
+  .newsletter h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem,4vw,3.5rem);
+    font-weight: 300; color: var(--cream);
+    margin: 1rem 0;
+  }
+  .newsletter p {
+    font-size: .8rem; color: rgba(245,240,232,.6);
+    margin-bottom: 2.5rem;
+  }
+  .nl-form {
+    display: flex; gap: 1rem;
+    justify-content: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .nl-form input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    background: rgba(245,240,232,.08);
+    border: 1px solid rgba(184,147,58,.3);
+    color: var(--cream);
+    font-size: .8rem;
+  }
+  .nl-form input::placeholder { color: rgba(245,240,232,.3); }
+  .nl-form input:focus { outline: none; border-color: var(--gold); }
+  .nl-form button {
+    padding: 1rem 2rem;
+    background: var(--gold);
+    color: var(--brown);
+    font-size: .62rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    border: none; cursor: none;
+    transition: background var(--transition-fast);
+  }
+  .nl-form button:hover { background: var(--gold-lt); }
+
+  @media (max-width: 1024px) {
+    .cat-asymmetric {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 300px 300px;
+    }
+    .cat-tile:first-child { grid-row: 1 / 2; }
+    .products-grid { grid-template-columns: repeat(2, 1fr); }
+    .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+    .look-grid { grid-template-columns: repeat(2, 1fr); }
+    .testi-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .brand-story { grid-template-columns: 1fr; }
+    .brand-story-img { min-height: 400px; }
+    .brand-story-img::after {
+      background: linear-gradient(to top, var(--cream) 60%, transparent 100%);
+    }
+    .brand-story-content { padding: 4rem 5%; }
+    .cat-asymmetric {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+    }
+    .cat-tile:first-child { grid-row: auto; }
+    .cat-tile { height: 300px; }
+    .products-grid { grid-template-columns: 1fr; }
+    .pillars-grid { grid-template-columns: 1fr; }
+    .look-grid { grid-template-columns: 1fr; }
+    .look-cell { height: 400px; }
+    .nl-form { flex-direction: column; }
+    .editorial-season { position: static; text-align: center; font-size: 3rem; margin-top: 2rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  {% set hero_banner = banners|selectattr('position','equalto','hero')|first|default(None) %}
+  <div class="hero-media">
+    <img src="{{ hero_banner.image_url if hero_banner else 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1800&q=85' }}" alt="{{ hero_banner.title if hero_banner else 'Fred Vunjabei Hero' }}"/>
+  </div>
+  <div class="hero-side-text">{{ hero_side_text or 'Fred Vunjabei · Haute Couture' }}</div>
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">{{ hero_eyebrow or 'Spring Summer Collection 2025' }}</div>
+    <h1>
+      {{ (hero_title or "The Art of<br/><em>Living</em><br/><span class=\"outline\">in Luxury</span>") | safe }}
+    </h1>
+    <div class="hero-row">
+      <p class="hero-desc">{{ hero_description or 'From the heart of Tanzania, Fred Vunjabei redefines African luxury — merging timeless craftsmanship with a bold, contemporary vision.' }}</p>
+      <div class="hero-actions">
+        <a href="#products" class="btn-lv"><span>Explore</span><span class="arrow">→</span></a>
+        <a href="#lookbook" class="btn-lv-ghost">Lookbook →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee-strip">
+  <div class="marquee-track">
+    {% for item in marquee_items or ["New Collection","Spring Summer 2025","Tanzanian Craftsmanship","Limited Edition","Maison Founded 2025"] %}
+    <div class="marquee-item"><span>{{ item }}</span><span class="diamond">◆</span></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="brand-story" id="about">
+  <div class="brand-story-img">
+    <img src="{{ brand_story_image or 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=85' }}" alt="Atelier"/>
+    <div class="brand-year">{{ brand_story_year or '2025' }}</div>
+  </div>
+  <div class="brand-story-content">
+    <div class="section-eyebrow reveal">{{ brand_story_eyebrow or 'Our Heritage' }}</div>
+    <h2 class="reveal reveal-delay-1">{{ (brand_story_title or "The House of <em>Infinite</em> Refinement") | safe }}</h2>
+    {% for paragraph in brand_story_paragraphs or ["Founded in 2025 in Dar es Salaam, Fred Vunjabei brings together the finest Tanzanian craftsmanship and the audacity of global haute couture. Each creation is a testament to our commitment to beauty, dignity, and innovation.","We do not follow trends — we shape the culture that others aspire to."] %}
+    <p class="reveal reveal-delay-{{ loop.index }}">{{ paragraph }}</p>
+    {% endfor %}
+  </div>
+</div>
+
+<section class="categories" id="categories">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Collections</div>
+      <h2 class="section-title reveal reveal-delay-1">Explore<br/><em>Every World</em></h2>
+    </div>
+  </div>
+  <div class="cat-asymmetric">
+    {% for cat in categories %}
+    <div class="cat-tile reveal reveal-delay-{{ loop.index0 % 3 }}">
+      <img src="{{ cat.image_url }}" alt="{{ cat.name }}"/>
+      <div class="cat-tile-overlay">
+        <div class="cat-tile-num">{{ '%02d' % loop.index }}</div>
+        <h3>{{ cat.name }}</h3>
+        <div class="cat-tile-meta">{{ cat.product_count }} Pieces</div>
+        <a href="{{ url_for('products.list_products', category=cat.slug) }}" class="cat-tile-btn">Explore →</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="products" id="products">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Boutique</div>
+      <h2 class="section-title reveal reveal-delay-1">Signature<br/><em>Pieces</em></h2>
+    </div>
+  </div>
+  <div class="products-grid">
+    {% for product in products %}
+    <div class="prod-card reveal">
+      <div class="prod-img">
+        <img src="{{ product.primary_image }}" alt="{{ product.name }}">
+        {% if product.badge %}
+        <span class="prod-badge badge-{{ product.badge.type }}">{{ product.badge.text }}</span>
+        {% endif %}
+        <div class="prod-actions">
+          <div class="prod-act" data-action="wishlist" data-product-id="{{ product.id }}">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <div class="prod-act" data-action="quickview" data-product-id="{{ product.id }}">
+            <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+          </div>
+          <div class="prod-act" data-action="addtocart" data-product-id="{{ product.id }}" data-variant-id="{{ product.variants[0].id if product.variants else '' }}">
+            <svg viewBox="0 0 24 24"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 4c0-1.1.9-2 2-2s2 .9 2 2h2c0-2.76-2.24-5-5-5S7 5.24 7 8h2zm-2 4h12v8H6v-8z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="prod-brand">{{ product.brand }}</div>
+      <div class="prod-name">{{ product.name }}</div>
+      <div class="prod-price">
+        <span class="price-main">{{ product.base_price | format_currency }}</span>
+        {% if product.compare_price %}
+        <span class="price-was">{{ product.compare_price | format_currency }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="editorial-full">
+  <img src="{{ editorial_image or 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1800&q=85' }}" alt="Editorial"/>
+  <div class="editorial-content">
+    <div class="section-eyebrow">{{ editorial_eyebrow or 'The Editorial' }}</div>
+    <h2>{{ (editorial_title or "The Art of <em>Effortless</em> Grandeur") | safe }}</h2>
+    <p>{{ editorial_text or 'A season where heritage meets the future.' }}</p>
+  </div>
+  <div class="editorial-season">{{ editorial_season or 'SS25' }}</div>
+</div>
+
+<section class="lookbook" id="lookbook">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Lookbook</div>
+      <h2 class="section-title reveal reveal-delay-1">Spring /<br/><em>Summer Look</em></h2>
+    </div>
+  </div>
+  <div class="look-grid">
+    {% for look in lookbook_images %}
+    <div class="look-cell reveal reveal-delay-{{ loop.index0 % 4 }}">
+      <img src="{{ look.url }}" alt="{{ look.title }}">
+      <div class="look-hover"><div class="look-hover-label">{{ look.label }}</div></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="pillars">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Our Promise</div>
+      <h2 class="section-title reveal reveal-delay-1">The <em>Maison</em><br/>Experience</h2>
+    </div>
+  </div>
+  <div class="pillars-grid">
+    {% for pillar in pillars %}
+    <div class="pillar-item reveal reveal-delay-{{ loop.index0 }}">
+      <div class="pillar-icon">{{ pillar.icon | safe }}</div>
+      <div class="pillar-num">{{ '%02d' % loop.index }}</div>
+      <h3>{{ pillar.title }}</h3>
+      <p>{{ pillar.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="designers" id="designers">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">The Creators</div>
+      <h2 class="section-title reveal reveal-delay-1">Featured<br/><em>Designers</em></h2>
+    </div>
+  </div>
+  <div class="designers-scroll">
+    {% for designer in designers %}
+    <div class="designer-card">
+      <div class="designer-img">
+        <img src="{{ designer.image }}" alt="{{ designer.name }}">
+        <div class="designer-overlay"><span>View Portfolio</span></div>
+      </div>
+      <div class="designer-brand">{{ designer.brand }}</div>
+      <div class="designer-name">{{ designer.name }}</div>
+      <div class="designer-origin">{{ designer.origin }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="press">
+  <p class="press-label">As Featured In</p>
+  <div class="press-logos">
+    {% for logo in press_logos %}
+    <div class="press-logo">{{ logo }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+<section class="testimonials">
+  <div class="section-header">
+    <div>
+      <div class="section-eyebrow reveal">Testimonials</div>
+      <h2 class="section-title reveal reveal-delay-1">Voices of<br/><em>the Maison</em></h2>
+    </div>
+  </div>
+  <div class="testi-grid">
+    {% for testimonial in testimonials %}
+    <div class="testi-card reveal reveal-delay-{{ loop.index0 }}">
+      <div class="testi-stars">{{ testimonial.stars }}</div>
+      <blockquote>{{ testimonial.quote }}</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">{{ testimonial.initial }}</div>
+        <div>
+          <div class="testi-name">{{ testimonial.name }}</div>
+          <div class="testi-role">{{ testimonial.role }}</div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="newsletter">
+  <div class="section-eyebrow">The Private Circle</div>
+  <h2>Enter the<br/><em>Inner Circle</em></h2>
+  <p>{{ newsletter_text or 'Receive exclusive previews and private sale access.' }}</p>
+  <form class="nl-form" action="#" method="post">
+    <input type="email" name="email" placeholder="Your email address" required/>
+    <button type="submit">Subscribe</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.addEventListener('scroll', () => {
+    const heroImg = document.querySelector('.hero-media img');
+    if (heroImg) heroImg.style.transform = `scale(1) translateY(${window.scrollY * 0.25}px)`;
+  });
+
+  document.querySelectorAll('.prod-act').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const productId = btn.dataset.productId;
+      if (action === 'addtocart') {
+        const variantId = btn.dataset.variantId;
+        const token = localStorage.getItem('cart_token') || Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('cart_token', token);
+        fetch('/api/cart/add', { method:'POST', headers:{'Content-Type':'application/json','X-Cart-Token':token}, body: JSON.stringify({product_id:productId, variant_id:variantId, quantity:1}) })
+        .then(() => alert('Added to cart'));
+      } else if (action === 'wishlist') {
+        fetch('/api/wishlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({product_id:productId, token: localStorage.getItem('wishlist_token')}) })
+        .then(() => alert('Added to wishlist'));
+      }
+    });
+  });
+</script>
+{% endblock %}

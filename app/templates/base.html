@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Fred Vunjabei | Haute Couture{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Luxury fashion house inspired by Tanzanian heritage.{% endblock %}">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream:      #f5f0e8;
+      --cream-deep: #ede6d8;
+      --parchment:  #d4c9b0;
+      --brown:      #1a0f00;
+      --brown-mid:  #3d2b1f;
+      --brown-lt:   #6b4c3b;
+      --gold:       #b8933a;
+      --gold-lt:    #d4ab52;
+      --gold-pale:  #e8d49a;
+      --white:      #ffffff;
+      --off-white:  #faf7f2;
+      --transition: .6s cubic-bezier(.25,.46,.45,.94);
+      --transition-fast: .3s cubic-bezier(.25,.46,.45,.94);
+    }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--cream);
+      color: var(--brown);
+      overflow-x: hidden;
+      cursor: none;
+    }
+    h1,h2,h3,h4,h5 { font-family: 'Cormorant Garamond', serif; }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; width: 100%; object-fit: cover; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--cream); }
+    ::-webkit-scrollbar-thumb { background: var(--gold); }
+
+    .cursor-dot {
+      width: 8px; height: 8px;
+      background: var(--brown);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0; z-index: 99999;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      transition: transform .1s ease, background .3s ease, width .3s ease, height .3s ease;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid var(--gold);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0; z-index: 99998;
+      pointer-events: none;
+      transform: translate(-50%,-50%);
+      transition: transform .15s ease, width .3s ease, height .3s ease, opacity .3s ease;
+    }
+    body:has(a:hover) .cursor-dot { background: var(--gold); width: 12px; height: 12px; }
+    body:has(a:hover) .cursor-ring { width: 52px; height: 52px; opacity: .5; }
+
+    #preloader {
+      position: fixed; inset: 0; z-index: 99997;
+      background: var(--brown);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 2rem;
+      transition: opacity .8s ease, visibility .8s ease;
+    }
+    #preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .preloader-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.5rem; font-weight: 300;
+      color: var(--cream); letter-spacing: 12px;
+      text-transform: uppercase;
+      opacity: 0; animation: fadeUp .8s .3s forwards;
+    }
+    .preloader-logo span { color: var(--gold); }
+    .preloader-line {
+      width: 0; height: 1px; background: var(--gold);
+      animation: lineGrow 1.2s .6s forwards;
+    }
+    .preloader-sub {
+      font-size: .6rem; letter-spacing: 6px; color: var(--parchment);
+      text-transform: uppercase;
+      opacity: 0; animation: fadeUp .8s 1s forwards;
+    }
+    @keyframes lineGrow { to { width: 200px; } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.8rem 5%;
+      transition: background var(--transition), padding var(--transition), box-shadow var(--transition);
+    }
+    nav.scrolled {
+      background: rgba(245,240,232,.97);
+      backdrop-filter: blur(20px);
+      padding: 1.1rem 5%;
+      box-shadow: 0 1px 0 rgba(184,147,58,.15);
+    }
+    .nav-left { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-left a {
+      font-size: .65rem; font-weight: 500; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--brown-mid);
+      position: relative; transition: color var(--transition-fast);
+    }
+    .nav-left a::after {
+      content: ''; position: absolute; bottom: -3px; left: 0;
+      width: 0; height: 1px; background: var(--gold);
+      transition: width var(--transition-fast);
+    }
+    .nav-left a:hover { color: var(--gold); }
+    .nav-left a:hover::after { width: 100%; }
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 400;
+      letter-spacing: 8px; text-transform: uppercase;
+      color: var(--brown); position: absolute;
+      left: 50%; transform: translateX(-50%);
+    }
+    .nav-logo span { color: var(--gold); font-style: italic; }
+    .nav-right { display: flex; align-items: center; gap: 2rem; list-style: none; }
+    .nav-right a {
+      font-size: .65rem; font-weight: 500; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--brown-mid);
+      transition: color var(--transition-fast);
+    }
+    .nav-right a:hover { color: var(--gold); }
+    .nav-icon { display: flex; align-items: center; cursor: none; }
+    .nav-icon svg { width: 18px; height: 18px; fill: var(--brown-mid); transition: fill var(--transition-fast); }
+    .nav-icon:hover svg { fill: var(--gold); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: none; }
+    .hamburger span { width: 24px; height: 1px; background: var(--brown); display: block; transition: var(--transition-fast); }
+
+    .mobile-menu {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(26,15,0,.98); backdrop-filter: blur(20px);
+      z-index: 999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2.5rem; opacity: 0; visibility: hidden;
+      transition: opacity .5s ease, visibility .5s ease;
+    }
+    .mobile-menu.active { opacity: 1; visibility: visible; }
+    .mobile-menu a {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem; font-weight: 300; letter-spacing: 3px;
+      color: var(--cream); transition: color var(--transition-fast);
+    }
+    .mobile-menu a:hover { color: var(--gold); }
+    .mobile-close { position: absolute; top: 2rem; right: 2rem; font-size: 1.5rem; color: var(--cream); cursor: none; }
+
+    .btn-lv {
+      display: inline-flex; align-items: center; gap: .8rem;
+      padding: 1rem 2.5rem;
+      background: var(--gold);
+      color: var(--brown);
+      font-size: .62rem; font-weight: 700;
+      letter-spacing: 4px; text-transform: uppercase;
+      transition: var(--transition-fast);
+      position: relative; overflow: hidden;
+    }
+    .btn-lv::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--gold-lt);
+      transform: translateX(-101%);
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .btn-lv:hover::before { transform: translateX(0); }
+    .btn-lv span { position: relative; z-index: 1; }
+
+    footer {
+      background: var(--brown-mid);
+      padding: 6rem 5% 2.5rem;
+      border-top: 1px solid rgba(184,147,58,.15);
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr 1fr;
+      gap: 4rem; margin-bottom: 5rem;
+    }
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem; font-weight: 300;
+      letter-spacing: 8px; color: var(--cream);
+      display: block; margin-bottom: 1.5rem;
+    }
+    .footer-logo span { color: var(--gold); font-style: italic; }
+    .footer-col h5 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: .58rem; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 1.8rem; font-weight: 600;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: .9rem; }
+    .footer-col ul li a {
+      font-size: .73rem; color: var(--parchment);
+      font-weight: 300; transition: color var(--transition-fast);
+    }
+    .footer-col ul li a:hover { color: var(--cream); }
+    .footer-divider { height: 1px; background: rgba(184,147,58,.12); margin-bottom: 2.5rem; }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .footer-bottom p { font-size: .62rem; color: var(--parchment); font-weight: 300; letter-spacing: 1px; }
+
+    @media (max-width: 768px) {
+      .nav-left, .nav-right li:not(:last-child) { display: none; }
+      .hamburger { display: flex; }
+      .nav-logo { position: static; transform: none; font-size: 1.2rem; }
+      .footer-top { grid-template-columns: 1fr; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div id="preloader">
+    <div class="preloader-logo">Fred <span>Vunjabei</span></div>
+    <div class="preloader-line"></div>
+    <div class="preloader-sub">Haute Couture · Dar es Salaam · Est. 2025</div>
+  </div>
+
+  <nav id="nav">
+    <ul class="nav-left">
+      <li><a href="{{ url_for('products.list_products') }}">Collections</a></li>
+      <li><a href="{{ url_for('products.list_products') }}">Boutique</a></li>
+      <li><a href="#lookbook">Lookbook</a></li>
+    </ul>
+    <a href="{{ url_for('frontend.index') }}" class="nav-logo">Fred <span>Vunjabei</span></a>
+    <ul class="nav-right">
+      <li><a href="#designers">Maisons</a></li>
+      <li><a href="#about">Héritage</a></li>
+      <li><a href="{{ url_for('frontend.wishlist') }}" class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </a></li>
+      <li><a href="{{ url_for('frontend.cart') }}" class="nav-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 4c0-1.1.9-2 2-2s2 .9 2 2h2c0-2.76-2.24-5-5-5S7 5.24 7 8h2zm-2 4h12v8H6v-8z"/></svg>
+      </a></li>
+    </ul>
+    <div class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-close" id="mobileClose">&times;</div>
+    <a href="{{ url_for('products.list_products') }}">Collections</a>
+    <a href="{{ url_for('products.list_products') }}">Boutique</a>
+    <a href="#lookbook">Lookbook</a>
+    <a href="#designers">Maisons</a>
+    <a href="#about">Héritage</a>
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand-col">
+        <span class="footer-logo">Fred <span>Vunjabei</span></span>
+        <p>Redefining African luxury from the heart of Tanzania.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Collections</h5>
+        <ul>
+          <li><a href="#">La Femme</a></li>
+          <li><a href="#">L'Homme</a></li>
+          <li><a href="#">Maroquinerie</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>La Maison</h5>
+        <ul>
+          <li><a href="#">Notre Histoire</a></li>
+          <li><a href="#">Savoir-Faire</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Services</h5>
+        <ul>
+          <li><a href="#">Livraison</a></li>
+          <li><a href="#">Retours</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <p>&copy; {{ now.year }} Fred Vunjabei. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+  <script>
+  // ── Utility: safe UUID generator ──────────────────────────────────────
+  function generateToken() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  // ── Preloader – always hide after timeout, even if window.load never fires
+  var preloaderHidden = false;
+  function hidePreloader() {
+    if (preloaderHidden) return;
+    preloaderHidden = true;
+    var p = document.getElementById('preloader');
+    if (p) p.classList.add('hidden');
+  }
+  // normal load hide
+  window.addEventListener('load', function() {
+    setTimeout(hidePreloader, 2000);
+  });
+  // failsafe: hide after 4 seconds regardless
+  setTimeout(hidePreloader, 4000);
+
+  // ── Custom cursor (fail‑safe ────────────────────────────────────────────)
+  var dot = document.getElementById('cursorDot');
+  var ring = document.getElementById('cursorRing');
+  if (dot && ring) {
+    var mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+    // If browser hides cursor by default (mobile), keep the dot/ring hidden
+    function updateCursorVisibility() {
+      var isMobile = window.matchMedia('(pointer: coarse)').matches;
+      dot.style.display = isMobile ? 'none' : 'block';
+      ring.style.display = isMobile ? 'none' : 'block';
+    }
+    updateCursorVisibility();
+    window.matchMedia('(pointer: coarse)').addListener(updateCursorVisibility);
+
+    document.addEventListener('mousemove', function(e) {
+      mouseX = e.clientX; mouseY = e.clientY;
+      dot.style.left = mouseX + 'px';
+      dot.style.top  = mouseY + 'px';
+    });
+
+    function animateRing() {
+      if (!preloaderHidden) {  // still on preloader, keep ring hidden
+        ring.style.display = 'none';
+        requestAnimationFrame(animateRing);
+        return;
+      }
+      ring.style.display = '';
+      ringX += (mouseX - ringX) * 0.12;
+      ringY += (mouseY - ringY) * 0.12;
+      ring.style.left = ringX + 'px';
+      ring.style.top  = ringY + 'px';
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+  }
+
+  // ── Mobile menu toggle ─────────────────────────────────────────────────
+  var hamburger = document.getElementById('hamburger');
+  var mobileMenu = document.getElementById('mobileMenu');
+  var mobileClose = document.getElementById('mobileClose');
+  if (hamburger && mobileMenu && mobileClose) {
+    hamburger.addEventListener('click', function() {
+      mobileMenu.classList.add('active');
+    });
+    mobileClose.addEventListener('click', function() {
+      mobileMenu.classList.remove('active');
+    });
+    var mobileLinks = mobileMenu.querySelectorAll('a');
+    for (var i = 0; i < mobileLinks.length; i++) {
+      mobileLinks[i].addEventListener('click', function() {
+        mobileMenu.classList.remove('active');
+      });
+    }
+  }
+
+  // ── Nav scroll effect ───────────────────────────────────────────────────
+  var nav = document.getElementById('nav');
+  if (nav) {
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 60) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+  }
+
+  // ── Scroll reveal (IntersectionObserver) ────────────────────────────────
+  var revealElements = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealElements.forEach(function(el) { revealObserver.observe(el); });
+  } else {
+    // fallback: show all immediately
+    for (var i = 0; i < revealElements.length; i++) {
+      revealElements[i].classList.add('visible');
+    }
+  }
+
+  // ── Parallax hero (only if .hero-media img exists) ─────────────────────
+  var heroImg = document.querySelector('.hero-media img');
+  if (heroImg) {
+    window.addEventListener('scroll', function() {
+      heroImg.style.transform = 'scale(1) translateY(' + (window.scrollY * 0.25) + 'px)';
+    });
+  }
+
+  // ── Product card action helpers (cart, wishlist) ────────────────────────
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.prod-act');
+    if (!btn) return;
+    var action = btn.getAttribute('data-action');
+    var productId = btn.getAttribute('data-product-id');
+    if (action === 'addtocart') {
+      var variantId = btn.getAttribute('data-variant-id') || '';
+      var token = localStorage.getItem('cart_token') || generateToken();
+      localStorage.setItem('cart_token', token);
+      fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Cart-Token': token },
+        body: JSON.stringify({ product_id: productId, variant_id: variantId, quantity: 1 })
+      }).then(function() { alert('Added to cart'); }).catch(function() {});
+    } else if (action === 'wishlist') {
+      var wishlistToken = localStorage.getItem('wishlist_token') || generateToken();
+      localStorage.setItem('wishlist_token', wishlistToken);
+      fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId, token: wishlistToken })
+      }).then(function() { alert('Added to wishlist'); }).catch(function() {});
+    }
+  });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

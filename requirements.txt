@@ -6,8 +6,6 @@ Flask-Limiter==3.7.0
 Flask-CORS==4.0.1
 Flask-Caching==2.3.0
 SQLAlchemy==2.0.31
-psycopg2-binary==2.9.9
-mysqlclient==2.2.4
 Pillow==10.4.0
 boto3==1.34.144
 python-dotenv==1.0.1

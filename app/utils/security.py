@@ -77,11 +77,14 @@ def add_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # Content-Security-Policy that allows the current frontend needs
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "img-src 'self' data: https://res.cloudinary.com; "
-        "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline';"
+        "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "connect-src 'self' https://api.tigo.com;"   # if you use Tigo API from frontend
     )
     return response
 

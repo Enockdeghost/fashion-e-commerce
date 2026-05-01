@@ -1,11 +1,9 @@
-
 from flask import Flask, jsonify
 from .config import config
 from .extensions import db, migrate, jwt, limiter, cors, cache
 from .routes import register_blueprints
 from .utils.security import add_security_headers
 import os
-
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -22,6 +20,23 @@ def create_app(config_name: str = None) -> Flask:
 
     register_blueprints(app)
 
+    def format_currency(value, currency=None):
+        if value is None:
+            return ""
+        if currency is None:
+            currency = app.config.get("DEFAULT_CURRENCY", "TZS")
+        try:
+            amount = float(value)
+        except (ValueError, TypeError):
+            return str(value)
+        if amount == int(amount):
+            formatted = f"{int(amount):,}"
+        else:
+            formatted = f"{amount:,.2f}"
+        return f"{currency} {formatted}"
+
+    app.jinja_env.filters["format_currency"] = format_currency
+
     app.after_request(add_security_headers)
 
     register_error_handlers(app)
@@ -34,7 +49,6 @@ def create_app(config_name: str = None) -> Flask:
 
 
 def register_error_handlers(app: Flask):
-    """Ensure every error returns JSON with the same shape."""
     from .utils.security import err
 
     @app.errorhandler(400)

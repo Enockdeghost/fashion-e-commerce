@@ -1,0 +1,1019 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<section class="breadcrumb-section">
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{{ url_for('frontend.index') }}">Home</a>
+            <span>/</span>
+            <a href="{{ url_for('products') }}">Collection</a>
+            <span>/</span>
+            <span>{{ product.name }}</span>
+        </div>
+    </div>
+</section>
+
+<!-- Product Detail -->
+<section class="product-detail">
+    <div class="container">
+        <div class="product-layout">
+            <!-- Image Gallery -->
+            <div class="product-gallery">
+                <div class="gallery-main">
+                    <img src="{{ product.primary_image or 'https://via.placeholder.com/800x1067/f5f5f0/333333?text=LUXÉ' }}" 
+                         alt="{{ product.name }}" 
+                         id="main-image">
+                </div>
+                <div class="gallery-thumbs">
+                    {% if product.images %}
+                        {% for image in product.images %}
+                            <button class="thumb-btn {% if loop.first %}active{% endif %}" 
+                                    data-image="{{ image.url }}">
+                                <img src="{{ image.url }}" alt="{{ product.name }}">
+                            </button>
+                        {% endfor %}
+                    {% else %}
+                        <button class="thumb-btn active" data-image="https://via.placeholder.com/800x1067/f5f5f0/333333?text=LUXÉ">
+                            <img src="https://via.placeholder.com/200x267/f5f5f0/333333?text=LUXÉ" alt="{{ product.name }}">
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="product-info">
+                <div class="product-header">
+                    <span class="product-brand">{{ product.brand.name if product.brand else 'LUXÉ' }}</span>
+                    <h1 class="product-title">{{ product.name }}</h1>
+                    <div class="product-price-section">
+                        <span class="product-price current-price">{{ "%.0f"|format(product.base_price) }} TZS</span>
+                        {% if product.compare_price %}
+                            <span class="product-price original-price">{{ "%.0f"|format(product.compare_price) }} TZS</span>
+                            <span class="product-badge sale-badge">Sale</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="product-description">
+                    <p>{{ product.short_description or product.description }}</p>
+                </div>
+
+                <!-- Variant Selection -->
+                {% if product.variants %}
+                    <div class="variant-section">
+                        <!-- Size Selection -->
+                        <div class="option-group">
+                            <div class="option-header">
+                                <span class="option-label">Size</span>
+                                <button class="size-guide-btn" id="size-guide-btn">Size Guide</button>
+                            </div>
+                            <div class="option-values" id="size-options">
+                                {% set sizes = [] %}
+                                {% for variant in product.variants %}
+                                    {% if variant.size and variant.size not in sizes %}
+                                        {% set _ = sizes.append(variant.size) %}
+                                        <button class="option-btn {% if variant.is_out_of_stock %}out-of-stock{% endif %}" 
+                                                data-size="{{ variant.size }}"
+                                                {% if variant.is_out_of_stock %}disabled{% endif %}>
+                                            {{ variant.size }}
+                                        </button>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Color Selection -->
+                        {% if product.variants | selectattr('color') | list | length > 0 %}
+                            <div class="option-group">
+                                <div class="option-header">
+                                    <span class="option-label">Color</span>
+                                </div>
+                                <div class="option-values color-options" id="color-options">
+                                    {% set colors = [] %}
+                                    {% for variant in product.variants %}
+                                        {% if variant.color and variant.color not in colors %}
+                                            {% set _ = colors.append(variant.color) %}
+                                            <button class="color-option {% if variant.is_out_of_stock %}out-of-stock{% endif %}" 
+                                                    data-color="{{ variant.color }}"
+                                                    style="background-color: {{ variant.color_hex or '#ccc' }};"
+                                                    title="{{ variant.color }}"
+                                                    {% if variant.is_out_of_stock %}disabled{% endif %}>
+                                            </button>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Quantity -->
+                <div class="quantity-section">
+                    <div class="quantity-control">
+                        <button class="qty-btn minus" id="qty-minus">−</button>
+                        <input type="number" value="1" min="1" max="10" id="quantity-input" class="qty-input">
+                        <button class="qty-btn plus" id="qty-plus">+</button>
+                    </div>
+                    <span class="stock-status in-stock">In Stock</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="product-actions-section">
+                    <button class="btn btn-primary btn-large add-to-cart-btn" id="add-to-cart-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        Add to Bag
+                    </button>
+                    <button class="btn btn-large wishlist-btn" id="wishlist-btn">
+                        <i class="far fa-heart"></i>
+                        Save to Wishlist
+                    </button>
+                </div>
+
+                <!-- Product Details -->
+                <div class="product-details-section">
+                    <div class="detail-tabs">
+                        <button class="tab-btn active" data-tab="details">Details</button>
+                        <button class="tab-btn" data-tab="shipping">Shipping & Returns</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="details-tab">
+                        <div class="product-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">SKU:</span>
+                                <span class="meta-value">{{ product.sku }}</span>
+                            </div>
+                            {% if product.category %}
+                                <div class="meta-item">
+                                    <span class="meta-label">Category:</span>
+                                    <span class="meta-value">{{ product.category.name }}</span>
+                                </div>
+                            {% endif %}
+                            {% if product.tags %}
+                                <div class="meta-item">
+                                    <span class="meta-label">Tags:</span>
+                                    <span class="meta-value">
+                                        {% for tag in product.tags %}
+                                            {{ tag.name }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="product-full-description">
+                            {{ product.description | safe }}
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="shipping-tab">
+                        <div class="shipping-info">
+                            <h4>Shipping Information</h4>
+                            <ul>
+                                <li>Complimentary shipping on orders over 500 TZS</li>
+                                <li>Standard delivery: 3-5 business days</li>
+                                <li>Express delivery: 1-2 business days</li>
+                                <li>International shipping available</li>
+                            </ul>
+                            
+                            <h4>Returns Policy</h4>
+                            <ul>
+                                <li>Free returns within 30 days</li>
+                                <li>Items must be unworn with tags attached</li>
+                                <li>Final sale items are non-returnable</li>
+                                <li>Refunds processed within 7-10 business days</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Products -->
+<section class="related-products">
+    <div class="container">
+        <div class="section-header text-center">
+            <h2>You May Also Like</h2>
+        </div>
+        <div class="products-grid" id="related-products">
+            <!-- Loaded dynamically -->
+        </div>
+    </div>
+</section>
+
+<!-- Size Guide Modal -->
+<div class="modal" id="size-guide-modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <button class="modal-close" id="size-guide-close">
+            <i class="fas fa-times"></i>
+        </button>
+        <h3>Size Guide</h3>
+        <div class="size-guide-content">
+            <table class="size-table">
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Chest (cm)</th>
+                        <th>Waist (cm)</th>
+                        <th>Hips (cm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>XS</td>
+                        <td>81-86</td>
+                        <td>61-66</td>
+                        <td>86-91</td>
+                    </tr>
+                    <tr>
+                        <td>S</td>
+                        <td>86-91</td>
+                        <td>66-71</td>
+                        <td>91-96</td>
+                    </tr>
+                    <tr>
+                        <td>M</td>
+                        <td>91-97</td>
+                        <td>71-76</td>
+                        <td>96-101</td>
+                    </tr>
+                    <tr>
+                        <td>L</td>
+                        <td>97-102</td>
+                        <td>76-81</td>
+                        <td>101-106</td>
+                    </tr>
+                    <tr>
+                        <td>XL</td>
+                        <td>102-109</td>
+                        <td>81-89</td>
+                        <td>106-114</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="size-note">For the best fit, we recommend measuring a similar garment that fits you well.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Breadcrumb */
+.breadcrumb-section {
+    padding: var(--spacing-lg) 0;
+}
+
+.breadcrumb {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-gray);
+}
+
+.breadcrumb a {
+    color: var(--color-gray);
+}
+
+.breadcrumb a:hover {
+    color: var(--color-black);
+}
+
+/* Product Detail */
+.product-detail {
+    padding: var(--spacing-lg) 0 var(--spacing-xxl);
+}
+
+.product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xxl);
+}
+
+/* Gallery */
+.product-gallery {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.gallery-main {
+    aspect-ratio: 3/4;
+    background-color: var(--color-cream);
+    margin-bottom: var(--spacing-sm);
+    overflow: hidden;
+}
+
+.gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gallery-thumbs {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.thumb-btn {
+    flex: 0 0 100px;
+    aspect-ratio: 3/4;
+    border: 2px solid transparent;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+}
+
+.thumb-btn:hover,
+.thumb-btn.active {
+    border-color: var(--color-black);
+}
+
+.thumb-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Product Info */
+.product-info {
+    padding-top: var(--spacing-lg);
+}
+
+.product-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.product-brand {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-gray);
+    margin-bottom: var(--spacing-xs);
+}
+
+.product-title {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+    margin-bottom: var(--spacing-md);
+}
+
+.product-price-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.product-price {
+    font-size: 1.5rem;
+    font-family: var(--font-serif);
+}
+
+.product-price.current-price {
+    color: var(--color-black);
+}
+
+.product-price.original-price {
+    text-decoration: line-through;
+    color: var(--color-gray-light);
+    font-size: 1.2rem;
+}
+
+.sale-badge {
+    background-color: #dc3545;
+    color: var(--color-white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.product-description {
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.8;
+    color: var(--color-gray);
+}
+
+/* Variant Section */
+.variant-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.option-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.option-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.size-guide-btn {
+    font-size: 0.75rem;
+    color: var(--color-gray);
+    text-decoration: underline;
+}
+
+.option-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.option-btn {
+    min-width: 50px;
+    height: 50px;
+    border: 1px solid rgba(0,0,0,0.2);
+    background: transparent;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.option-btn:hover:not(:disabled) {
+    border-color: var(--color-black);
+}
+
+.option-btn.active {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-white);
+}
+
+.option-btn.out-of-stock {
+    opacity: 0.3;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.color-options {
+    gap: var(--spacing-sm);
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.color-option:hover:not(:disabled) {
+    border-color: var(--color-black);
+    transform: scale(1.1);
+}
+
+.color-option.active {
+    border-color: var(--color-black);
+    box-shadow: 0 0 0 2px var(--color-white), 0 0 0 4px var(--color-black);
+}
+
+.color-option.out-of-stock {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Quantity Section */
+.quantity-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.qty-btn {
+    width: 45px;
+    height: 45px;
+    background: transparent;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.qty-btn:hover {
+    background-color: var(--color-cream);
+}
+
+.qty-input {
+    width: 60px;
+    height: 45px;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stock-status {
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.stock-status.in-stock {
+    color: #28a745;
+}
+
+.stock-status.out-of-stock {
+    color: #dc3545;
+}
+
+/* Actions Section */
+.product-actions-section {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.add-to-cart-btn {
+    flex: 2;
+}
+
+.wishlist-btn {
+    flex: 1;
+}
+
+.wishlist-btn.active i {
+    color: #dc3545;
+}
+
+/* Details Section */
+.product-details-section {
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding-top: var(--spacing-lg);
+}
+
+.detail-tabs {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.tab-btn {
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast);
+    color: var(--color-gray);
+}
+
+.tab-btn:hover,
+.tab-btn.active {
+    color: var(--color-black);
+    border-bottom-color: var(--color-black);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.product-meta {
+    margin-bottom: var(--spacing-md);
+}
+
+.meta-item {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.9rem;
+}
+
+.meta-label {
+    color: var(--color-gray);
+    min-width: 80px;
+}
+
+.meta-value {
+    color: var(--color-black);
+}
+
+.product-full-description {
+    line-height: 1.8;
+    color: var(--color-gray);
+}
+
+.shipping-info h4 {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: var(--spacing-md) 0 var(--spacing-sm);
+}
+
+.shipping-info ul {
+    padding-left: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.shipping-info li {
+    list-style: disc;
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.9rem;
+    color: var(--color-gray);
+}
+
+/* Related Products */
+.related-products {
+    padding: var(--spacing-xxl) 0;
+    background-color: var(--color-cream);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--color-white);
+    padding: var(--spacing-xl);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-close {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    font-size: 1.2rem;
+    color: var(--color-gray);
+}
+
+.modal-content h3 {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.size-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+}
+
+.size-table th,
+.size-table td {
+    padding: var(--spacing-sm);
+    text-align: left;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.size-table th {
+    font-weight: 500;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
+.size-table td {
+    font-size: 0.9rem;
+    color: var(--color-gray);
+}
+
+.size-note {
+    font-size: 0.85rem;
+    color: var(--color-gray);
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .product-layout {
+        gap: var(--spacing-xl);
+    }
+    
+    .product-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .product-gallery {
+        position: relative;
+        top: 0;
+    }
+    
+    .product-info {
+        padding-top: var(--spacing-lg);
+    }
+    
+    .product-title {
+        font-size: 1.8rem;
+    }
+    
+    .product-actions-section {
+        flex-direction: column;
+    }
+    
+    .gallery-thumbs {
+        overflow-x: auto;
+        padding-bottom: var(--spacing-sm);
+    }
+    
+    .thumb-btn {
+        flex: 0 0 80px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const product = {{ product | tojson }};
+    
+    // Gallery functionality
+    initGallery();
+    
+    // Variant selection
+    initVariants();
+    
+    // Quantity controls
+    initQuantity();
+    
+    // Tabs
+    initTabs();
+    
+    // Size guide modal
+    initSizeGuide();
+    
+    // Add to cart
+    initAddToCart();
+    
+    // Wishlist
+    initWishlist();
+    
+    // Load related products
+    loadRelatedProducts();
+});
+
+function initGallery() {
+    const mainImage = document.getElementById('main-image');
+    const thumbs = document.querySelectorAll('.thumb-btn');
+    
+    thumbs.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            thumbs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            mainImage.src = this.dataset.image;
+        });
+    });
+}
+
+function initVariants() {
+    const sizeBtns = document.querySelectorAll('.option-btn');
+    const colorBtns = document.querySelectorAll('.color-option');
+    
+    sizeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.disabled) return;
+            sizeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateStockStatus();
+        });
+    });
+    
+    colorBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.disabled) return;
+            colorBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            updateStockStatus();
+        });
+    });
+}
+
+function updateStockStatus() {
+    const activeSize = document.querySelector('.option-btn.active');
+    const activeColor = document.querySelector('.color-option.active');
+    const stockStatus = document.querySelector('.stock-status');
+    
+    // This would typically check against actual variant stock
+    if (stockStatus) {
+        stockStatus.textContent = 'In Stock';
+        stockStatus.className = 'stock-status in-stock';
+    }
+}
+
+function initQuantity() {
+    const minusBtn = document.getElementById('qty-minus');
+    const plusBtn = document.getElementById('qty-plus');
+    const input = document.getElementById('quantity-input');
+    
+    if (minusBtn && plusBtn && input) {
+        minusBtn.addEventListener('click', () => {
+            const current = parseInt(input.value) || 1;
+            if (current > 1) input.value = current - 1;
+        });
+        
+        plusBtn.addEventListener('click', () => {
+            const current = parseInt(input.value) || 1;
+            if (current < 10) input.value = current + 1;
+        });
+        
+        input.addEventListener('change', () => {
+            let value = parseInt(input.value) || 1;
+            value = Math.max(1, Math.min(10, value));
+            input.value = value;
+        });
+    }
+}
+
+function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+}
+
+function initSizeGuide() {
+    const modal = document.getElementById('size-guide-modal');
+    const openBtn = document.getElementById('size-guide-btn');
+    const closeBtn = document.getElementById('size-guide-close');
+    const overlay = modal.querySelector('.modal-overlay');
+    
+    if (openBtn) {
+        openBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+}
+
+function initAddToCart() {
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', function() {
+            const quantity = parseInt(document.getElementById('quantity-input').value) || 1;
+            const activeSize = document.querySelector('.option-btn.active');
+            const activeColor = document.querySelector('.color-option.active');
+            
+            // Find matching variant
+            let variantId = null;
+            if (activeSize || activeColor) {
+                // In a real app, you'd match against actual variants
+                // For now, we'll just add the product
+            }
+            
+            addToCart({{ product.id }}, variantId, quantity);
+        });
+    }
+}
+
+function initWishlist() {
+    const wishlistBtn = document.getElementById('wishlist-btn');
+    
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function() {
+            addToWishlist({{ product.id }});
+            this.classList.toggle('active');
+            const icon = this.querySelector('i');
+            if (this.classList.contains('active')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+            }
+        });
+    }
+}
+
+function loadRelatedProducts() {
+    const categoryId = {{ product.category_id | tojson }};
+    
+    fetch(`/api/products?category=${categoryId}&per_page=4`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('related-products');
+            if (data.data && data.data.products) {
+                // Filter out current product
+                const related = data.data.products.filter(p => p.id !== {{ product.id }}).slice(0, 4);
+                container.innerHTML = related.map(product => createProductCard(product)).join('');
+            }
+        })
+        .catch(error => console.error('Error loading related products:', error));
+}
+
+function createProductCard(product) {
+    const badge = product.is_new_arrival ? '<span class="product-badge">New</span>' : 
+                  product.compare_price ? '<span class="product-badge sale">Sale</span>' : '';
+    
+    const salePrice = product.compare_price ? `
+        <span class="original">${formatPrice(product.compare_price)}</span>
+        <span class="sale">${formatPrice(product.base_price)}</span>
+    ` : `<span>${formatPrice(product.base_price)}</span>`;
+    
+    return `
+        <div class="product-card" data-product-id="${product.id}">
+            <div class="product-image">
+                <img src="${product.primary_image || 'https://via.placeholder.com/400x533/f5f5f0/333333?text=LUXÉ'}" alt="${product.name}">
+                ${badge}
+                <div class="product-actions">
+                    <button class="product-action-btn" onclick="addToCart(${product.id})">Add to Bag</button>
+                    <button class="product-action-btn wishlist" onclick="addToWishlist(${product.id})">
+                        <i class="far fa-heart"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="product-details">
+                <h4 class="product-name"><a href="/products/${product.slug}">${product.name}</a></h4>
+                <p class="product-price">${salePrice}</p>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}
