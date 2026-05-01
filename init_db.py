@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Database Initialization Script for LUXÉ Fashion E-Commerce
-Run this script to create all database tables.
+sample db
+
 """
 
 from app import create_app
@@ -15,7 +15,7 @@ def init_database():
     with app.app_context():
         # Create all tables
         db.create_all()
-        print("✅ Database tables created successfully!")
+        print(" Database tables created successfully!")
         
         # Create some sample data
         create_sample_data()
@@ -26,10 +26,10 @@ def create_sample_data():
     
     # Check if data already exists
     if Category.query.first():
-        print("📊 Sample data already exists, skipping...")
+        print(" Sample data already exists, skipping...")
         return
     
-    print("🌱 Creating sample data...")
+    print(" Creating sample data...")
     
     # Create categories
     categories_data = [
@@ -63,7 +63,7 @@ def create_sample_data():
         brands[brand_data['slug']] = brand
     
     db.session.commit()
-    print(f"✅ Created {len(brands)} brands")
+    print(f"Created {len(brands)} brands")
     
     # Create a sample collection
     artisan_collection = Collection(
@@ -74,10 +74,10 @@ def create_sample_data():
     db.session.add(artisan_collection)
     db.session.commit()
     
-    print("✅ Sample data created successfully!")
-    print("\n🎉 Database initialization complete!")
-    print("📝 You can now run the application with: python run.py")
+    print(" Sample data created successfully!")
+    print("\n Database initialization complete!")
+    print(" You can now run the application with: python run.py")
 
 if __name__ == '__main__':
-    print("🚀 Initializing LUXÉ Fashion Database...")
+    print(" Initializing LUXÉ Fashion Database...")
     init_database()

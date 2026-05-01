@@ -35,13 +35,13 @@ def products():
         product_query = product_query.filter(Product.category.has(slug=cat_slug))
     if brand_slug:
         product_query = product_query.filter(Product.brand.has(slug=brand_slug))
-    products_list = product_query.order_by(Product.created_at.desc()).limit(12).all()
+    products_list = product_query.order_by(Product.created_at.desc()).limit(24).all()
     return render_template('products/list.html',
+                           products=products_list,
                            categories=categories,
                            brands=brands,
                            category_name=category_name,
-                           products=products_list,
-                           now=_now())
+                           now=datetime.now(timezone.utc))
 
 @frontend_bp.route('/products/<product_slug>')
 def product_detail(product_slug):

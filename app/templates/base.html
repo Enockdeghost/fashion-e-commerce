@@ -20,6 +20,20 @@
       --gold-pale:  #e8d49a;
       --white:      #ffffff;
       --off-white:  #faf7f2;
+       --color-white:    var(--white);
+      --color-cream:    var(--cream);
+      --color-gray:     var(--brown-lt);
+      --color-gray-light: var(--parchment);
+      --color-black:    var(--brown);
+      --font-serif:     'Cormorant Garamond', serif;
+      --font-sans:      'Montserrat', sans-serif;
+      --spacing-xs:  0.5rem;
+      --spacing-sm:  0.8rem;
+      --spacing-md:  1.2rem;
+      --spacing-lg:  2rem;
+      --spacing-xl:  3rem;
+      --spacing-xxl: 5rem;
+      --transition-normal: 0.3s ease;
       --transition: .6s cubic-bezier(.25,.46,.45,.94);
       --transition-fast: .3s cubic-bezier(.25,.46,.45,.94);
     }
@@ -214,6 +228,7 @@
     }
   </style>
   {% block head %}{% endblock %}
+{% block extra_css %}{% endblock %}
 </head>
 <body>
   <div class="cursor-dot" id="cursorDot"></div>

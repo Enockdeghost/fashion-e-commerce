@@ -83,6 +83,78 @@
 
 {% block scripts %}
 <script>
+
+
+function formatPrice(amount) {
+  if (amount == null) return '0 TZS';
+  var num = parseFloat(amount);
+  if (isNaN(num)) return '0 TZS';
+  return 'TZS ' + num.toLocaleString();
+}
+
+function getCartToken() {
+  var token = localStorage.getItem('cart_token');
+  if (!token) {
+    token = 'cart_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('cart_token', token);
+  }
+  return token;
+}
+
+var cartData = null;
+
+function loadCart() {
+  console.log('Loading cart...');
+  var token = getCartToken();
+  document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:4rem;">Loading your cart…</p>';
+  
+  fetch('/api/cart', {headers:{'X-Cart-Token':token}})
+    .then(function(r) {
+      if (!r.ok) throw new Error('Cart API error: ' + r.status);
+      return r.json();
+    })
+    .then(function(d) {
+      console.log('Cart data:', d);
+      if (d.success && d.data && d.data.cart && d.data.cart.items && d.data.cart.items.length) {
+        cartData = d.data.cart;
+        renderCart(cartData);
+        document.getElementById('checkoutBtn').hidden = false;
+      } else {
+        showEmptyCart();
+      }
+    })
+    .catch(function(err) {
+      console.error('Cart load failed:', err);
+      showEmptyCart();
+    });
+}
+
+function renderCart(cart) {
+  var container = document.getElementById('cartItems');
+  var html = cart.items.map(function(item) {
+    var img = item.image || item.product?.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=100&q=85';
+    return '<div style="display:flex; gap:1.5rem; align-items:center; padding:1.5rem 0; border-bottom:1px solid var(--parchment);">' +
+      '<img src="' + img + '" style="width:100px; height:100px; object-fit:cover;">' +
+      '<div style="flex:1;">' +
+        '<strong>' + (item.product_name || '') + '</strong><br>' +
+        '<span style="font-size:0.75rem; color:var(--brown-lt);">' + (item.size||'') + ' ' + (item.color||'') + '</span><br>' +
+        '<span style="font-size:0.75rem;">Qty: ' + item.quantity + '</span>' +
+      '</div>' +
+      '<div style="font-weight:600;">' + formatPrice(item.line_total) + '</div>' +
+    '</div>';
+  }).join('');
+  container.innerHTML = html;
+}
+
+function showEmptyCart() {
+  document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:4rem;">Your cart is empty. <a href="/products" style="color:var(--gold);">Start shopping</a></p>';
+  document.getElementById('checkoutBtn').hidden = true;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadCart();
+});
+
 function formatPrice(amount) {
   return 'TZS ' + parseFloat(amount || 0).toLocaleString();
 }
