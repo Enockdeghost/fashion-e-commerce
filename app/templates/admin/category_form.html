@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}Edit{% else %}New{% endif %} Category | Fred Vunjabei{% endblock %}
+{% block content %}
+<div style="padding:6rem 5% 4rem; max-width:600px; margin:0 auto;">
+  <h1 style="font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.2rem;">
+    {% if category %}Edit Category{% else %}Add New Category{% endif %}
+  </h1>
+
+  <form id="categoryForm" style="display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem;">
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Name</label>
+      <input name="name" value="{{ category.name if category else '' }}" required
+             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Description</label>
+      <textarea name="description" rows="3"
+                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">{{ category.description if category else '' }}</textarea>
+    </div>
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Image URL</label>
+      <input name="image_url" value="{{ category.image_url if category else '' }}"
+             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Parent Category</label>
+      <select id="parentSelect" name="parent_id"
+              style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-lv" style="align-self:flex-start;">
+      <span>{% if category %}Update{% else %}Create{% endif %} Category</span>
+    </button>
+  </form>
+  <div id="formMessage" style="margin-top:2rem;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Load existing categories for parent dropdown
+  fetch('/api/categories').then(r => r.json()).then(d => {
+    const sel = document.getElementById('parentSelect');
+    if (d.data) {
+      d.data.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name;
+        sel.appendChild(o);
+      });
+    }
+    {% if category and category.parent_id %}
+      sel.value = '{{ category.parent_id }}';
+    {% endif %}
+  });
+
+  document.getElementById('categoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData);
+
+    const token = localStorage.getItem('admin_token');
+    const method = '{{ 'PUT' if category else 'POST' }}';
+    const url = '{{ '/api/categories/' + category.id if category else '/api/categories' }}';
+
+    fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      const msg = document.getElementById('formMessage');
+      if (d.success) {
+        alert('Category saved!', 'success');
+        window.location.href = '/admin/products';  // or a categories list page
+      } else {
+        alert(d.error || 'Error', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

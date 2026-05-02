@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{% if brand %}Edit{% else %}New{% endif %} Brand | Fred Vunjabei{% endblock %}
+{% block content %}
+<div style="padding:6rem 5% 4rem; max-width:600px; margin:0 auto;">
+  <h1 style="font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.2rem;">
+    {% if brand %}Edit Brand{% else %}Add New Brand{% endif %}
+  </h1>
+
+  <form id="brandForm" style="display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem;">
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Name</label>
+      <input name="name" value="{{ brand.name if brand else '' }}" required
+             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+    </div>
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Description</label>
+      <textarea name="description" rows="3"
+                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">{{ brand.description if brand else '' }}</textarea>
+    </div>
+    <div>
+      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Logo URL</label>
+      <input name="logo_url" value="{{ brand.logo_url if brand else '' }}"
+             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+    </div>
+    <button type="submit" class="btn-lv" style="align-self:flex-start;">
+      <span>{% if brand %}Update{% else %}Create{% endif %} Brand</span>
+    </button>
+  </form>
+  <div id="formMessage" style="margin-top:2rem;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('brandForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData);
+
+    const token = localStorage.getItem('admin_token');
+    const method = '{{ 'PUT' if brand else 'POST' }}';
+    const url = '{{ '/api/brands/' + brand.id if brand else '/api/brands' }}';
+
+    fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      const msg = document.getElementById('formMessage');
+      if (d.success) {
+        alert('Brand saved!', 'success');
+        window.location.href = '/admin/products';
+      } else {
+        alert(d.error || 'Error', 'error');
+      }
+    });
+  });
+</script>
+{% endblock %}

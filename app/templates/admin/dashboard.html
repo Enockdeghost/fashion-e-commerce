@@ -149,10 +149,13 @@
     <div class="admin-panel">
       <h2>Quick Actions</h2>
       <div class="quick-actions">
-        <a href="{{ url_for('frontend.admin_products') }}" class="quick-action">Manage Products</a>
+        <a href="{{ url_for('frontend.admin_product_new') }}" class="quick-action">Add Product</a>
+        <a href="{{ url_for('frontend.admin_category_new') }}" class="quick-action">Add Category</a>
+        <a href="{{ url_for('frontend.admin_brand_new') }}" class="quick-action">Add Brand</a>
         <a href="{{ url_for('frontend.admin_orders') }}" class="quick-action">View Orders</a>
         <a href="/api/admin/manage/coupons" class="quick-action">Coupons</a>
         <a href="/api/admin/manage/banners" class="quick-action">Banners</a>
+      </div>
       </div>
     </div>
     <div class="admin-panel">

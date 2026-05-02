@@ -134,3 +134,30 @@ def lookbook_category(category):
     cat = Category.query.filter((Category.slug == category) | (Category.id == category)).first_or_404()
     products = Product.query.filter_by(category_id=cat.id, is_active=True, is_deleted=False).order_by(Product.created_at.desc()).limit(24).all()
     return render_template('products/category.html', category=cat, products=products, now=_now())
+
+@frontend_bp.route('/admin/products/new')
+def admin_product_new():
+    return render_template('admin/product_form.html', product=None, now=_now())
+
+@frontend_bp.route('/admin/products/<product_id>/edit')
+def admin_product_edit(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('admin/product_form.html', product=product, now=_now())
+
+@frontend_bp.route('/admin/categories/new')
+def admin_category_new():
+    return render_template('admin/category_form.html', category=None, now=_now())
+
+@frontend_bp.route('/admin/categories/<category_id>/edit')
+def admin_category_edit(category_id):
+    category = Category.query.get_or_404(category_id)
+    return render_template('admin/category_form.html', category=category, now=_now())
+
+@frontend_bp.route('/admin/brands/new')
+def admin_brand_new():
+    return render_template('admin/brand_form.html', brand=None, now=_now())
+
+@frontend_bp.route('/admin/brands/<brand_id>/edit')
+def admin_brand_edit(brand_id):
+    brand = Brand.query.get_or_404(brand_id)
+    return render_template('admin/brand_form.html', brand=brand, now=_now())

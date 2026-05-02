@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Admin Login | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .admin-auth-page {
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; background: var(--brown); padding: 2rem;
+  }
+  .admin-auth-card {
+    width: 100%; max-width: 420px; background: var(--cream);
+    padding: 3.5rem 2.5rem; border: 1px solid var(--gold);
+  }
+  .admin-auth-card .logo {
+    text-align: center; font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem; font-weight: 300; letter-spacing: 8px;
+    color: var(--brown); margin-bottom: 2rem;
+  }
+  .admin-auth-card .logo span { color: var(--gold); font-style: italic; }
+  .admin-auth-card h2 {
+    font-family: 'Cormorant Garamond', serif; font-size: 2rem;
+    font-weight: 300; text-align: center; color: var(--brown);
+    margin-bottom: 2rem;
+  }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label {
+    display: block; font-size: 0.65rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.5rem; font-weight: 600;
+  }
+  .form-group input {
+    width: 100%; padding: 0.9rem 0; font-size: 0.95rem;
+    border: none; border-bottom: 1px solid var(--parchment);
+    background: transparent; color: var(--brown);
+    font-family: 'Montserrat', sans-serif; outline: none;
+    transition: border-color 0.3s;
+  }
+  .form-group input:focus { border-bottom-color: var(--gold); }
+  .login-btn {
+    width: 100%; padding: 1.1rem; background: var(--brown);
+    color: var(--cream); font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 4px; text-transform: uppercase;
+    border: none; cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+    margin-top: 1rem;
+  }
+  .login-btn:hover {
+    background: var(--gold); color: var(--brown); transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-auth-page">
+  <div class="admin-auth-card">
+    <div class="logo">Fred <span>Vunjabei</span></div>
+    <h2>Admin Panel</h2>
+    <form id="adminLoginForm" onsubmit="return handleAdminLogin(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" required placeholder="admin@maison.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="········">
+      </div>
+      <button type="submit" class="login-btn">Access Panel</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function handleAdminLogin(e) {
+    e.preventDefault();
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, password: password})
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            localStorage.setItem('admin_token', d.data.access_token);
+            window.location.href = '/admin/dashboard';
+        } else {
+            alert(d.error || 'Invalid credentials');
+        }
+    })
+    .catch(() => alert('Network error'));
+    return false;
+  }
+</script>
+{% endblock %}
