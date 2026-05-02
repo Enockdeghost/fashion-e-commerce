@@ -4,7 +4,7 @@ from app.models import User
 from app.extensions import db
 from app.utils.security import ok, err, sanitise_text, is_valid_email
 
-auth_bp = Blueprint("auth", __name__, url_prefix="/auth")  
+auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth_bp.route("/register", methods=["POST"])
 def register():

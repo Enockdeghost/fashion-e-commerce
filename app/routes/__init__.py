@@ -18,10 +18,10 @@ from .frontend import frontend_bp
 from .auth import auth_bp
 
 def register_blueprints(app: Flask):
-    # Frontend pages (no prefix) – serves /login, /register, /, etc.
+    # Frontend pages – no prefix, serves /login, /register, /cart, etc.
     app.register_blueprint(frontend_bp)
 
-    # Admin auth – provides /api/login, /api/me, /api/refresh (admin only)
+    # Admin auth – provides /api/login, /api/me, /api/refresh
     app.register_blueprint(admin_auth_bp, url_prefix="/api")
 
     # Customer auth – provides /api/auth/login, /api/auth/register, /api/auth/me
