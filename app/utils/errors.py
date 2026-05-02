@@ -2,7 +2,6 @@ from flask import jsonify
 
 
 class APIError(Exception):
-    """Base exception with status code and message."""
     status_code = 400
 
     def __init__(self, message: str = "Error", status_code: int = None, errors: list = None):

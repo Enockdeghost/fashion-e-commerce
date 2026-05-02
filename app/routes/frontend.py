@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify
-from app.models import Product, Category, Brand, Banner
-from app.utils.security import ok
+from flask import Blueprint, render_template, request
 from datetime import datetime, timezone
+from app.models import Product, Category, Brand, Banner, BlogPost, Page
 
 frontend_bp = Blueprint('frontend', __name__)
 
@@ -18,6 +17,14 @@ def index():
                            categories=categories,
                            products=products,
                            now=_now())
+
+@frontend_bp.route('/login')
+def login():
+    return render_template('auth/login.html', now=_now())
+
+@frontend_bp.route('/register')
+def register():
+    return render_template('auth/register.html', now=_now())
 
 @frontend_bp.route('/products')
 def products():
@@ -41,7 +48,7 @@ def products():
                            categories=categories,
                            brands=brands,
                            category_name=category_name,
-                           now=datetime.now(timezone.utc))
+                           now=_now())
 
 @frontend_bp.route('/products/<product_slug>')
 def product_detail(product_slug):
@@ -51,6 +58,12 @@ def product_detail(product_slug):
         Product.is_active == True
     ).first_or_404()
     return render_template('products/detail.html', product=product, now=_now())
+
+@frontend_bp.route('/category/<slug>')
+def category(slug):
+    cat = Category.query.filter((Category.slug == slug) | (Category.id == slug)).first_or_404()
+    products = Product.query.filter_by(category_id=cat.id, is_active=True, is_deleted=False).order_by(Product.created_at.desc()).limit(24).all()
+    return render_template('products/category.html', category=cat, products=products, now=_now())
 
 @frontend_bp.route('/cart')
 def cart():
@@ -64,13 +77,9 @@ def checkout():
 def wishlist():
     return render_template('wishlist/view.html', now=_now())
 
-@frontend_bp.route('/login')
-def login():
-    return render_template('auth/login.html', now=_now())
-
-@frontend_bp.route('/register')
-def register():
-    return render_template('auth/register.html', now=_now())
+@frontend_bp.route('/lookbook')
+def lookbook():
+    return render_template('lookbook/view.html', now=_now())
 
 @frontend_bp.route('/dashboard')
 def dashboard():
@@ -102,19 +111,16 @@ def admin_orders():
 
 @frontend_bp.route('/page/<slug>')
 def cms_page(slug):
-    from app.models import Page
     page = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
     return render_template('cms/page.html', page=page, now=_now())
 
 @frontend_bp.route('/blog')
 def blog():
-    from app.models import BlogPost
     posts = BlogPost.query.filter_by(is_published=True).order_by(BlogPost.published_at.desc()).all()
     return render_template('blog/list.html', posts=posts, now=_now())
 
 @frontend_bp.route('/blog/<slug>')
 def blog_post(slug):
-    from app.models import BlogPost
     post = BlogPost.query.filter_by(slug=slug, is_published=True).first_or_404()
     return render_template('blog/post.html', post=post, now=_now())
 
@@ -122,3 +128,9 @@ def blog_post(slug):
 def search():
     query = request.args.get('q', '')
     return render_template('search/results.html', query=query, now=_now())
+
+@frontend_bp.route('/lookbook/<category>')
+def lookbook_category(category):
+    cat = Category.query.filter((Category.slug == category) | (Category.id == category)).first_or_404()
+    products = Product.query.filter_by(category_id=cat.id, is_active=True, is_deleted=False).order_by(Product.created_at.desc()).limit(24).all()
+    return render_template('products/category.html', category=cat, products=products, now=_now())

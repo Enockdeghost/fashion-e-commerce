@@ -14,6 +14,7 @@ from .product import Product, ProductVariant, ProductImage, ProductVideo
 from .shipping import ShippingZone, ShippingRate
 from .tag import Tag
 from .wishlist import Wishlist
+from .user import User
 
 # Define Collection if it doesn't exist as a separate model
 # It might be used in product associations

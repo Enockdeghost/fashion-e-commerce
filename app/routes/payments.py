@@ -1,4 +1,3 @@
-
 from datetime import datetime, timezone
 from flask import Blueprint, request, g
 from app.extensions import db
@@ -7,8 +6,6 @@ from app.utils.security import ok, err, is_valid_tz_phone, normalise_phone, sani
 
 payments_bp = Blueprint("payments", __name__)
 
-
-# ─── INITIATE CHECKOUT 
 
 @payments_bp.route("/checkout", methods=["POST"])
 def checkout():
@@ -30,7 +27,6 @@ def checkout():
     if order.status not in ("pending",):
         return err(f"Order cannot be paid in '{order.status}' status")
 
-    # Check if payment already pending
     existing = Payment.query.filter_by(order_id=order.id, status="pending").first()
     if existing:
         return ok({
@@ -40,7 +36,6 @@ def checkout():
 
     phone = normalise_phone(phone)
 
-    # Create payment record
     payment = Payment(
         order_id=order.id,
         payment_method="tigo_money",
@@ -52,7 +47,6 @@ def checkout():
     db.session.add(payment)
     db.session.flush()
 
-    # Call Tigo API
     from app.services.payment_service import TigoMoneyService
     tigo = TigoMoneyService()
     result = tigo.initiate_payment(
@@ -78,8 +72,6 @@ def checkout():
         return err(f"Payment initiation failed: {result['message']}", 502)
 
 
-# ─── QUERY PAYMENT STATUS 
-
 @payments_bp.route("/checkout/<order_ref>", methods=["GET"])
 def payment_status(order_ref):
     order = Order.query.filter(
@@ -95,7 +87,6 @@ def payment_status(order_ref):
     if not payment:
         return err("No payment found for this order", 404)
 
-    # Poll Tigo if still pending
     if payment.status == "pending":
         from app.services.payment_service import TigoMoneyService
         tigo = TigoMoneyService()
@@ -115,10 +106,8 @@ def payment_status(order_ref):
     })
 
 
-# ─── WEBHOOK (Tigo callback) 
 @payments_bp.route("/payment/webhook", methods=["POST"])
 def payment_webhook():
-    # Signature verification
     raw_body = request.get_data()
     signature = request.headers.get("X-Tigo-Signature", "")
 
@@ -138,14 +127,13 @@ def payment_webhook():
     ).first()
 
     if not order:
-        return {"status": "ok"}, 200  # Acknowledge but ignore unknown orders
+        return {"status": "ok"}, 200
 
     payment = Payment.query.filter_by(
         order_id=order.id, transaction_id=parsed["transaction_id"]
     ).first()
 
     if not payment:
-        # Create from webhook
         payment = Payment(
             order_id=order.id,
             payment_method="tigo_money",
@@ -169,10 +157,7 @@ def payment_webhook():
 
 
 def _confirm_payment(order: Order, payment: Payment):
-    """Mark payment and order as paid."""
     from app.models import OrderStatusHistory
-    from datetime import datetime, timezone
-
     now = datetime.now(timezone.utc)
     payment.status = "successful"
     payment.paid_at = now
@@ -187,7 +172,6 @@ def _confirm_payment(order: Order, payment: Payment):
     ))
     db.session.commit()
 
-    # Notifications
     try:
         from app.services.email_service import send_payment_receipt
         send_payment_receipt(order, payment)

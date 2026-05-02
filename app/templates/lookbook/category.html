@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}{{ config.title }} Lookbook | LUXÉ{% endblock %}
+
+{% block head %}
+<style>
+/* ── Cinematic Hero ──────────────────────────────────────────────────────── */
+.lc-hero{position:relative;height:100vh;overflow:hidden;display:flex;align-items:flex-end}
+.lc-hero-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lc-hero-grain{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")}
+.lc-hero-gradient{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.3) 40%,rgba(0,0,0,.1) 100%)}
+.lc-hero-content{position:relative;z-index:2;padding:4rem 5%;width:100%}
+.lc-hero-breadcrumb{font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:1.5rem;display:flex;align-items:center;gap:.8rem}
+.lc-hero-breadcrumb a{color:inherit;text-decoration:none;transition:color var(--trans)}
+.lc-hero-breadcrumb a:hover{color:var(--gold)}
+.lc-hero-breadcrumb span{color:rgba(255,255,255,.25)}
+.lc-hero-eyebrow{font-size:.62rem;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;overflow:hidden}
+.lc-hero-eyebrow span{display:block;opacity:0;transform:translateY(100%);animation:slideUp .8s ease .4s forwards}
+.lc-hero-title{font-family:var(--serif);font-size:clamp(5rem,11vw,10rem);font-weight:300;line-height:.88;color:var(--white);letter-spacing:-.02em;overflow:hidden;margin-bottom:2rem}
+.lc-hero-title .line{display:block;opacity:0;transform:translateY(60px);animation:slideUp 1s cubic-bezier(.16,1,.3,1) forwards}
+.lc-hero-title .line-1{animation-delay:.5s}
+.lc-hero-title .line-2{animation-delay:.65s;padding-left:4vw}
+.lc-hero-title em{font-style:italic;color:var(--gold-light)}
+.lc-hero-meta{display:flex;align-items:center;gap:3rem;margin-top:2rem;opacity:0;animation:fadeUp .8s ease 1s forwards}
+.lc-meta-item{display:flex;flex-direction:column;gap:.3rem}
+.lc-meta-label{font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.lc-meta-value{font-size:.75rem;letter-spacing:.1em;color:rgba(255,255,255,.85)}
+.lc-meta-divider{width:1px;height:40px;background:rgba(255,255,255,.15)}
+
+/* ── Sticky Category Nav ─────────────────────────────────────────────────── */
+.lc-subnav{background:var(--black);position:sticky;top:70px;z-index:100;padding:0 5%;border-bottom:1px solid rgba(255,255,255,.08)}
+.lc-subnav-inner{display:flex;justify-content:space-between;align-items:center}
+.lc-subnav-tabs{display:flex;gap:0;list-style:none;overflow-x:auto;scrollbar-width:none}
+.lc-subnav-tabs::-webkit-scrollbar{display:none}
+.lc-subnav-tabs a{display:block;padding:1.1rem 1.8rem;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);text-decoration:none;border-bottom:2px solid transparent;transition:all var(--trans);white-space:nowrap}
+.lc-subnav-tabs a:hover,.lc-subnav-tabs a.active{color:var(--white);border-bottom-color:var(--gold)}
+.lc-subnav-count{font-size:.6rem;letter-spacing:.15em;color:rgba(255,255,255,.25);white-space:nowrap;padding:.5rem 0}
+
+/* ── Intro Strip ─────────────────────────────────────────────────────────── */
+.lc-intro{display:grid;grid-template-columns:1fr 1fr;gap:6rem;padding:7rem 5%;align-items:center}
+.lc-intro-text .tag{font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem}
+.lc-intro-text h2{font-family:var(--serif);font-size:clamp(2.5rem,4vw,4rem);font-weight:300;line-height:1;margin-bottom:2rem}
+.lc-intro-text h2 em{font-style:italic}
+.lc-intro-text p{font-size:.82rem;line-height:2;color:var(--mid);margin-bottom:1.5rem}
+.lc-intro-img{position:relative;aspect-ratio:3/4;overflow:hidden}
+.lc-intro-img img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.25,.46,.45,.94)}
+.lc-intro-img:hover img{transform:scale(1.05)}
+.lc-intro-img-tag{position:absolute;bottom:2rem;left:2rem;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);padding:.7rem 1.2rem;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--white)}
+
+/* ── Masonry Gallery ─────────────────────────────────────────────────────── */
+.lc-gallery{padding:0 5% 6rem;background:var(--white)}
+.lc-gallery-header{display:flex;justify-content:space-between;align-items:center;padding:3rem 0 2.5rem}
+.gallery-filters{display:flex;gap:.5rem}
+.filter-btn{background:none;border:1px solid rgba(0,0,0,.12);padding:.45rem 1.2rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all var(--trans)}
+.filter-btn.active,.filter-btn:hover{background:var(--black);color:var(--white);border-color:var(--black)}
+
+/* Masonry-style grid */
+.masonry{columns:3;gap:1rem;column-fill:balance}
+.masonry-item{break-inside:avoid;margin-bottom:1rem;position:relative;overflow:hidden;cursor:pointer;display:block}
+.masonry-item img{width:100%;display:block;filter:brightness(.96);transition:transform 1s cubic-bezier(.25,.46,.45,.94),filter .8s ease}
+.masonry-item:hover img{transform:scale(1.06);filter:brightness(.75)}
+.masonry-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 50%);opacity:0;transition:opacity .4s ease;display:flex;flex-direction:column;justify-content:flex-end;padding:1.5rem}
+.masonry-item:hover .masonry-overlay{opacity:1}
+.mi-tag{font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold)}
+.mi-name{font-family:var(--serif);font-size:1.3rem;font-weight:300;color:var(--white);line-height:1.1;margin:.3rem 0}
+.mi-price{font-size:.7rem;color:rgba(255,255,255,.6)}
+.mi-cta{display:inline-flex;align-items:center;gap:.5rem;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.8);text-decoration:none;margin-top:.6rem;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:2px;width:fit-content}
+
+/* ── Featured Film Strip ─────────────────────────────────────────────────── */
+.lc-filmstrip{background:var(--black);padding:6rem 0;overflow:hidden}
+.filmstrip-track{display:flex;gap:1.5rem;animation:scrollLeft 30s linear infinite;width:max-content}
+.filmstrip-track:hover{animation-play-state:paused}
+.film-frame{width:300px;height:400px;flex-shrink:0;position:relative;overflow:hidden}
+.film-frame img{width:100%;height:100%;object-fit:cover;filter:brightness(.85);transition:filter .6s ease}
+.film-frame:hover img{filter:brightness(1)}
+.film-frame-label{position:absolute;bottom:1.2rem;left:1.2rem;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+@keyframes scrollLeft{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── Campaign Video ──────────────────────────────────────────────────────── */
+.lc-campaign{position:relative;height:80vh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.lc-campaign img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55)}
+.campaign-content{position:relative;z-index:2;text-align:center;color:var(--white)}
+.campaign-content .eyebrow{font-size:.6rem;letter-spacing:.4em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem}
+.campaign-content h2{font-family:var(--serif);font-size:clamp(3rem,7vw,6rem);font-weight:300;line-height:.9;margin-bottom:2.5rem}
+.campaign-content h2 em{font-style:italic}
+.play-btn{width:72px;height:72px;border:1px solid rgba(255,255,255,.5);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--trans);margin-bottom:1.5rem}
+.play-btn:hover{background:var(--white);border-color:var(--white)}
+.play-btn svg{stroke:white;transition:stroke var(--trans);margin-left:3px}
+.play-btn:hover svg{stroke:var(--black)}
+
+/* ── Products Carousel ───────────────────────────────────────────────────── */
+.lc-products{padding:6rem 5%;background:var(--cream)}
+.products-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:3rem}
+.product-card{cursor:pointer}
+.product-card-img{position:relative;aspect-ratio:3/4;overflow:hidden;margin-bottom:1.2rem;background:var(--white)}
+.product-card-img img{width:100%;height:100%;object-fit:cover;transition:transform 1s cubic-bezier(.25,.46,.45,.94)}
+.product-card:hover .product-card-img img{transform:scale(1.06)}
+.product-card-badge{position:absolute;top:1rem;left:1rem;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;background:var(--black);color:var(--white);padding:.3rem .8rem}
+.product-card-wish{position:absolute;top:1rem;right:1rem;width:36px;height:36px;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(-4px);transition:all var(--trans)}
+.product-card:hover .product-card-wish{opacity:1;transform:translateY(0)}
+.product-card-wish svg{width:14px;height:14px;stroke:var(--black);fill:none}
+.product-card-info{padding:0 .2rem}
+.product-card-cat{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mid);margin-bottom:.3rem}
+.product-card-name{font-family:var(--serif);font-size:1.15rem;font-weight:400;margin-bottom:.4rem;line-height:1.2}
+.product-card-price{font-size:.8rem;color:var(--mid)}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes slideUp{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:none}
+.reveal-delay-1{transition-delay:.12s}
+.reveal-delay-2{transition-delay:.24s}
+.reveal-delay-3{transition-delay:.36s}
+.reveal-delay-4{transition-delay:.48s}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .lc-intro{grid-template-columns:1fr}
+  .masonry{columns:2}
+  .products-row{grid-template-columns:repeat(2,1fr)}
+  .lc-hero-title{font-size:clamp(3.5rem,12vw,6rem)}
+  .film-frame{width:220px;height:300px}
+}
+@media(max-width:480px){
+  .masonry{columns:1}
+  .products-row{grid-template-columns:1fr 1fr}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ─── CINEMATIC HERO ───────────────────────────────────── -->
+<section class="lc-hero">
+  <img class="lc-hero-media" src="{{ config.hero_img }}" alt="{{ config.title }}"/>
+  <div class="lc-hero-grain"></div>
+  <div class="lc-hero-gradient"></div>
+  <div class="lc-hero-content">
+    <div class="lc-hero-breadcrumb">
+      <a href="{{ url_for('frontend.lookbook') }}">Lookbook</a>
+      <span>/</span>
+      <span style="color:rgba(255,255,255,.7)">{{ config.title }}</span>
+    </div>
+    <div class="lc-hero-eyebrow"><span>{{ config.season }}</span></div>
+    <h1 class="lc-hero-title">
+      <em class="line line-1">{{ config.title_line1 }}</em>
+      <span class="line line-2">{{ config.title_line2 }}</span>
+    </h1>
+    <div class="lc-hero-meta">
+      <div class="lc-meta-item">
+        <span class="lc-meta-label">Collection</span>
+        <span class="lc-meta-value">{{ config.season }}</span>
+      </div>
+      <div class="lc-meta-divider"></div>
+      <div class="lc-meta-item">
+        <span class="lc-meta-label">Looks</span>
+        <span class="lc-meta-value">{{ config.looks_count }}</span>
+      </div>
+      <div class="lc-meta-divider"></div>
+      <div class="lc-meta-item">
+        <span class="lc-meta-label">Pieces</span>
+        <span class="lc-meta-value">{{ config.pieces_count }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STICKY SUBNAV ────────────────────────────────────── -->
+<nav class="lc-subnav">
+  <div class="lc-subnav-inner">
+    <ul class="lc-subnav-tabs">
+      {% for tab in config.sub_tabs %}
+      <li><a href="#{{ tab.anchor }}" class="{{ 'active' if loop.first }}">{{ tab.label }}</a></li>
+      {% endfor %}
+    </ul>
+    <span class="lc-subnav-count">{{ config.looks_count }} Looks</span>
+  </div>
+</nav>
+
+<!-- ─── INTRO ────────────────────────────────────────────── -->
+<section id="story" class="lc-intro">
+  <div class="lc-intro-text reveal">
+    <div class="tag">{{ config.season }}</div>
+    <h2>{{ config.intro_headline|safe }}</h2>
+    {% for para in config.intro_paragraphs %}
+    <p>{{ para }}</p>
+    {% endfor %}
+    <a href="{{ url_for('frontend.products') }}?category={{ category }}" class="btn-ghost" style="margin-top:1rem">
+      Shop {{ config.title }}
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+  <div class="lc-intro-img reveal reveal-delay-2">
+    <img src="{{ config.intro_img }}" alt="{{ config.title }} story"/>
+    <div class="lc-intro-img-tag">{{ config.season }} · {{ config.title }}</div>
+  </div>
+</section>
+
+<!-- ─── MASONRY GALLERY ──────────────────────────────────── -->
+<section id="gallery" class="lc-gallery">
+  <div class="lc-gallery-header">
+    <div>
+      <div class="section-eyebrow">The Looks</div>
+      <h2 class="section-title" style="font-size:2rem">All {{ config.looks_count }} Pieces</h2>
+    </div>
+    <div class="gallery-filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      {% for f in config.filters %}
+      <button class="filter-btn" data-filter="{{ f.slug }}">{{ f.label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="masonry" id="masonry-grid">
+    {% for item in config.gallery_items %}
+    <a href="{{ url_for('frontend.products') }}?q={{ item.name }}" class="masonry-item reveal" data-category="{{ item.filter_tag }}">
+      <img src="{{ item.img }}" alt="{{ item.name }}" loading="lazy"/>
+      <div class="masonry-overlay">
+        <span class="mi-tag">{{ item.tag }}</span>
+        <span class="mi-name">{{ item.name }}</span>
+        <span class="mi-price">{{ item.price }}</span>
+        <span class="mi-cta">Shop This Look
+          <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─── FILMSTRIP ────────────────────────────────────────── -->
+<section id="film" class="lc-filmstrip">
+  <div class="filmstrip-track" id="filmstrip">
+    {% for item in config.filmstrip_items %}
+    <div class="film-frame">
+      <img src="{{ item.img }}" alt="{{ item.label }}" loading="lazy"/>
+      <span class="film-frame-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+    {# duplicate for seamless loop #}
+    {% for item in config.filmstrip_items %}
+    <div class="film-frame">
+      <img src="{{ item.img }}" alt="{{ item.label }}" loading="lazy"/>
+      <span class="film-frame-label">{{ item.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─── CAMPAIGN ─────────────────────────────────────────── -->
+<section id="campaign" class="lc-campaign">
+  <img src="{{ config.campaign_img }}" alt="Campaign"/>
+  <div class="campaign-content">
+    <div class="eyebrow">{{ config.season }} Campaign</div>
+    <h2>{{ config.campaign_headline|safe }}</h2>
+    <a href="{{ url_for('frontend.products') }}?category={{ category }}" class="btn-ghost" style="color:white;border-color:rgba(255,255,255,.4)">
+      Discover All Pieces
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ─── FEATURED PRODUCTS ────────────────────────────────── -->
+<section id="shop" class="lc-products">
+  <div class="section-eyebrow reveal">Shop the Look</div>
+  <h2 class="section-title reveal reveal-delay-1">Key Pieces<br/><em>from the Collection</em></h2>
+
+  <div class="products-row">
+    {% for p in config.featured_products %}
+    <div class="product-card reveal reveal-delay-{{ loop.index }}">
+      <div class="product-card-img">
+        <img src="{{ p.img }}" alt="{{ p.name }}" loading="lazy"/>
+        {% if p.badge %}<span class="product-card-badge">{{ p.badge }}</span>{% endif %}
+        <div class="product-card-wish">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="product-card-info">
+        <div class="product-card-cat">{{ p.category }}</div>
+        <div class="product-card-name">{{ p.name }}</div>
+        <div class="product-card-price">{{ p.price }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─── NEXT COLLECTION ──────────────────────────────────── -->
+<section style="display:grid;grid-template-columns:1fr 1fr;min-height:50vh">
+  {% set prev_cat = config.prev_category %}
+  {% set next_cat = config.next_category %}
+  <a href="{{ url_for('frontend.lookbook_category', category=prev_cat.slug) }}"
+     style="position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:3rem;text-decoration:none">
+    <img src="{{ prev_cat.img }}" alt="{{ prev_cat.name }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5);transition:transform 1s ease">
+    <div style="position:relative;z-index:2">
+      <div style="font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.5rem">← Previous</div>
+      <div style="font-family:var(--serif);font-size:2rem;font-weight:300;color:var(--white)">{{ prev_cat.name }}</div>
+    </div>
+  </a>
+  <a href="{{ url_for('frontend.lookbook_category', category=next_cat.slug) }}"
+     style="position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:flex-end;padding:3rem;text-decoration:none">
+    <img src="{{ next_cat.img }}" alt="{{ next_cat.name }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5);transition:transform 1s ease">
+    <div style="position:relative;z-index:2;text-align:right">
+      <div style="font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:.5rem">Next →</div>
+      <div style="font-family:var(--serif);font-size:2rem;font-weight:300;color:var(--white)">{{ next_cat.name }}</div>
+    </div>
+  </a>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── Reveal on scroll ───────────────────── */
+const ro = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target)}})
+},{threshold:.08,rootMargin:'0px 0px -60px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+/* ── Gallery filter ─────────────────────── */
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter=btn.dataset.filter;
+    document.querySelectorAll('.masonry-item').forEach(item=>{
+      const cat=item.dataset.category||'all';
+      if(filter==='all'||cat===filter){
+        item.style.display='block';
+        setTimeout(()=>{item.style.opacity='1';item.style.transform='none'},20);
+      } else {
+        item.style.opacity='0';
+        setTimeout(()=>item.style.display='none',300);
+      }
+    });
+  });
+});
+
+/* ── Smooth anchor scroll ───────────────── */
+document.querySelectorAll('.lc-subnav-tabs a').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelectorAll('.lc-subnav-tabs a').forEach(x=>x.classList.remove('active'));
+    a.classList.add('active');
+    const target=document.querySelector(a.getAttribute('href'));
+    if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+
+/* ── Hover zoom on filmstrip ────────────── */
+document.querySelectorAll('.film-frame').forEach(f=>{
+  f.addEventListener('mouseenter',()=>{
+    f.querySelector('img').style.transform='scale(1.05)';
+    f.querySelector('img').style.transition='transform .8s ease';
+  });
+  f.addEventListener('mouseleave',()=>{
+    f.querySelector('img').style.transform='scale(1)';
+  });
+});
+</script>
+{% endblock %}

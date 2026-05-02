@@ -1,8 +1,8 @@
-
-from flask import Blueprint, request, g
+from flask import Blueprint, request, g, current_app
 from app.extensions import db
 from app.models import ProductVariant, InventoryLog, Product
 from app.utils.security import admin_required, validate_pagination, ok, err
+from app.services.email_service import send_admin_low_stock_alert
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 
@@ -38,7 +38,6 @@ def list_inventory():
 @inventory_bp.route("/low-stock", methods=["GET"])
 @admin_required
 def low_stock():
-    from flask import current_app
     threshold = int(request.args.get("threshold", current_app.config["LOW_STOCK_THRESHOLD"]))
     variants = (
         ProductVariant.query
@@ -101,11 +100,8 @@ def adjust_stock(variant_id):
     db.session.add(log)
     db.session.commit()
 
-    # Send low stock alert if needed
-    from flask import current_app
     if variant.is_low_stock:
         try:
-            from app.services.email_service import send_admin_low_stock_alert
             send_admin_low_stock_alert(variant, current_app.config["SUPER_ADMIN_EMAIL"])
         except Exception:
             pass

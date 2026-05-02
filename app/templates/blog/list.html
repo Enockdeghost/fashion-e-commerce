@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Journal | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .blog-page {
+    padding: 8rem 5% 4rem;
+    min-height: 100vh;
+    background: var(--cream);
+  }
+  .blog-header {
+    margin-bottom: 3rem;
+  }
+  .blog-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+    margin-bottom: 0.5rem;
+  }
+  .blog-header p {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+  }
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  .blog-card {
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .blog-card:hover {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+  }
+  .blog-card img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    filter: brightness(0.95);
+    transition: filter 0.6s;
+  }
+  .blog-card:hover img {
+    filter: brightness(1);
+  }
+  .blog-card-body {
+    padding: 1.8rem;
+  }
+  .blog-card-body .date {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+  }
+  .blog-card-body h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: var(--brown);
+    margin-bottom: 0.8rem;
+    transition: color 0.3s;
+  }
+  .blog-card:hover .blog-card-body h2 {
+    color: var(--gold);
+  }
+  .blog-card-body .excerpt {
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--brown-lt);
+    margin-bottom: 1.2rem;
+  }
+  .read-more {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .blog-card:hover .read-more {
+    border-bottom-color: var(--gold);
+  }
+  @media (max-width: 900px) {
+    .blog-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .blog-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="blog-page">
+  <div class="blog-header">
+    <h1>The Journal</h1>
+    <p>Stories from the Maison</p>
+  </div>
+  <div class="blog-grid" id="blogGrid">
+    <p style="grid-column:1/-1; text-align:center; padding:3rem;">Loading articles…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  fetch('/api/cms/blog')
+    .then(r => r.json())
+    .then(d => {
+      var grid = document.getElementById('blogGrid');
+      if (d.success && d.data && d.data.posts && d.data.posts.length) {
+        grid.innerHTML = d.data.posts.map(function(post) {
+          var img = post.cover_image_url || 'https://images.unsplash.com/photo-1470309864662-7c3ac28d2ad0?w=600&q=85';
+          var date = post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) : '';
+          return '<a href="/blog/' + post.slug + '" class="blog-card">' +
+            '<img src="' + img + '" alt="' + post.title + '">' +
+            '<div class="blog-card-body">' +
+              '<div class="date">' + date + '</div>' +
+              '<h2>' + post.title + '</h2>' +
+              '<p class="excerpt">' + (post.excerpt || '') + '</p>' +
+              '<span class="read-more">Read More</span>' +
+            '</div>' +
+          '</a>';
+        }).join('');
+      } else {
+        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:3rem;">No articles published yet.</p>';
+      }
+    })
+    .catch(function() {
+      document.getElementById('blogGrid').innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:3rem;">Could not load articles.</p>';
+    });
+</script>
+{% endblock %}

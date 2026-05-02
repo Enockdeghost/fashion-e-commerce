@@ -62,6 +62,18 @@
       transform: translate(-50%,-50%);
       transition: transform .1s ease, background .3s ease, width .3s ease, height .3s ease;
     }
+    .nav-link-auth {
+        font-size: .65rem;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--gold) !important;
+        border-bottom: 1px solid transparent;
+        transition: border-color .3s;
+      }
+      .nav-link-auth:hover {
+        border-bottom-color: var(--gold);
+      }
     .cursor-ring {
       width: 36px; height: 36px;
       border: 1px solid var(--gold);
@@ -241,15 +253,22 @@
   </div>
 
   <nav id="nav">
-    <ul class="nav-left">
-      <li><a href="{{ url_for('products.list_products') }}">Collections</a></li>
-      <li><a href="{{ url_for('products.list_products') }}">Boutique</a></li>
-      <li><a href="#lookbook">Lookbook</a></li>
-    </ul>
-    <a href="{{ url_for('frontend.index') }}" class="nav-logo">Fred <span>Vunjabei</span></a>
-    <ul class="nav-right">
-      <li><a href="#designers">Maisons</a></li>
-      <li><a href="#about">Héritage</a></li>
+      <ul class="nav-left">
+        <li><a href="{{ url_for('frontend.products') }}">Collections</a></li>
+        <li><a href="{{ url_for('frontend.products') }}">Boutique</a></li>
+        <li><a href="{{ url_for('frontend.lookbook') }}">Lookbook</a></li>
+      </ul>
+      <a href="{{ url_for('frontend.index') }}" class="nav-logo">Fred <span>Vunjabei</span></a>
+     <ul class="nav-right">
+      <li><a href="{{ url_for('frontend.index') }}#designers">Maisons</a></li>
+      <li><a href="{{ url_for('frontend.index') }}#about">Héritage</a></li>
+      {% if current_user %}
+        <li><span class="nav-link-auth">{{ current_user.first_name }}</span></li>
+        <li><a href="#" class="nav-link-auth" onclick="logoutUser()">Logout</a></li>
+      {% else %}
+        <li><a href="{{ url_for('frontend.login') }}" class="nav-link-auth">Sign In</a></li>
+        <li><a href="{{ url_for('frontend.register') }}" class="nav-link-auth">Register</a></li>
+      {% endif %}
       <li><a href="{{ url_for('frontend.wishlist') }}" class="nav-icon">
         <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
       </a></li>
@@ -257,18 +276,18 @@
         <svg viewBox="0 0 24 24"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 4c0-1.1.9-2 2-2s2 .9 2 2h2c0-2.76-2.24-5-5-5S7 5.24 7 8h2zm-2 4h12v8H6v-8z"/></svg>
       </a></li>
     </ul>
-    <div class="hamburger" id="hamburger">
-      <span></span><span></span><span></span>
-    </div>
+      <div class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </div>
   </nav>
 
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-close" id="mobileClose">&times;</div>
-    <a href="{{ url_for('products.list_products') }}">Collections</a>
-    <a href="{{ url_for('products.list_products') }}">Boutique</a>
-    <a href="#lookbook">Lookbook</a>
-    <a href="#designers">Maisons</a>
-    <a href="#about">Héritage</a>
+    <a href="{{ url_for('frontend.products') }}">Collections</a>
+    <a href="{{ url_for('frontend.products') }}">Boutique</a>
+    <a href="{{ url_for('frontend.lookbook') }}">Lookbook</a>
+    <a href="{{ url_for('frontend.index') }}#designers">Maisons</a>
+    <a href="{{ url_for('frontend.index') }}#about">Héritage</a>
   </div>
 
   {% block content %}{% endblock %}
@@ -456,6 +475,11 @@
       }).then(function() { alert('Added to wishlist'); }).catch(function() {});
     }
   });
+
+  function logoutUser() {
+    localStorage.removeItem('user_token');
+    window.location.href = '{{ url_for("frontend.index") }}';
+  }
   </script>
   {% block scripts %}{% endblock %}
 </body>

@@ -6,6 +6,7 @@ from flask_jwt_extended import (
 from app.models import AdminUser
 from app.extensions import db
 from app.utils.security import ok, err, sanitise_text
+from datetime import datetime, timezone
 
 admin_auth_bp = Blueprint("admin_auth", __name__, url_prefix="/admin")
 
@@ -26,12 +27,9 @@ def login():
     if not admin.is_active:
         return err("Account deactivated", 403)
 
-    # Update last login
-    from datetime import datetime, timezone
     admin.last_login = datetime.now(timezone.utc)
     db.session.commit()
 
-    # Create tokens
     access_token = create_access_token(identity=admin.id)
     refresh_token = create_refresh_token(identity=admin.id)
 
@@ -45,7 +43,6 @@ def login():
 @admin_auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    """Use the refresh token to get a new access token."""
     current_admin_id = get_jwt_identity()
     new_access_token = create_access_token(identity=current_admin_id)
     return ok({"access_token": new_access_token}, "Token refreshed")
@@ -54,7 +51,6 @@ def refresh():
 @admin_auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def me():
-    """Return the current admin user's details."""
     admin_id = get_jwt_identity()
     admin = AdminUser.query.get(admin_id)
     if not admin or not admin.is_active:

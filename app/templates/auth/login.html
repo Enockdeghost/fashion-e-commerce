@@ -1,169 +1,174 @@
 {% extends "base.html" %}
-
-{% block title %}Sign In{% endblock %}
-
-{% block content %}
-<section class="auth-section">
-    <div class="container">
-        <div class="auth-container">
-            <div class="auth-header">
-                <h1>Sign In</h1>
-                <p>Welcome back to LUXÉ</p>
-            </div>
-            
-            <form id="login-form" class="auth-form">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required autocomplete="email">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password">
-                </div>
-                
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember">
-                        <span>Remember me</span>
-                    </label>
-                    <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot password?</a>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-large">Sign In</button>
-            </form>
-            
-            <div class="auth-footer">
-                <p>Don't have an account? <a href="{{ url_for('register') }}">Create one</a></p>
-            </div>
-            
-            <div class="guest-checkout">
-                <p>Or continue as guest</p>
-                <a href="{{ url_for('products') }}" class="btn">Continue Shopping</a>
-            </div>
-        </div>
-    </div>
-</section>
-{% endblock %}
-
-{% block extra_css %}
+{% block title %}Sign In | Fred Vunjabei{% endblock %}
+{% block head %}
 <style>
-.auth-section {
-    padding: var(--spacing-xxl) 0;
-    min-height: 80vh;
+  .auth-page {
+    min-height: 100vh;
     display: flex;
     align-items: center;
-}
-
-.auth-container {
-    max-width: 450px;
-    margin: 0 auto;
-}
-
-.auth-header {
-    text-align: center;
-    margin-bottom: var(--spacing-xl);
-}
-
-.auth-header h1 {
-    font-family: var(--font-serif);
-    font-size: 2rem;
-    margin-bottom: var(--spacing-xs);
-}
-
-.auth-header p {
-    color: var(--color-gray);
-}
-
-.auth-form {
-    margin-bottom: var(--spacing-xl);
-}
-
-.form-options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-}
-
-.remember-me {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.forgot-link {
-    font-size: 0.85rem;
-    color: var(--color-gray);
-}
-
-.forgot-link:hover {
-    color: var(--color-black);
-}
-
-.auth-form .btn {
+    justify-content: center;
+    padding: 6rem 5%;
+    background: var(--cream);
+  }
+  .auth-card {
     width: 100%;
-}
-
-.auth-footer {
-    text-align: center;
-    padding: var(--spacing-lg) 0;
-    border-top: 1px solid rgba(0,0,0,0.05);
-}
-
-.auth-footer p {
+    max-width: 440px;
+    background: var(--white);
+    padding: 4rem 3rem;
+    border: 1px solid var(--parchment);
+  }
+  .auth-card h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.4rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+    margin-bottom: 0.5rem;
+  }
+  .auth-card .subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+    margin-bottom: 2.5rem;
+  }
+  .form-group {
+    margin-bottom: 1.8rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 0.9rem 0;
     font-size: 0.9rem;
-    color: var(--color-gray);
-}
-
-.guest-checkout {
+    border: none;
+    border-bottom: 1px solid var(--parchment);
+    background: transparent;
+    color: var(--brown);
+    font-family: 'Montserrat', sans-serif;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .form-group input:focus {
+    border-bottom-color: var(--gold);
+  }
+  .auth-btn {
+    width: 100%;
+    padding: 1.2rem;
+    background: var(--brown);
+    color: var(--cream);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+    margin-top: 1rem;
+  }
+  .auth-btn:hover {
+    background: var(--gold);
+    color: var(--brown);
+    transform: translateY(-2px);
+  }
+  .auth-link {
     text-align: center;
-    padding-top: var(--spacing-lg);
-}
-
-.guest-checkout p {
-    font-size: 0.85rem;
-    color: var(--color-gray);
-    margin-bottom: var(--spacing-md);
-}
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--brown-lt);
+  }
+  .auth-link a {
+    color: var(--gold);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .auth-link a:hover {
+    border-bottom-color: var(--gold);
+  }
+  .back-home {
+    display: block;
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+  }
+  .back-home:hover {
+    color: var(--gold);
+  }
+  @media (max-width: 480px) {
+    .auth-card {
+      padding: 2.5rem 1.5rem;
+    }
+  }
 </style>
 {% endblock %}
 
-{% block extra_js %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Sign in to your account</p>
+    <form id="loginForm" onsubmit="return handleLogin(event)">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" name="password" placeholder="········" required>
+      </div>
+      <button type="submit" class="auth-btn">Sign In</button>
+    </form>
+    <p class="auth-link">
+      Don't have an account? <a href="{{ url_for('frontend.register') }}">Create one</a>
+    </p>
+    <a href="{{ url_for('frontend.index') }}" class="back-home">← Back to Home</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
-document.getElementById('login-form').addEventListener('submit', function(e) {
+  function handleLogin(e) {
     e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    showLoading();
-    
-    fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    if (!email || !password) {
+      alert('Please fill in all fields.');
+      return false;
+    }
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email, password: password})
     })
-    .then(response => response.json())
-    .then(data => {
-        hideLoading();
-        if (data.data) {
-            localStorage.setItem('access_token', data.data.access_token);
-            localStorage.setItem('refresh_token', data.data.refresh_token);
-            showToast('Login successful', 'success');
-            window.location.href = '{{ url_for("dashboard") }}';
-        } else {
-            showToast(data.error || 'Invalid credentials', 'error');
-        }
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        localStorage.setItem('user_token', d.data.access_token);
+        window.location.href = '/dashboard';
+      } else {
+        alert(d.error || 'Invalid credentials');
+      }
     })
-    .catch(error => {
-        hideLoading();
-        showToast('An error occurred', 'error');
-    });
-});
+    .catch(function() { alert('Something went wrong.'); });
+    return false;
+  }
+  fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, password: password})
+})
 </script>
 {% endblock %}
+
+

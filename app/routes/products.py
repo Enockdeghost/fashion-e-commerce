@@ -1,6 +1,5 @@
-
-from flask import Blueprint, request, jsonify, g
-from sqlalchemy import or_, desc, asc
+from flask import Blueprint, request, g
+from sqlalchemy import or_
 from app.extensions import db, limiter
 from app.models import (
     Product, ProductVariant, ProductImage, ProductVideo,
@@ -17,7 +16,10 @@ from app.services.media_service import (
 from slugify import slugify
 
 products_bp = Blueprint("products", __name__, url_prefix="/products")
-
+cat_bp = Blueprint("categories", __name__, url_prefix="/categories")
+brand_bp = Blueprint("brands", __name__, url_prefix="/brands")
+col_bp = Blueprint("collections", __name__, url_prefix="/collections")
+tag_bp = Blueprint("tags", __name__, url_prefix="/tags")
 
 
 @products_bp.route("", methods=["GET"])
@@ -25,7 +27,6 @@ def list_products():
     page, per_page = validate_pagination(request.args)
     q = Product.query.filter_by(is_deleted=False, is_active=True)
 
-    # Filters
     if cat := request.args.get("category"):
         q = q.join(Category).filter(or_(Category.id == cat, Category.slug == cat))
     if brand := request.args.get("brand"):
@@ -34,11 +35,11 @@ def list_products():
         q = q.filter(Product.collections.any(or_(Collection.id == col, Collection.slug == col)))
     if tag := request.args.get("tag"):
         q = q.filter(Product.tags.any(or_(Tag.id == tag, Tag.slug == tag)))
-    if featured := request.args.get("featured"):
+    if featured := request.args.get("is_featured"):
         q = q.filter(Product.is_featured == (featured.lower() == "true"))
-    if new_arr := request.args.get("new_arrival"):
+    if new_arr := request.args.get("is_new_arrival"):
         q = q.filter(Product.is_new_arrival == (new_arr.lower() == "true"))
-    if bestseller := request.args.get("bestseller"):
+    if bestseller := request.args.get("is_bestseller"):
         q = q.filter(Product.is_bestseller == (bestseller.lower() == "true"))
     if min_price := request.args.get("min_price"):
         q = q.filter(Product.base_price >= float(min_price))
@@ -48,7 +49,6 @@ def list_products():
         like = f"%{search}%"
         q = q.filter(or_(Product.name.ilike(like), Product.description.ilike(like)))
 
-    # Sort
     sort_map = {
         "price_asc": Product.base_price.asc(),
         "price_desc": Product.base_price.desc(),
@@ -78,12 +78,10 @@ def get_product(product_id):
         Product.is_deleted == False,
     ).first_or_404()
 
-    # Increment view count
     product.view_count = (product.view_count or 0) + 1
     db.session.commit()
 
     return ok(product.to_dict(full=True))
-
 
 
 @products_bp.route("", methods=["POST"])
@@ -91,7 +89,6 @@ def get_product(product_id):
 def create_product():
     data = request.get_json(force=True)
 
-    # Required
     name = sanitise_text(data.get("name", ""))
     price = data.get("base_price")
     if not name:
@@ -120,7 +117,6 @@ def create_product():
         meta_keywords=sanitise_text(data.get("meta_keywords", "")),
     )
 
-    # Ensure slug is unique
     base_slug = product.slug
     counter = 1
     while Product.query.filter_by(slug=product.slug).first():
@@ -128,9 +124,8 @@ def create_product():
         counter += 1
 
     db.session.add(product)
-    db.session.flush()  # get product.id
+    db.session.flush()
 
-    # Tags
     for tag_name in data.get("tags", []):
         tag = Tag.query.filter_by(name=tag_name).first()
         if not tag:
@@ -138,13 +133,11 @@ def create_product():
             db.session.add(tag)
         product.tags.append(tag)
 
-    # Collections
     for col_id in data.get("collection_ids", []):
         col = Collection.query.get(col_id)
         if col:
             product.collections.append(col)
 
-    # Variants
     for v_data in data.get("variants", []):
         variant = ProductVariant(
             product_id=product.id,
@@ -160,7 +153,6 @@ def create_product():
 
     db.session.commit()
     return ok(product.to_dict(full=True), "Product created", 201)
-
 
 
 @products_bp.route("/<product_id>", methods=["PUT"])
@@ -194,14 +186,12 @@ def update_product(product_id):
     return ok(product.to_dict(full=True), "Product updated")
 
 
-
 @products_bp.route("/<product_id>", methods=["DELETE"])
 @roles_required("super_admin", "manager")
 def delete_product(product_id):
     product = Product.query.filter_by(id=product_id, is_deleted=False).first_or_404()
     product.soft_delete()
     return ok(message="Product deleted")
-
 
 
 @products_bp.route("/<product_id>/images", methods=["POST"])
@@ -222,7 +212,6 @@ def upload_image(product_id):
 
     result = upload_product_image(file, product_id, is_primary)
 
-    # If set as primary, unset others
     if is_primary:
         ProductImage.query.filter_by(product_id=product_id).update({"is_primary": False})
 
@@ -251,7 +240,6 @@ def delete_image(product_id, image_id):
     return ok(message="Image deleted")
 
 
-
 @products_bp.route("/<product_id>/videos", methods=["POST"])
 @admin_required
 def upload_video(product_id):
@@ -275,7 +263,6 @@ def upload_video(product_id):
     db.session.add(video)
     db.session.commit()
     return ok(video.to_dict(), "Video uploaded", 201)
-
 
 
 @products_bp.route("/bulk", methods=["POST"])
@@ -313,7 +300,6 @@ def bulk_create():
     return ok({"created": created, "errors": errors}, f"{len(created)} products created", 201)
 
 
-
 @products_bp.route("/<product_id>/variants", methods=["POST"])
 @admin_required
 def add_variant(product_id):
@@ -341,10 +327,6 @@ def update_variant(product_id, variant_id):
             setattr(variant, field, data[field])
     db.session.commit()
     return ok(variant.to_dict(), "Variant updated")
-
-
-
-cat_bp = Blueprint("categories", __name__, url_prefix="/categories")
 
 
 @cat_bp.route("", methods=["GET"])
@@ -394,10 +376,6 @@ def delete_category(cat_id):
     return ok(message="Category deactivated")
 
 
-
-brand_bp = Blueprint("brands", __name__, url_prefix="/brands")
-
-
 @brand_bp.route("", methods=["GET"])
 def list_brands():
     brands = Brand.query.filter_by(is_active=True).all()
@@ -420,10 +398,6 @@ def create_brand():
     return ok(brand.to_dict(), "Brand created", 201)
 
 
-
-col_bp = Blueprint("collections", __name__, url_prefix="/collections")
-
-
 @col_bp.route("", methods=["GET"])
 def list_collections():
     cols = Collection.query.filter_by(is_active=True).all()
@@ -444,10 +418,6 @@ def create_collection():
     db.session.add(col)
     db.session.commit()
     return ok(col.to_dict(), "Collection created", 201)
-
-
-
-tag_bp = Blueprint("tags", __name__, url_prefix="/tags")
 
 
 @tag_bp.route("", methods=["GET"])

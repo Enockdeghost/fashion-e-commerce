@@ -12,6 +12,7 @@ class Order(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=_uuid)
     order_number = db.Column(db.String(30), unique=True, nullable=False, default=_gen_order_number)
     session_token = db.Column(db.String(128), index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=True)
 
     status = db.Column(db.String(30), nullable=False, default="pending")
 

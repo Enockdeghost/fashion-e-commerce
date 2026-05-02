@@ -1,46 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Wishlist | Fred Vunjabei{% endblock %}
 {% block content %}
-<section style="padding:8rem 5%;">
+<section style="padding:8rem 5% 2rem;">
   <div class="section-header">
     <div>
-      <div class="section-eyebrow reveal">Your Favorites</div>
-      <h2 class="section-title reveal reveal-delay-1">My<br/><em>Wishlist</em></h2>
+      <div class="section-eyebrow">Your Favorites</div>
+      <h1 class="section-title">My<br/><em>Wishlist</em></h1>
     </div>
   </div>
-  <div class="products-grid" id="wishlistContainer">
-    <p style="text-align:center;padding:4rem;">Loading your wishlist…</p>
+</section>
+
+<section style="padding:2rem 5% 6rem;">
+  <div class="products-grid" id="wishlistGrid">
+    <p style="text-align:center;padding:4rem;grid-column:1/-1;">Loading your wishlist…</p>
   </div>
 </section>
 {% endblock %}
+
 {% block scripts %}
 <script>
-  const token = localStorage.getItem('wishlist_token') || 'wish_' + Math.random().toString(36).substr(2,9);
-  localStorage.setItem('wishlist_token', token);
+function formatPrice(amount) {
+  if (amount == null) return '0 TZS';
+  var num = parseFloat(amount);
+  if (isNaN(num)) return '0 TZS';
+  return 'TZS ' + num.toLocaleString();
+}
 
+function getWishlistToken() {
+  var token = localStorage.getItem('wishlist_token');
+  if (!token) {
+    token = 'wish_' + Math.random().toString(36).substr(2,9);
+    localStorage.setItem('wishlist_token', token);
+  }
+  return token;
+}
+
+function loadWishlist() {
+  var token = getWishlistToken();
   fetch('/api/wishlist', {headers:{'X-Cart-Token':token}})
-    .then(r => r.json())
-    .then(d => {
-      const container = document.getElementById('wishlistContainer');
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var grid = document.getElementById('wishlistGrid');
       if (d.success && d.data && d.data.wishlist && d.data.wishlist.length) {
-        container.innerHTML = d.data.wishlist.map(item => `
-          <div class="prod-card">
-            <div class="prod-img">
-              <img src="${item.product.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=700&q=85'}" alt="${item.product.name}" style="height:100%;">
-            </div>
-            <div class="prod-brand">${item.product.brand || 'Fred Vunjabei'}</div>
-            <div class="prod-name">${item.product.name}</div>
-            <div class="prod-price">
-              <span class="price-main">TZS ${parseFloat(item.product.base_price).toLocaleString()}</span>
-            </div>
-          </div>
-        `).join('');
+        grid.innerHTML = d.data.wishlist.map(function(item) {
+          var p = item.product || {};
+          var img = p.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=85';
+          return '<div class="prod-card">' +
+            '<a href="/products/' + (p.slug || '') + '">' +
+              '<div class="prod-img" style="height:350px;">' +
+                '<img src="' + img + '" alt="' + p.name + '" style="height:100%;">' +
+              '</div>' +
+            '</a>' +
+            '<div class="prod-brand" style="font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin:0.8rem 0 0.3rem;">Fred Vunjabei</div>' +
+            '<div class="prod-name" style="font-family:\'Cormorant Garamond\',serif; font-size:1.1rem;">' + p.name + '</div>' +
+            '<div class="prod-price"><span class="price-main">' + formatPrice(p.base_price) + '</span></div>' +
+          '</div>';
+        }).join('');
       } else {
-        container.innerHTML = '<p style="text-align:center;padding:4rem;">Your wishlist is empty. Start adding pieces you love.</p>';
+        grid.innerHTML = '<p style="text-align:center;padding:4rem;grid-column:1/-1;">Your wishlist is empty. <a href="' + '{{ url_for("frontend.products") }}' + '" style="color:var(--gold);">Discover pieces</a></p>';
       }
     })
-    .catch(() => {
-      document.getElementById('wishlistContainer').innerHTML = '<p style="text-align:center;padding:4rem;">Could not load wishlist.</p>';
+    .catch(function() {
+      document.getElementById('wishlistGrid').innerHTML = '<p style="text-align:center;padding:4rem;grid-column:1/-1;">Could not load wishlist.</p>';
     });
+}
+
+document.addEventListener('DOMContentLoaded', loadWishlist);
 </script>
 {% endblock %}

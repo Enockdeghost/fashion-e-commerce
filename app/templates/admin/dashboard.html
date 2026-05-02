@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .admin-dashboard {
+    padding: 6rem 5% 4rem;
+    min-height: 100vh;
+    background: var(--cream);
+  }
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .admin-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+  }
+  .logout-btn {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, color 0.3s;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .logout-btn:hover {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+  .stat-card .stat-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--brown);
+    margin-bottom: 0.3rem;
+  }
+  .stat-card .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+  }
+  .admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  .admin-panel {
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    padding: 2rem 2.5rem;
+  }
+  .admin-panel h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: 1px;
+    color: var(--brown);
+    margin-bottom: 1.5rem;
+  }
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .quick-action {
+    padding: 1rem;
+    border: 1px solid var(--parchment);
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brown);
+    transition: all 0.3s ease;
+  }
+  .quick-action:hover {
+    background: var(--brown);
+    color: var(--cream);
+    border-color: var(--brown);
+  }
+  .recent-orders-list {
+    list-style: none;
+  }
+  .recent-orders-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    font-size: 0.85rem;
+  }
+  .recent-orders-list li:last-child {
+    border-bottom: none;
+  }
+  @media (max-width: 900px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .admin-grid {
+      grid-template-columns: 1fr;
+    }
+    .quick-actions {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 480px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+  <div class="admin-header">
+    <h1>Admin Dashboard</h1>
+    <button class="logout-btn" onclick="localStorage.removeItem('admin_token'); window.location.href='{{ url_for('frontend.admin_login') }}'">Sign Out</button>
+  </div>
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Total Orders</div></div>
+    <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Products</div></div>
+    <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Revenue</div></div>
+    <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Pending Orders</div></div>
+  </div>
+  <div class="admin-grid">
+    <div class="admin-panel">
+      <h2>Quick Actions</h2>
+      <div class="quick-actions">
+        <a href="{{ url_for('frontend.admin_products') }}" class="quick-action">Manage Products</a>
+        <a href="{{ url_for('frontend.admin_orders') }}" class="quick-action">View Orders</a>
+        <a href="/api/admin/manage/coupons" class="quick-action">Coupons</a>
+        <a href="/api/admin/manage/banners" class="quick-action">Banners</a>
+      </div>
+    </div>
+    <div class="admin-panel">
+      <h2>Recent Orders</h2>
+      <ul class="recent-orders-list" id="recentOrders">
+        <li>Loading…</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function formatPrice(amount) {
+    if (amount == null) return '0 TZS';
+    var num = parseFloat(amount);
+    if (isNaN(num)) return '0 TZS';
+    return 'TZS ' + num.toLocaleString();
+  }
+
+  // Load dashboard stats from API
+  fetch('/api/admin/manage/dashboard', {
+    headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token')||'')}
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success && d.data) {
+      var stats = d.data;
+      var cells = document.querySelectorAll('#statsGrid .stat-number');
+      cells[0].textContent = stats.total_orders || 0;
+      cells[1].textContent = stats.total_products || 0;
+      cells[2].textContent = formatPrice(stats.total_revenue);
+      cells[3].textContent = stats.pending_orders || 0;
+    }
+  })
+  .catch(() => {});
+
+  // Load recent orders
+  fetch('/api/orders?per_page=5', {
+    headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token')||'')}
+  })
+  .then(r => r.json())
+  .then(d => {
+    var list = document.getElementById('recentOrders');
+    if (d.success && d.data && d.data.length) {
+      list.innerHTML = d.data.map(function(o) {
+        return '<li><span>' + o.order_number + '</span><span>' + formatPrice(o.total) + ' · ' + o.status + '</span></li>';
+      }).join('');
+    } else {
+      list.innerHTML = '<li>No orders yet.</li>';
+    }
+  })
+  .catch(() => {
+    document.getElementById('recentOrders').innerHTML = '<li>Could not load.</li>';
+  });
+</script>
+{% endblock %}

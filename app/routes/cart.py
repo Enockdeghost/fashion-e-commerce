@@ -1,20 +1,20 @@
-
 import secrets
 from datetime import datetime, timezone, timedelta
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, current_app
 from app.extensions import db
-from app.models import Cart, CartItem, Product, ProductVariant, Coupon
-from app.utils.security import ok, err, validate_pagination
+from app.models import Cart, CartItem, Product, ProductVariant, Coupon, AbandonedCart
+from app.utils.security import ok, err, sanitise_text
 
 cart_bp = Blueprint("cart", __name__, url_prefix="/cart")
 
 
+def _generate_token():
+    return secrets.token_urlsafe(32)
+
+
 def _get_or_create_cart(token: str) -> Cart:
-    """Return existing non-expired cart or create a new one."""
-    from flask import current_app
     cart = Cart.query.filter_by(session_token=token).first()
     if cart and cart.is_expired:
-        # Save as abandoned cart for analytics
         _record_abandoned(cart)
         db.session.delete(cart)
         db.session.flush()
@@ -31,7 +31,6 @@ def _get_or_create_cart(token: str) -> Cart:
 
 def _record_abandoned(cart: Cart):
     try:
-        from app.models import AbandonedCart
         ac = AbandonedCart(
             session_token=cart.session_token,
             items_snapshot=[i.to_dict() for i in cart.items],
@@ -49,11 +48,9 @@ def _require_token():
         or (request.get_json(silent=True) or {}).get("token")
     )
     if not token:
-        token = secrets.token_urlsafe(32)
+        token = _generate_token()
     return token
 
-
-# ─── GET CART 
 
 @cart_bp.route("", methods=["GET"])
 def get_cart():
@@ -64,12 +61,10 @@ def get_cart():
     return ok({"cart": cart.to_dict(), "token": token})
 
 
-# ─── ADD ITEM 
-
 @cart_bp.route("/add", methods=["POST"])
 def add_item():
     data = request.get_json(force=True)
-    token = data.get("token") or request.headers.get("X-Cart-Token") or secrets.token_urlsafe(32)
+    token = data.get("token") or request.headers.get("X-Cart-Token") or _generate_token()
 
     product_id = data.get("product_id")
     variant_id = data.get("variant_id")
@@ -84,7 +79,6 @@ def add_item():
     if not product:
         return err("Product not found", 404)
 
-    # Validate variant if provided
     variant = None
     if variant_id:
         variant = ProductVariant.query.filter_by(id=variant_id, product_id=product_id, is_active=True).first()
@@ -93,19 +87,16 @@ def add_item():
         if variant.available_stock < quantity:
             return err(f"Only {variant.available_stock} units available")
 
-    # Determine unit price
     unit_price = float(variant.price) if (variant and variant.price) else float(product.base_price)
 
     cart = _get_or_create_cart(token)
 
-    # Check if item already in cart
     existing = CartItem.query.filter_by(
         cart_id=cart.id, product_id=product_id, variant_id=variant_id
     ).first()
 
     if existing:
         new_qty = existing.quantity + quantity
-        # Check stock
         if variant and variant.available_stock < new_qty:
             return err(f"Only {variant.available_stock} units available")
         existing.quantity = new_qty
@@ -122,8 +113,6 @@ def add_item():
     db.session.commit()
     return ok({"cart": cart.to_dict(), "token": token}, "Item added to cart")
 
-
-# ─── UPDATE QUANTITY 
 
 @cart_bp.route("/update", methods=["PUT"])
 def update_item():
@@ -152,7 +141,6 @@ def update_item():
     return ok({"cart": cart.to_dict()}, "Cart updated")
 
 
-# ─── REMOVE ITEM 
 @cart_bp.route("/remove", methods=["DELETE"])
 def remove_item():
     data = request.get_json(force=True)
@@ -169,15 +157,15 @@ def remove_item():
     if item:
         db.session.delete(item)
         db.session.commit()
+
     return ok({"cart": cart.to_dict()}, "Item removed")
 
 
-# ─── APPLY COUPON
 @cart_bp.route("/coupon", methods=["POST"])
 def apply_coupon():
     data = request.get_json(force=True)
     token = data.get("token") or request.headers.get("X-Cart-Token")
-    code = (data.get("code") or "").strip().upper()
+    code = sanitise_text((data.get("code") or "").strip().upper())
 
     if not token:
         return err("Cart token required")
@@ -193,10 +181,10 @@ def apply_coupon():
     if not valid:
         return err(msg)
 
-    discount = coupon.calculate_discount(float(cart.subtotal))
     cart.coupon_id = coupon.id
     db.session.commit()
 
+    discount = coupon.calculate_discount(float(cart.subtotal))
     return ok({
         "cart": cart.to_dict(),
         "discount": discount,
@@ -217,13 +205,8 @@ def remove_coupon():
     return ok(message="Coupon removed")
 
 
-
 @cart_bp.route("/merge", methods=["POST"])
 def merge_carts():
-    """
-    Merge source_token cart into target_token cart.
-    Used when a user gets a new device/browser session.
-    """
     data = request.get_json(force=True)
     source_token = data.get("source_token")
     target_token = data.get("target_token")

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .post-page {
+    padding: 8rem 5% 4rem;
+    min-height: 100vh;
+    background: var(--cream);
+  }
+  .post-header {
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+  .post-header .date {
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+  .post-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .post-cover {
+    width: 100%;
+    max-height: 600px;
+    object-fit: cover;
+    margin-bottom: 3rem;
+  }
+  .post-content {
+    max-width: 720px;
+    margin: 0 auto;
+    font-size: 0.95rem;
+    line-height: 2;
+    color: var(--brown-lt);
+    font-weight: 300;
+  }
+  .post-content p {
+    margin-bottom: 1.5rem;
+  }
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 4rem;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .back-link:hover {
+    border-bottom-color: var(--gold);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="post-page">
+  <div class="post-header">
+    <div class="date">{{ post.published_at.strftime('%d %B %Y') if post.published_at else '' }}</div>
+    <h1>{{ post.title }}</h1>
+  </div>
+  {% if post.cover_image_url %}
+  <img class="post-cover" src="{{ post.cover_image_url }}" alt="{{ post.title }}">
+  {% endif %}
+  <div class="post-content">
+    {{ post.content | safe if post.content else 'No content yet.' }}
+  </div>
+  <a href="{{ url_for('frontend.blog') }}" class="back-link">← Back to Journal</a>
+</div>
+{% endblock %}

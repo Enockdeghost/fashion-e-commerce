@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Manage Orders | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .admin-orders-page {
+    padding: 6rem 5% 4rem;
+    min-height: 100vh;
+    background: var(--cream);
+  }
+  .admin-header {
+    margin-bottom: 2.5rem;
+  }
+  .admin-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+  }
+  .orders-table {
+    width: 100%;
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    border-collapse: collapse;
+  }
+  .orders-table th {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 1.2rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--parchment);
+    font-weight: 600;
+  }
+  .orders-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    font-size: 0.85rem;
+    color: var(--brown);
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.3rem 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .status-pending { color: #b8933a; border-color: #b8933a; }
+  .status-paid { color: #2e7d32; border-color: #2e7d32; }
+  .status-shipped { color: #1565c0; border-color: #1565c0; }
+  .status-delivered { color: #1a0f00; border-color: #1a0f00; }
+  .status-cancelled { color: #c0392b; border-color: #c0392b; }
+  @media (max-width: 768px) {
+    .orders-table {
+      display: block;
+      overflow-x: auto;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-orders-page">
+  <div class="admin-header">
+    <h1>Orders</h1>
+  </div>
+  <table class="orders-table">
+    <thead>
+      <tr>
+        <th>Order #</th>
+        <th>Customer</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="ordersTableBody">
+      <tr>
+        <td colspan="5" style="text-align:center; padding:3rem;">Loading orders…</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function formatPrice(amount) {
+    if (amount == null) return '0 TZS';
+    var num = parseFloat(amount);
+    if (isNaN(num)) return '0 TZS';
+    return 'TZS ' + num.toLocaleString();
+  }
+
+  fetch('/api/orders?per_page=50', {
+    headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token')||'')}
+  })
+  .then(r => r.json())
+  .then(d => {
+    var tbody = document.getElementById('ordersTableBody');
+    if (d.success && d.data && d.data.length) {
+      tbody.innerHTML = d.data.map(function(order) {
+        var statusClass = 'status-' + (order.status || 'pending');
+        return '<tr>' +
+          '<td>' + (order.order_number || '—') + '</td>' +
+          '<td>' + (order.customer_name || '—') + '</td>' +
+          '<td>' + formatPrice(order.total) + '</td>' +
+          '<td><span class="status-badge ' + statusClass + '">' + (order.status || 'pending') + '</span></td>' +
+          '<td>' + (order.created_at ? new Date(order.created_at).toLocaleDateString() : '') + '</td>' +
+        '</tr>';
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem;">No orders found.</td></tr>';
+    }
+  })
+  .catch(() => {
+    document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem;">Could not load orders.</td></tr>';
+  });
+</script>
+{% endblock %}

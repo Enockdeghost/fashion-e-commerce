@@ -1,13 +1,3 @@
-"""
-Order Management API
-  POST /orders                     — create order from cart
-  GET  /orders/<id>                — get order (by order_number or id)
-  PUT  /orders/<id>/status         — update status (admin)
-  POST /orders/<id>/cancel         — guest cancel (within window)
-  POST /orders/<id>/return         — request return
-  GET  /orders/<id>/invoice        — generate PDF invoice
-  GET  /orders                     — list orders (admin)
-"""
 import io
 from datetime import datetime, timezone
 from flask import Blueprint, request, send_file, g
@@ -17,23 +7,20 @@ from app.models import (
     Cart, CartItem, Product, ProductVariant, Coupon, Payment,
     ShippingZone, ShippingRate,
 )
-from app.utils.security import admin_required, ok, err, sanitise_text, validate_pagination
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
 from reportlab.lib.units import cm
-
+from app.utils.security import admin_required, ok, err, sanitise_text, validate_pagination
 
 orders_bp = Blueprint("orders", __name__, url_prefix="/orders")
-
 
 
 @orders_bp.route("", methods=["POST"])
 def create_order():
     data = request.get_json(force=True)
 
-    # --- Validate cart ---
     cart_token = data.get("cart_token")
     if not cart_token:
         return err("cart_token is required")
@@ -43,7 +30,6 @@ def create_order():
     if not cart.items.count():
         return err("Cart is empty")
 
-    # --- Validate required customer fields ---
     email = sanitise_text(data.get("customer_email", ""))
     name = sanitise_text(data.get("customer_name", ""))
     from app.utils.security import is_valid_email
@@ -52,7 +38,6 @@ def create_order():
     if not name:
         return err("customer_name is required")
 
-    # --- Validate stock for each item ---
     for item in cart.items:
         if item.variant:
             if item.variant.available_stock < item.quantity:
@@ -61,7 +46,6 @@ def create_order():
                     f"({item.variant.size}/{item.variant.color})"
                 )
 
-    # --- Shipping ---
     shipping_rate_id = data.get("shipping_rate_id")
     shipping_amount = 0.0
     shipping_zone_id = None
@@ -74,7 +58,6 @@ def create_order():
             shipping_zone_id = shipping_rate.zone_id
             courier = shipping_rate.name
 
-    # --- Coupon / discount ---
     discount_amount = 0.0
     coupon_code = None
     coupon = cart.coupon
@@ -88,7 +71,6 @@ def create_order():
 
     total = max(0, subtotal - discount_amount + shipping_amount)
 
-    # --- Create Order ---
     order = Order(
         session_token=cart_token,
         customer_email=email,
@@ -116,9 +98,8 @@ def create_order():
         status="pending",
     )
     db.session.add(order)
-    db.session.flush()  # get order.id
+    db.session.flush()
 
-    # --- Copy cart items to order items & reserve stock ---
     for item in cart.items:
         oi = OrderItem(
             order_id=order.id,
@@ -135,29 +116,23 @@ def create_order():
         )
         db.session.add(oi)
 
-        # Reserve stock
         if item.variant:
             item.variant.reserved_stock += item.quantity
 
-    # --- Status history ---
     db.session.add(OrderStatusHistory(
         order_id=order.id, from_status=None, to_status="pending",
         notes="Order placed by customer",
     ))
 
-    # --- Delete cart ---
     db.session.delete(cart)
-
     db.session.commit()
 
-    # Send confirmation email (best-effort)
     try:
         from app.services.email_service import send_order_confirmation
         send_order_confirmation(order)
     except Exception:
         pass
 
-    # Admin alert
     try:
         from flask import current_app
         from app.services.email_service import send_admin_new_order_alert
@@ -168,20 +143,17 @@ def create_order():
     return ok(order.to_dict(full=True), "Order created successfully", 201)
 
 
-
 @orders_bp.route("/<order_ref>", methods=["GET"])
 def get_order(order_ref):
     order = Order.query.filter(
         (Order.id == order_ref) | (Order.order_number == order_ref)
     ).first_or_404()
 
-    # Guest access: require email verification
     provided_email = request.args.get("email", "").lower().strip()
     if provided_email and order.customer_email.lower() != provided_email:
         return err("Order not found", 404)
 
     return ok(order.to_dict(full=True))
-
 
 
 @orders_bp.route("", methods=["GET"])
@@ -229,7 +201,6 @@ def update_status(order_id):
     old_status = order.status
     order.status = new_status
 
-    # Update timestamps
     now = datetime.now(timezone.utc)
     if new_status == "shipped":
         order.shipped_at = now
@@ -237,7 +208,6 @@ def update_status(order_id):
         order.courier = data.get("courier", order.courier)
     elif new_status == "delivered":
         order.delivered_at = now
-        # Release reserved stock
         for item in order.items:
             if item.variant:
                 v = item.variant
@@ -246,14 +216,12 @@ def update_status(order_id):
                 v.product.total_sold += item.quantity
     elif new_status == "cancelled":
         order.cancelled_at = now
-        # Release reserved stock
         for item in order.items:
             if item.variant:
                 item.variant.reserved_stock = max(0, item.variant.reserved_stock - item.quantity)
     elif new_status == "paid":
         order.paid_at = now
 
-    # Status history
     db.session.add(OrderStatusHistory(
         order_id=order.id,
         from_status=old_status,
@@ -263,7 +231,6 @@ def update_status(order_id):
     ))
     db.session.commit()
 
-    # Notifications
     try:
         from app.services import email_service as em
         if new_status == "shipped":
@@ -313,7 +280,6 @@ def cancel_order(order_ref):
     return ok(message="Order cancelled")
 
 
-
 @orders_bp.route("/<order_ref>/return", methods=["POST"])
 def request_return(order_ref):
     data = request.get_json(force=True)
@@ -345,7 +311,6 @@ def get_invoice(order_ref):
         (Order.id == order_ref) | (Order.order_number == order_ref)
     ).first_or_404()
 
-    # Simple email verification for guest access
     email = request.args.get("email", "")
     if email and order.customer_email.lower() != email.lower():
         return err("Unauthorised", 403)
@@ -361,16 +326,14 @@ def get_invoice(order_ref):
 
 
 def _generate_invoice_pdf(order) -> io.BytesIO:
-    """Generate a professional invoice PDF using ReportLab."""
     try:
-       
+        
         buf = io.BytesIO()
         doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm,
                                 topMargin=2*cm, bottomMargin=2*cm)
         styles = getSampleStyleSheet()
         story = []
 
-        # Brand header
         story.append(Paragraph("<b>LUXÉ FASHION</b>", ParagraphStyle(
             "brand", fontSize=24, textColor=colors.HexColor("#111111"), spaceAfter=4
         )))
@@ -380,7 +343,6 @@ def _generate_invoice_pdf(order) -> io.BytesIO:
         story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
         story.append(Spacer(1, 0.5*cm))
 
-        # Invoice meta
         story.append(Paragraph(f"<b>INVOICE</b>", styles["h2"]))
         meta = [
             ["Order Number:", order.order_number],
@@ -401,7 +363,6 @@ def _generate_invoice_pdf(order) -> io.BytesIO:
         story.append(meta_table)
         story.append(Spacer(1, 0.8*cm))
 
-        # Items table
         headers = ["Item", "SKU", "Size", "Color", "Qty", "Unit Price", "Total"]
         rows = [headers]
         for item in order.items:
@@ -429,7 +390,6 @@ def _generate_invoice_pdf(order) -> io.BytesIO:
         story.append(item_table)
         story.append(Spacer(1, 0.5*cm))
 
-        # Totals
         totals = [
             ["Subtotal:", f"{float(order.subtotal):,.0f} {order.currency}"],
             ["Discount:", f"- {float(order.discount_amount):,.0f} {order.currency}"],
@@ -453,7 +413,6 @@ def _generate_invoice_pdf(order) -> io.BytesIO:
         return buf
 
     except ImportError:
-        # Fallback if ReportLab not installed
         buf = io.BytesIO()
         buf.write(b"%PDF-1.0 1 0 obj<</Type/Catalog>>endobj")
         return buf

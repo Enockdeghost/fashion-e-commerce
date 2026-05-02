@@ -4,7 +4,8 @@ from .extensions import db, migrate, jwt, limiter, cors, cache
 from .routes import register_blueprints
 from .utils.security import add_security_headers
 import os
-
+from flask import g, request
+from flask_jwt_extended import decode_token
 
 def create_app(config_name: str = None) -> Flask:
     config_name = config_name or os.getenv("FLASK_CONFIG", "development")
@@ -65,7 +66,7 @@ def register_error_handlers(app: Flask):
 
     @app.errorhandler(404)
     def not_found(e):
-        return err("Resource not found", 404)
+        return err("Resource not found(404)", 404)
 
     @app.errorhandler(405)
     def method_not_allowed(e):

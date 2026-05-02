@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Search{% if query %}: {{ query }}{% endif %} | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .search-page {
+    padding: 8rem 5% 4rem;
+    min-height: 100vh;
+    background: var(--cream);
+  }
+  .search-header {
+    margin-bottom: 3rem;
+  }
+  .search-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: var(--brown);
+    margin-bottom: 1rem;
+  }
+  .search-form {
+    display: flex;
+    max-width: 520px;
+    margin-bottom: 1.5rem;
+  }
+  .search-form input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--parchment);
+    border-right: none;
+    font-size: 0.9rem;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--brown);
+    background: var(--white);
+    outline: none;
+  }
+  .search-form button {
+    padding: 1rem 2rem;
+    background: var(--brown);
+    color: var(--cream);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .search-form button:hover {
+    background: var(--gold);
+    color: var(--brown);
+  }
+  .search-results {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  .product-card {
+    background: var(--white);
+    border: 1px solid var(--parchment);
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .product-card:hover {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.05);
+  }
+  .product-card img {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    filter: brightness(0.96);
+    transition: transform 0.6s cubic-bezier(.25,.46,.45,.94), filter 0.6s;
+  }
+  .product-card:hover img {
+    transform: scale(1.04);
+    filter: brightness(1);
+  }
+  .product-card-body {
+    padding: 1.5rem;
+    text-align: center;
+  }
+  .product-card-body .brand {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+  }
+  .product-card-body h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--brown);
+    margin-bottom: 0.4rem;
+  }
+  .product-card-body .price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    color: var(--brown);
+    font-weight: 500;
+  }
+  @media (max-width: 900px) {
+    .search-results {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 600px) {
+    .search-results {
+      grid-template-columns: 1fr;
+    }
+    .search-form {
+      flex-direction: column;
+    }
+    .search-form input {
+      border-right: 1px solid var(--parchment);
+      border-bottom: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-page">
+  <div class="search-header">
+    <h1>{% if query %}Results for "{{ query }}"{% else %}Search{% endif %}</h1>
+    <form class="search-form" onsubmit="return searchProducts(event)">
+      <input type="text" id="searchInput" placeholder="Search products..." value="{{ query or '' }}">
+      <button type="submit">Search</button>
+    </form>
+  </div>
+  <div class="search-results" id="searchResults">
+    {% if not query %}
+    <p style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--brown-lt);">Enter a search term to discover pieces.</p>
+    {% else %}
+    <p style="grid-column:1/-1; text-align:center; padding:3rem;">Searching…</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function formatPrice(amount) {
+    if (amount == null) return '0 TZS';
+    var num = parseFloat(amount);
+    if (isNaN(num)) return '0 TZS';
+    return 'TZS ' + num.toLocaleString();
+  }
+
+  function searchProducts(e) {
+    e.preventDefault();
+    var query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+    window.location.href = '/search?q=' + encodeURIComponent(query);
+  }
+
+  {% if query %}
+  fetch('/api/search?q={{ query|urlencode }}')
+    .then(r => r.json())
+    .then(d => {
+      var container = document.getElementById('searchResults');
+      if (d.success && d.data && d.data.items && d.data.items.length) {
+        container.innerHTML = d.data.items.map(function(item) {
+          var img = item.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=85';
+          return '<a href="/products/' + item.slug + '" class="product-card">' +
+            '<img src="' + img + '" alt="' + item.name + '">' +
+            '<div class="product-card-body">' +
+              '<div class="brand">Fred Vunjabei</div>' +
+              '<h3>' + item.name + '</h3>' +
+              '<div class="price">' + formatPrice(item.base_price) + '</div>' +
+            '</div>' +
+          '</a>';
+        }).join('');
+      } else {
+        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--brown-lt);">No pieces found for "' + '{{ query }}' + '". Try a different term.</p>';
+      }
+    })
+    .catch(function() {
+      document.getElementById('searchResults').innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:3rem;">Search unavailable right now.</p>';
+    });
+  {% endif %}
+</script>
+{% endblock %}

@@ -14,7 +14,6 @@ from slugify import slugify
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin/manage")
 
 
-# ── Dashboard 
 @admin_bp.route("/dashboard", methods=["GET"])
 @admin_required
 def dashboard():
@@ -42,7 +41,6 @@ def dashboard():
     })
 
 
-# ── Coupons CRUD 
 @admin_bp.route("/coupons", methods=["GET"])
 @admin_required
 def list_coupons():
@@ -109,7 +107,6 @@ def delete_coupon(coupon_id):
     return ok(message="Coupon deleted")
 
 
-# ── Banners CRUD 
 @admin_bp.route("/banners", methods=["GET"])
 @admin_required
 def list_banners():
@@ -170,8 +167,6 @@ def delete_banner(banner_id):
     db.session.commit()
     return ok(message="Banner deleted")
 
-
-# ── Blog Posts CRUD 
 
 @admin_bp.route("/blog", methods=["GET"])
 @admin_required
@@ -235,7 +230,6 @@ def delete_blog_post(post_id):
     return ok(message="Blog post deleted")
 
 
-# ── Pages CRUD 
 @admin_bp.route("/pages", methods=["GET"])
 @admin_required
 def list_pages():
@@ -268,8 +262,10 @@ def update_page(page_id):
     for field in ["slug", "title", "content", "is_published"]:
         if field in data:
             val = data[field]
-            if field in ("title", "content"):
-                val = sanitise_text(val) if field == "title" else sanitise_html(val)
+            if field == "title":
+                val = sanitise_text(val)
+            elif field == "content":
+                val = sanitise_html(val)
             setattr(page, field, val)
     db.session.commit()
     return ok(page.to_dict(), "Page updated")
@@ -284,7 +280,6 @@ def delete_page(page_id):
     return ok(message="Page deleted")
 
 
-# ── FAQs CRUD 
 @admin_bp.route("/faqs", methods=["GET"])
 @admin_required
 def list_faqs():
@@ -339,8 +334,6 @@ def delete_faq(faq_id):
     db.session.commit()
     return ok(message="FAQ deleted")
 
-
-# ── Admin Users Management (super_admin only) 
 
 @admin_bp.route("/admins", methods=["GET"])
 @roles_required("super_admin")

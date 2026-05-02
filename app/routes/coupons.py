@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request
 from app.models import Coupon
 from app.utils.security import ok, err, sanitise_text
@@ -17,11 +16,10 @@ def validate_coupon():
     if not coupon:
         return err("Invalid coupon code")
 
-    valid, reason = coupon.is_valid(0)   # we don't know the order subtotal yet
+    valid, reason = coupon.is_valid(0)
     if not valid:
         return err(reason)
 
-    # Return discount details without a subtotal – frontend will handle actual calculation
     return ok({
         "code": coupon.code,
         "discount_type": coupon.discount_type,

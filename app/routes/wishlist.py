@@ -38,7 +38,7 @@ def add_to_wishlist():
     data = request.get_json(force=True)
     token = data.get("token") or _require_token()
     product_id = data.get("product_id")
-    variant_id = data.get("variant_id")  # optional
+    variant_id = data.get("variant_id")
 
     if not product_id:
         return err("product_id is required")
@@ -47,7 +47,6 @@ def add_to_wishlist():
     if not product:
         return err("Product not found", 404)
 
-    # Check for duplicate
     existing = Wishlist.query.filter_by(
         session_token=token, product_id=product_id, variant_id=variant_id
     ).first()

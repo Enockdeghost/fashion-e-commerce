@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Shopping Bag | Fred Vunjabei{% endblock %}
 {% block content %}
-
-<section class="page-header" style="padding:8rem 5% 2rem;">
+<section style="padding:8rem 5% 2rem;">
   <div style="font-size:0.65rem; letter-spacing:2px; text-transform:uppercase; color:var(--brown-lt); margin-bottom:1rem;">
-    <a href="{{ url_for('frontend.index') }}" style="color:var(--brown-lt);">Home</a>
-    <span>/</span>
-    <span>Shopping Bag</span>
+    <a href="{{ url_for('frontend.products') }}" style="color:var(--brown-lt);">← Continue Shopping</a>
   </div>
   <div class="section-header">
     <div>
@@ -17,74 +14,17 @@
 </section>
 
 <section style="padding:2rem 5% 6rem;">
-  <div style="display:grid; grid-template-columns:1fr 380px; gap:3rem; align-items:start;" class="cart-layout">
-    <div>
-      <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:1rem; padding-bottom:1rem; border-bottom:1px solid rgba(0,0,0,0.1); font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; color:var(--brown-lt);" class="cart-header">
-        <span>Product</span>
-        <span>Price</span>
-        <span>Quantity</span>
-        <span>Total</span>
-      </div>
-      <div id="cart-products"></div>
-      <div id="cart-empty" style="text-align:center; padding:4rem 0; display:none;">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--parchment)" style="margin-bottom:1.5rem;">
-          <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 4c0-1.1.9-2 2-2s2 .9 2 2h2c0-2.76-2.24-5-5-5S7 5.24 7 8h2zm-2 4h12v8H6v-8z"/>
-        </svg>
-        <h2 style="font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:300; margin-bottom:0.5rem;">Your bag is empty</h2>
-        <p style="font-size:0.8rem; color:var(--brown-lt); margin-bottom:2rem;">Discover our latest collection</p>
-        <a href="{{ url_for('frontend.products') }}" class="btn-lv"><span>Continue Shopping</span></a>
-      </div>
-    </div>
-
-    <div style="background:var(--off-white); padding:2.5rem; position:sticky; top:100px;" class="cart-summary">
-      <h3 style="font-family:'Montserrat',sans-serif; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:1.5rem;">Order Summary</h3>
-      <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem; font-size:0.9rem;">
-        <span>Subtotal</span>
-        <span id="cart-subtotal">0 TZS</span>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem; font-size:0.9rem;">
-        <span>Shipping</span>
-        <span id="cart-shipping">Calculated at checkout</span>
-      </div>
-      <div id="discount-row" style="display:none; justify-content:space-between; margin-bottom:0.8rem; font-size:0.9rem; color:#28a745;">
-        <span>Discount</span>
-        <span id="cart-discount">-0 TZS</span>
-      </div>
-      <div style="margin:1rem 0; display:flex; gap:0.5rem;">
-        <input type="text" id="coupon-code" placeholder="Promo code" style="flex:1; padding:0.6rem; border:1px solid rgba(184,147,58,.3); background:var(--white); font-size:0.75rem;">
-        <button id="apply-coupon" class="btn-lv" style="padding:0.6rem 1.2rem; font-size:0.55rem;"><span>Apply</span></button>
-      </div>
-      <div style="height:1px; background:rgba(0,0,0,0.1); margin:1rem 0;"></div>
-      <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:500; margin-bottom:1.5rem;">
-        <span>Total</span>
-        <span id="cart-total">0 TZS</span>
-      </div>
-      <a href="{{ url_for('frontend.checkout') }}" class="btn-lv" style="width:100%; justify-content:center;">
-        <span>Proceed to Checkout</span>
-      </a>
-      <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid rgba(0,0,0,0.05);">
-        <p style="font-size:0.7rem; color:var(--brown-lt); margin-bottom:0.3rem;">Free shipping on orders over 500 TZS</p>
-        <p style="font-size:0.7rem; color:var(--brown-lt);">Free returns within 30 days</p>
-      </div>
-    </div>
+  <div id="cartItems">
+    <p style="text-align:center;padding:4rem;">Loading your bag…</p>
   </div>
-</section>
-
-<section style="padding:4rem 5%; background:var(--off-white);">
-  <div class="section-header">
-    <div>
-      <div class="section-eyebrow">Complete Your Look</div>
-      <h2 class="section-title">You May<br/><em>Also Like</em></h2>
-    </div>
+  <div style="text-align:right;margin-top:2rem;" id="checkoutBtn" hidden>
+    <a href="{{ url_for('frontend.checkout') }}" class="btn-lv"><span>Proceed to Checkout</span></a>
   </div>
-  <div class="products-grid" id="related-products" style="grid-template-columns:repeat(4,1fr);"></div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
-
-
 function formatPrice(amount) {
   if (amount == null) return '0 TZS';
   var num = parseFloat(amount);
@@ -104,17 +44,12 @@ function getCartToken() {
 var cartData = null;
 
 function loadCart() {
-  console.log('Loading cart...');
   var token = getCartToken();
-  document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:4rem;">Loading your cart…</p>';
-  
+  var container = document.getElementById('cartItems');
+  container.innerHTML = '<p style="text-align:center;padding:4rem;">Loading your bag…</p>';
   fetch('/api/cart', {headers:{'X-Cart-Token':token}})
-    .then(function(r) {
-      if (!r.ok) throw new Error('Cart API error: ' + r.status);
-      return r.json();
-    })
+    .then(function(r) { if (!r.ok) throw new Error('Cart API error'); return r.json(); })
     .then(function(d) {
-      console.log('Cart data:', d);
       if (d.success && d.data && d.data.cart && d.data.cart.items && d.data.cart.items.length) {
         cartData = d.data.cart;
         renderCart(cartData);
@@ -123,185 +58,33 @@ function loadCart() {
         showEmptyCart();
       }
     })
-    .catch(function(err) {
-      console.error('Cart load failed:', err);
+    .catch(function() {
       showEmptyCart();
     });
 }
 
 function renderCart(cart) {
   var container = document.getElementById('cartItems');
-  var html = cart.items.map(function(item) {
-    var img = item.image || item.product?.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=100&q=85';
+  container.innerHTML = cart.items.map(function(item) {
+    var p = item.product || {};
+    var img = p.primary_image || item.image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=100&q=85';
     return '<div style="display:flex; gap:1.5rem; align-items:center; padding:1.5rem 0; border-bottom:1px solid var(--parchment);">' +
       '<img src="' + img + '" style="width:100px; height:100px; object-fit:cover;">' +
       '<div style="flex:1;">' +
-        '<strong>' + (item.product_name || '') + '</strong><br>' +
+        '<strong>' + (item.product_name || p.name) + '</strong><br>' +
         '<span style="font-size:0.75rem; color:var(--brown-lt);">' + (item.size||'') + ' ' + (item.color||'') + '</span><br>' +
         '<span style="font-size:0.75rem;">Qty: ' + item.quantity + '</span>' +
       '</div>' +
       '<div style="font-weight:600;">' + formatPrice(item.line_total) + '</div>' +
     '</div>';
   }).join('');
-  container.innerHTML = html;
 }
 
 function showEmptyCart() {
-  document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:4rem;">Your cart is empty. <a href="/products" style="color:var(--gold);">Start shopping</a></p>';
+  document.getElementById('cartItems').innerHTML = '<p style="text-align:center;padding:4rem;">Your bag is empty. <a href="' + '{{ url_for("frontend.products") }}' + '" style="color:var(--gold);">Start shopping</a></p>';
   document.getElementById('checkoutBtn').hidden = true;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  loadCart();
-});
-
-function formatPrice(amount) {
-  return 'TZS ' + parseFloat(amount || 0).toLocaleString();
-}
-function getCartToken() {
-  var token = localStorage.getItem('cart_token');
-  if (!token) {
-    token = 'cart_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('cart_token', token);
-  }
-  return token;
-}
-
-var cartData = null;
-function loadCart() {
-  var token = getCartToken();
-  fetch('/api/cart', {headers:{'X-Cart-Token':token}})
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      if (d.success && d.data && d.data.cart) {
-        cartData = d.data.cart;
-        renderCart(cartData);
-      } else {
-        showEmptyCart();
-      }
-    })
-    .catch(function(){ showEmptyCart(); });
-}
-
-function renderCart(cart) {
-  var container = document.getElementById('cart-products');
-  var emptyState = document.getElementById('cart-empty');
-  if (!cart.items || cart.items.length === 0) {
-    showEmptyCart();
-    return;
-  }
-  emptyState.style.display = 'none';
-  container.style.display = 'block';
-  container.innerHTML = cart.items.map(function(item){
-    var p = item.product || {};
-    var v = item.variant || {};
-    var img = p.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=120&q=85';
-    return '<div class="cart-product-item" style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:1rem; align-items:center; padding:1.5rem 0; border-bottom:1px solid rgba(0,0,0,0.05);">'+
-      '<div style="display:flex; gap:1rem;">'+
-        '<div style="width:120px; height:160px; overflow:hidden; background:var(--cream-deep);"><img src="'+img+'" alt="'+p.name+'" style="width:100%;height:100%;object-fit:cover;"></div>'+
-        '<div style="display:flex; flex-direction:column; gap:0.3rem;">'+
-          '<h4 style="font-family:\'Cormorant Garamond\',serif; font-size:1rem; margin:0;"><a href="/products/'+(p.slug||'')+'" style="color:var(--brown);">'+p.name+'</a></h4>'+
-          (v.size||v.color?'<span style="font-size:0.8rem; color:var(--brown-lt);">'+(v.size||'')+' '+(v.color||'')+'</span>':'')+
-          '<button onclick="removeItem(\''+item.id+'\')" style="background:none; border:none; color:var(--brown-lt); font-size:0.7rem; cursor:pointer; padding:0; text-align:left;">Remove</button>'+
-        '</div>'+
-      '</div>'+
-      '<div style="font-size:0.9rem;">'+formatPrice(item.unit_price)+'</div>'+
-      '<div style="display:flex; align-items:center; border:1px solid rgba(0,0,0,0.1); width:fit-content;">'+
-        '<button onclick="updateQuantity(\''+item.id+'\','+(item.quantity-1)+')" style="width:35px; height:35px; background:transparent; border:none; font-size:1rem;">\u2212</button>'+
-        '<input type="number" value="'+item.quantity+'" min="1" max="99" onchange="updateQuantity(\''+item.id+'\',this.value)" style="width:50px; height:35px; border:none; text-align:center; font-size:0.9rem;">'+
-        '<button onclick="updateQuantity(\''+item.id+'\','+(item.quantity+1)+')" style="width:35px; height:35px; background:transparent; border:none; font-size:1rem;">+</button>'+
-      '</div>'+
-      '<div style="font-size:0.95rem; font-weight:500;">'+formatPrice(item.line_total)+'</div>'+
-    '</div>';
-  }).join('');
-  updateSummary(cart);
-}
-
-function showEmptyCart() {
-  document.getElementById('cart-products').style.display = 'none';
-  document.getElementById('cart-empty').style.display = 'block';
-  updateSummary({items:[], subtotal:0});
-}
-
-function updateSummary(cart) {
-  var subtotal = parseFloat(cart.subtotal) || 0;
-  var shipping = subtotal >= 500 ? 0 : 25;
-  var discount = (cart.coupon && cart.coupon.discount_value) ? parseFloat(cart.coupon.discount_value) : 0;
-  var total = Math.max(0, subtotal - discount + shipping);
-  document.getElementById('cart-subtotal').textContent = formatPrice(subtotal);
-  document.getElementById('cart-shipping').textContent = shipping === 0 ? 'Free' : formatPrice(shipping);
-  document.getElementById('cart-total').textContent = formatPrice(total);
-  if (discount > 0) {
-    document.getElementById('discount-row').style.display = 'flex';
-    document.getElementById('cart-discount').textContent = '-' + formatPrice(discount);
-  } else {
-    document.getElementById('discount-row').style.display = 'none';
-  }
-}
-
-function updateQuantity(itemId, quantity) {
-  quantity = Math.max(1, Math.min(99, parseInt(quantity) || 1));
-  var token = getCartToken();
-  fetch('/api/cart/update', {
-    method:'PUT',
-    headers:{'Content-Type':'application/json','X-Cart-Token':token},
-    body: JSON.stringify({token:token, item_id:itemId, quantity:quantity})
-  }).then(function(r){ return r.json(); })
-  .then(function(){ loadCart(); })
-  .catch(function(){});
-}
-
-function removeItem(itemId) {
-  var token = getCartToken();
-  fetch('/api/cart/remove', {
-    method:'DELETE',
-    headers:{'Content-Type':'application/json','X-Cart-Token':token},
-    body: JSON.stringify({token:token, item_id:itemId})
-  }).then(function(r){ return r.json(); })
-  .then(function(){ loadCart(); })
-  .catch(function(){});
-}
-
-document.getElementById('apply-coupon').addEventListener('click', function(){
-  var code = document.getElementById('coupon-code').value.trim().toUpperCase();
-  if (!code) { alert('Please enter a coupon code'); return; }
-  var token = getCartToken();
-  fetch('/api/cart/coupon', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-Cart-Token':token},
-    body: JSON.stringify({token:token, code:code})
-  }).then(function(r){ return r.json(); })
-  .then(function(d){
-    if (d.success) { loadCart(); }
-    else { alert(d.error || 'Invalid coupon'); }
-  }).catch(function(){});
-});
-
-function loadRelatedProducts() {
-  fetch('/api/products?is_featured=true&per_page=4')
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var container = document.getElementById('related-products');
-      if (d.success && d.data && d.data.products) {
-        container.innerHTML = d.data.products.map(function(product){
-          return '<div class="prod-card">'+
-            '<a href="/products/'+product.slug+'">'+
-              '<div class="prod-img" style="height:300px;">'+
-                '<img src="'+(product.primary_image||'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=85')+'" alt="'+product.name+'" style="height:100%;">'+
-              '</div>'+
-            '</a>'+
-            '<div class="prod-brand" style="font-size:0.58rem; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin:0.8rem 0 0.3rem;">Fred Vunjabei</div>'+
-            '<div class="prod-name" style="font-family:\'Cormorant Garamond\',serif; font-size:1.1rem;">'+product.name+'</div>'+
-            '<div class="prod-price"><span class="price-main">'+formatPrice(product.base_price)+'</span></div>'+
-          '</div>';
-        }).join('');
-      }
-    }).catch(function(){});
-}
-
-document.addEventListener('DOMContentLoaded', function(){
-  loadCart();
-  loadRelatedProducts();
-});
+document.addEventListener('DOMContentLoaded', loadCart);
 </script>
 {% endblock %}

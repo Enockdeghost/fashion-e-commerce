@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} | Fred Vunjabei{% endblock %}
+{% block head %}
+<style>
+  .category-hero {
+    position: relative;
+    height: 65vh;
+    min-height: 500px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+  .category-hero-bg {
+    position: absolute;
+    inset: 0;
+  }
+  .category-hero-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.55);
+    transform: scale(1.02);
+    animation: slowZoom 10s ease-out forwards;
+  }
+  @keyframes slowZoom {
+    from { transform: scale(1.02); }
+    to   { transform: scale(1); }
+  }
+  .category-hero-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 3rem 5% 5rem;
+    background: linear-gradient(to top, rgba(26,15,0,0.9) 0%, transparent 100%);
+  }
+  .category-hero-content h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 300;
+    color: var(--cream);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+  }
+  .category-hero-content p {
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold-pale);
+    margin-top: 0.5rem;
+  }
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 4rem 5%;
+    background: var(--cream);
+  }
+  .product-card {
+    background: var(--cream);
+    transition: box-shadow 0.4s ease;
+  }
+  .product-card:hover {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+  }
+  .product-image {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+  }
+  .product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(.25,.46,.45,.94);
+  }
+  .product-card:hover .product-image img {
+    transform: scale(1.04);
+  }
+  .product-details {
+    padding: 1rem;
+    text-align: center;
+  }
+  .product-brand {
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.3rem;
+  }
+  .product-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--brown);
+    margin-bottom: 0.3rem;
+  }
+  .product-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--brown);
+  }
+  @media (max-width: 768px) {
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      padding: 2rem 5%;
+    }
+    .category-hero {
+      height: 50vh;
+    }
+  }
+  @media (max-width: 480px) {
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="category-hero">
+  <div class="category-hero-bg">
+    <img src="{{ category.image_url or 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1800&q=85' }}" alt="{{ category.name }}">
+  </div>
+  <div class="category-hero-content">
+    <h1>{{ category.name }}</h1>
+    <p>{{ products|length }} curated pieces</p>
+  </div>
+</section>
+
+<section class="products-grid">
+  {% for product in products %}
+  <a href="{{ url_for('frontend.product_detail', product_slug=product.slug) }}" class="product-card">
+    <div class="product-image">
+      <img src="{{ product.primary_image or 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=85' }}" alt="{{ product.name }}" loading="lazy">
+    </div>
+    <div class="product-details">
+      <div class="product-brand">{{ product.brand.name if product.brand else 'Fred Vunjabei' }}</div>
+      <div class="product-name">{{ product.name }}</div>
+      <div class="product-price">
+        {{ product.base_price | format_currency }}
+        {% if product.compare_price %}
+        <span style="text-decoration:line-through;color:var(--brown-lt);font-size:0.85rem;">{{ product.compare_price | format_currency }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+  {% if products|length == 0 %}
+  <p style="text-align:center;grid-column:1/-1;padding:3rem;">No products in this category yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -5,8 +5,6 @@ from app.utils.security import ok, err, validate_pagination
 cms_bp = Blueprint("cms", __name__, url_prefix="/cms")
 
 
-# ── Banners 
-
 @cms_bp.route("/banners", methods=["GET"])
 def get_banners():
     position = request.args.get("position", "homepage_hero")
@@ -19,7 +17,6 @@ def get_banners():
     return ok([b.to_dict() for b in banners])
 
 
-# ── Blog 
 @cms_bp.route("/blog", methods=["GET"])
 def get_blog_posts():
     page, per_page = validate_pagination(request.args)
@@ -41,15 +38,11 @@ def get_blog_post(slug):
     return ok(post.to_dict(full=True))
 
 
-# ── Pages 
-
 @cms_bp.route("/pages/<slug>", methods=["GET"])
 def get_page(slug):
     page = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
     return ok(page.to_dict())
 
-
-# ── FAQs 
 
 @cms_bp.route("/faqs", methods=["GET"])
 def get_faqs():

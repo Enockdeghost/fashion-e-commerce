@@ -23,7 +23,6 @@ def upload_image():
     if not valid:
         return err(msg)
 
-    # Determine upload type from form data; default = banner
     upload_type = request.form.get("type", "banner")
     if upload_type == "blog":
         slug = request.form.get("slug", "post")
