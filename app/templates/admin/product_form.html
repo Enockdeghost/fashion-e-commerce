@@ -3,7 +3,7 @@
 {% block head %}
 <style>
   .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
-  .admin-header { margin-bottom: 2rem; }
+  .admin-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
   .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
   .form-card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 800px; }
   .form-group { margin-bottom: 1.5rem; }
@@ -18,6 +18,11 @@
   .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
   .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
   .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .current-image { max-width: 300px; margin-top: 0.5rem; border: 1px solid var(--parchment); display: block; }
+  .file-input-wrapper { position: relative; display: inline-block; }
+  .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
+  .file-input-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
+  .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
 </style>
 {% endblock %}
 
@@ -29,33 +34,33 @@
   </div>
 
   <div class="form-card">
-    <form id="productForm">
+    <form id="productForm" enctype="multipart/form-data" onsubmit="return false;">
       <div class="form-group">
         <label>Name *</label>
-        <input type="text" id="name" value="{{ product.name if product else '' }}" required>
+        <input type="text" name="name" value="{{ product.name if product else '' }}" required>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label>Price (TZS) *</label>
-          <input type="number" id="base_price" step="0.01" value="{{ product.base_price if product else '' }}" required>
+          <input type="number" name="base_price" step="0.01" value="{{ product.base_price if product else '' }}" required>
         </div>
         <div class="form-group">
           <label>Compare at Price</label>
-          <input type="number" id="compare_price" step="0.01" value="{{ product.compare_price if product else '' }}">
+          <input type="number" name="compare_price" step="0.01" value="{{ product.compare_price if product else '' }}">
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label>Category</label>
-          <select id="category_id">
+          <select name="category_id" id="categorySelect">
             <option value="">— Select —</option>
           </select>
         </div>
         <div class="form-group">
           <label>Brand</label>
-          <select id="brand_id">
+          <select name="brand_id" id="brandSelect">
             <option value="">— Select —</option>
           </select>
         </div>
@@ -63,28 +68,38 @@
 
       <div class="form-group">
         <label>Description</label>
-        <textarea id="description" rows="4">{{ product.description if product else '' }}</textarea>
+        <textarea name="description" rows="4">{{ product.description if product else '' }}</textarea>
       </div>
 
       <div class="form-group">
-        <label>Primary Image URL</label>
-        <input type="url" id="primary_image" placeholder="https://…" value="{{ product.primary_image or '' }}">
+        <label>Image Upload</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="imageFile" name="file" accept="image/*">
+          <span class="file-input-btn">Choose File</span>
+        </div>
+        <span class="file-name" id="fileName"></span>
+        <img id="imagePreview" class="current-image" {% if product and product.primary_image %}src="{{ product.primary_image }}"{% else %}style="display:none"{% endif %} alt="Preview">
+      </div>
+
+      <div class="form-group">
+        <label>Or paste Image URL</label>
+        <input type="url" id="imageUrl" placeholder="https://…" value="{{ product.primary_image if product and not request.files else '' }}">
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="checkbox" id="is_active" {% if product and product.is_active %}checked{% endif %}> Active
+            <input type="checkbox" name="is_active" value="true" {% if product and product.is_active %}checked{% endif %}> Active
           </label>
         </div>
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="checkbox" id="is_featured" {% if product and product.is_featured %}checked{% endif %}> Featured
+            <input type="checkbox" name="is_featured" value="true" {% if product and product.is_featured %}checked{% endif %}> Featured
           </label>
         </div>
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="checkbox" id="is_new_arrival" {% if product and product.is_new_arrival %}checked{% endif %}> New Arrival
+            <input type="checkbox" name="is_new_arrival" value="true" {% if product and product.is_new_arrival %}checked{% endif %}> New Arrival
           </label>
         </div>
       </div>
@@ -105,62 +120,67 @@
   const token = localStorage.getItem('admin_token');
   if (!token) { window.location.href = '/admin'; }
 
-  // Load categories and brands for dropdowns
-  fetch('/api/categories', {headers: {'Authorization': 'Bearer ' + token}})
-    .then(r => r.json())
-    .then(d => {
-      const sel = document.getElementById('category_id');
+  // Load categories and brands
+  fetch('/api/categories', {headers:{'Authorization':'Bearer '+token}})
+    .then(r => r.json()).then(d => {
+      const sel = document.getElementById('categorySelect');
       if (d.data) {
-        d.data.forEach(c => {
-          const o = document.createElement('option');
-          o.value = c.id; o.textContent = c.name;
-          sel.appendChild(o);
-        });
+        d.data.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o); });
       }
-      {% if product and product.category_id %}
-        sel.value = '{{ product.category_id }}';
-      {% endif %}
+      {% if product and product.category_id %} sel.value = '{{ product.category_id }}'; {% endif %}
     });
 
-  fetch('/api/brands', {headers: {'Authorization': 'Bearer ' + token}})
-    .then(r => r.json())
-    .then(d => {
-      const sel = document.getElementById('brand_id');
+  fetch('/api/brands', {headers:{'Authorization':'Bearer '+token}})
+    .then(r => r.json()).then(d => {
+      const sel = document.getElementById('brandSelect');
       if (d.data) {
-        d.data.forEach(b => {
-          const o = document.createElement('option');
-          o.value = b.id; o.textContent = b.name;
-          sel.appendChild(o);
-        });
+        d.data.forEach(b => { const o = document.createElement('option'); o.value = b.id; o.textContent = b.name; sel.appendChild(o); });
       }
-      {% if product and product.brand_id %}
-        sel.value = '{{ product.brand_id }}';
-      {% endif %}
+      {% if product and product.brand_id %} sel.value = '{{ product.brand_id }}'; {% endif %}
     });
 
-  // Handle form submission
+  // Preview image when file selected
+  const fileInput = document.getElementById('imageFile');
+  const fileName = document.getElementById('fileName');
+  const imagePreview = document.getElementById('imagePreview');
+  const imageUrlInput = document.getElementById('imageUrl');
+
+  fileInput.addEventListener('change', function() {
+    const file = fileInput.files[0];
+    if (file) {
+      fileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) { imagePreview.src = e.target.result; imagePreview.style.display = 'block'; };
+      reader.readAsDataURL(file);
+      imageUrlInput.value = '';
+    }
+  });
+
+  imageUrlInput.addEventListener('input', function() {
+    if (this.value) {
+      imagePreview.src = this.value;
+      imagePreview.style.display = 'block';
+      fileInput.value = '';
+      fileName.textContent = '';
+    }
+  });
+
+  // Submit via AJAX
   document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const payload = {
-      name: document.getElementById('name').value.trim(),
-      base_price: parseFloat(document.getElementById('base_price').value),
-      compare_price: document.getElementById('compare_price').value ? parseFloat(document.getElementById('compare_price').value) : null,
-      category_id: document.getElementById('category_id').value || null,
-      brand_id: document.getElementById('brand_id').value || null,
-      description: document.getElementById('description').value.trim(),
-      primary_image: document.getElementById('primary_image').value.trim(),
-      is_active: document.getElementById('is_active').checked,
-      is_featured: document.getElementById('is_featured').checked,
-      is_new_arrival: document.getElementById('is_new_arrival').checked,
-    };
+    const form = this;
+    const formData = new FormData(form);
+    if (!formData.get('is_active')) formData.append('is_active', 'false');
+    if (!formData.get('is_featured')) formData.append('is_featured', 'false');
+    if (!formData.get('is_new_arrival')) formData.append('is_new_arrival', 'false');
 
-    const method = '{{ 'PUT' if product else 'POST' }}';
-    const url = '{{ '/api/products/' + product.id if product else '/api/products' }}';
+    const method = '{{ "PUT" if product else "POST" }}';
+    const url = '{{ "/api/products/" + product.id if product else "/api/products" }}';
 
     fetch(url, {
       method,
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-      body: JSON.stringify(payload)
+      headers: {'Authorization': 'Bearer ' + token},
+      body: formData
     })
     .then(r => r.json())
     .then(d => {
@@ -170,7 +190,8 @@
       } else {
         alert(d.error || 'Save failed');
       }
-    });
+    })
+    .catch(() => alert('Network error'));
   });
 </script>
 {% endblock %}

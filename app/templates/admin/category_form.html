@@ -1,82 +1,128 @@
 {% extends "base.html" %}
-{% block title %}{% if category %}Edit{% else %}New{% endif %} Category | Fred Vunjabei{% endblock %}
-{% block content %}
-<div style="padding:6rem 5% 4rem; max-width:600px; margin:0 auto;">
-  <h1 style="font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.2rem;">
-    {% if category %}Edit Category{% else %}Add New Category{% endif %}
-  </h1>
+{% block title %}{% if category %}Edit{% else %}New{% endif %} Category | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .form-card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 700px; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
+  .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
+  .btn { padding: 0.8rem 2rem; border: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .current-image { max-width: 300px; margin-top: 0.5rem; border: 1px solid var(--parchment); display: block; }
+  .file-input-wrapper { position: relative; display: inline-block; }
+  .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
+  .file-input-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
+  .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
+</style>
+{% endblock %}
 
-  <form id="categoryForm" style="display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem;">
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Name</label>
-      <input name="name" value="{{ category.name if category else '' }}" required
-             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-    </div>
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Description</label>
-      <textarea name="description" rows="3"
-                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">{{ category.description if category else '' }}</textarea>
-    </div>
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Image URL</label>
-      <input name="image_url" value="{{ category.image_url if category else '' }}"
-             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-    </div>
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Parent Category</label>
-      <select id="parentSelect" name="parent_id"
-              style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-        <option value="">— None —</option>
-      </select>
-    </div>
-    <button type="submit" class="btn-lv" style="align-self:flex-start;">
-      <span>{% if category %}Update{% else %}Create{% endif %} Category</span>
-    </button>
-  </form>
-  <div id="formMessage" style="margin-top:2rem;"></div>
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_categories') }}" class="back-link">← Back to Categories</a>
+  <div class="admin-header">
+    <h1>{% if category %}Edit Category{% else %}New Category{% endif %}</h1>
+  </div>
+
+  <div class="form-card">
+    <form id="categoryForm" enctype="multipart/form-data" onsubmit="return false;">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" name="name" value="{{ category.name if category else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="3">{{ category.description if category else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Image Upload</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="imageFile" name="file" accept="image/*">
+          <span class="file-input-btn">Choose File</span>
+        </div>
+        <span class="file-name" id="fileName"></span>
+        <img id="imagePreview" class="current-image" {% if category and category.image_url %}src="{{ category.image_url }}"{% else %}style="display:none"{% endif %} alt="Preview">
+      </div>
+      <div class="form-group">
+        <label>Or paste Image URL (optional)</label>
+        <input type="url" id="imageUrl" placeholder="https://…" value="{{ category.image_url if category and not request.files else '' }}">
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" name="is_active" value="true" {% if category and category.is_active %}checked{% endif %}> Active
+        </label>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">
+          {% if category %}Update Category{% else %}Create Category{% endif %}
+        </button>
+        <a href="{{ url_for('frontend.admin_categories') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Load existing categories for parent dropdown
-  fetch('/api/categories').then(r => r.json()).then(d => {
-    const sel = document.getElementById('parentSelect');
-    if (d.data) {
-      d.data.forEach(c => {
-        const o = document.createElement('option');
-        o.value = c.id;
-        o.textContent = c.name;
-        sel.appendChild(o);
-      });
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  // Preview logic
+  const fileInput = document.getElementById('imageFile');
+  const fileName = document.getElementById('fileName');
+  const imagePreview = document.getElementById('imagePreview');
+  const imageUrlInput = document.getElementById('imageUrl');
+
+  fileInput.addEventListener('change', function() {
+    const file = fileInput.files[0];
+    if (file) {
+      fileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) { imagePreview.src = e.target.result; imagePreview.style.display = 'block'; };
+      reader.readAsDataURL(file);
+      imageUrlInput.value = '';
     }
-    {% if category and category.parent_id %}
-      sel.value = '{{ category.parent_id }}';
-    {% endif %}
   });
 
+  imageUrlInput.addEventListener('input', function() {
+    if (this.value) {
+      imagePreview.src = this.value;
+      imagePreview.style.display = 'block';
+      fileInput.value = '';
+      fileName.textContent = '';
+    }
+  });
+
+  // Submit
   document.getElementById('categoryForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
-    const payload = Object.fromEntries(formData);
+    if (!formData.get('is_active')) formData.append('is_active', 'false');
 
-    const token = localStorage.getItem('admin_token');
-    const method = '{{ 'PUT' if category else 'POST' }}';
-    const url = '{{ '/api/categories/' + category.id if category else '/api/categories' }}';
+    const method = '{{ "PUT" if category else "POST" }}';
+    const url = '{{ "/api/categories/" + category.id if category else "/api/categories" }}';
 
     fetch(url, {
-      method: method,
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-      body: JSON.stringify(payload)
+      method,
+      headers: {'Authorization': 'Bearer ' + token},
+      body: formData
     })
     .then(r => r.json())
     .then(d => {
-      const msg = document.getElementById('formMessage');
       if (d.success) {
-        alert('Category saved!', 'success');
-        window.location.href = '/admin/products';  // or a categories list page
+        alert('Category saved!');
+        window.location.href = '/admin/categories';
       } else {
-        alert(d.error || 'Error', 'error');
+        alert(d.error || 'Save failed');
       }
     });
   });

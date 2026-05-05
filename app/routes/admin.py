@@ -11,9 +11,14 @@ from app.utils.security import (
     sanitise_text, sanitise_html, validate_pagination,
 )
 from sqlalchemy import func, extract
+import os, uuid
+from werkzeug.utils import secure_filename
 
-# ⚠️ THIS LINE SETS THE PREFIX TO /admin/manage
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin/manage")
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'banners')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ─── DASHBOARD ────────────────────────────────────
 @admin_bp.route("/dashboard", methods=["GET"])
@@ -233,26 +238,7 @@ def delete_coupon(coupon_id):
 def list_banners():
     return ok({"banners":[b.to_dict() for b in Banner.query.order_by(Banner.sort_order, Banner.created_at.desc()).all()]})
 
-@admin_bp.route("/banners", methods=["POST"])
-@roles_required("super_admin", "manager")
-def create_banner():
-    data = request.get_json(force=True)
-    if not data.get("image_url"): return err("image_url is required")
-    b = Banner(title=sanitise_text(data.get("title","")), subtitle=sanitise_text(data.get("subtitle","")),
-               image_url=data["image_url"], link_url=sanitise_text(data.get("link_url","")),
-               position=data.get("position","homepage_hero"), is_active=data.get("is_active",True))
-    db.session.add(b); db.session.commit()
-    return ok(b.to_dict(), "Banner created", 201)
 
-@admin_bp.route("/banners/<banner_id>", methods=["PUT"])
-@roles_required("super_admin", "manager")
-def update_banner(banner_id):
-    b = Banner.query.get_or_404(banner_id)
-    data = request.get_json(force=True)
-    for f in ["title","subtitle","image_url","link_url","position","is_active"]:
-        if f in data: setattr(b, f, data[f])
-    db.session.commit()
-    return ok(b.to_dict(), "Banner updated")
 
 @admin_bp.route("/banners/<banner_id>", methods=["DELETE"])
 @roles_required("super_admin")
@@ -407,3 +393,66 @@ def delete_admin(admin_id):
     db.session.delete(AdminUser.query.get_or_404(admin_id))
     db.session.commit()
     return ok(message="Admin deleted")
+
+
+
+@admin_bp.route("/banners", methods=["POST"])
+@roles_required("super_admin", "manager")
+def create_banner():
+    # Accept multipart or JSON
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
+
+    image_url = None
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            return err("Invalid image type")
+        save_name = f"{uuid.uuid4().hex}.{ext}"
+        file.save(os.path.join(UPLOAD_FOLDER, save_name))
+        image_url = f"/static/uploads/banners/{save_name}"
+    else:
+        image_url = sanitise_text(data.get("image_url", ""))
+    if not image_url:
+        return err("Image file or image_url is required")
+
+    banner = Banner(
+        title=sanitise_text(data.get("title", "")),
+        subtitle=sanitise_text(data.get("subtitle", "")),
+        image_url=image_url,
+        link_url=sanitise_text(data.get("link_url", "")),
+        position=sanitise_text(data.get("position", "homepage_hero")),
+        is_active=str(data.get("is_active", "true")).lower() != "false",
+    )
+    db.session.add(banner)
+    db.session.commit()
+    return ok(banner.to_dict(), "Banner created", 201)
+
+@admin_bp.route("/banners/<banner_id>", methods=["PUT"])
+@roles_required("super_admin", "manager")
+def update_banner(banner_id):
+    banner = Banner.query.get_or_404(banner_id)
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
+
+    if file and file.filename:
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[-1].lower()
+        if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            save_name = f"{uuid.uuid4().hex}.{ext}"
+            file.save(os.path.join(UPLOAD_FOLDER, save_name))
+            banner.image_url = f"/static/uploads/banners/{save_name}"
+    elif data.get("image_url"):
+        banner.image_url = sanitise_text(data.get("image_url"))
+
+    for field in ["title", "subtitle", "link_url", "position"]:
+        if field in data:
+            setattr(banner, field, sanitise_text(data[field]))
+    if "sort_order" in data:
+        banner.sort_order = int(data.get("sort_order", 0))
+    if "is_active" in data:
+        banner.is_active = str(data.get("is_active")).lower() not in ("false", "0", "no")
+
+    db.session.commit()
+    return ok(banner.to_dict(), "Banner updated")

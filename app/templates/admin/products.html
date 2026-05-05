@@ -5,7 +5,7 @@
   .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
   .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
   .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
-  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
   .btn-primary { background: var(--gold); color: var(--brown); }
   .btn-primary:hover { background: var(--gold-lt); }
   .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
@@ -25,7 +25,7 @@
   .pag-btn.active { background: var(--gold); color: var(--brown); border-color: var(--gold); }
   .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
   .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
-  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
   .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
 </style>
 {% endblock %}
@@ -45,7 +45,7 @@
 
   <div class="admin-header">
     <h1>Products</h1>
-    <a href="#" class="btn btn-primary">+ Add Product</a>
+    <a href="{{ url_for('frontend.admin_product_new') }}" class="btn btn-primary">+ Add Product</a>
   </div>
 
   <div class="toolbar">
@@ -109,21 +109,21 @@
       const tbody = document.getElementById('productsTableBody');
       if (d.success && d.data && d.data.products) {
         const prods = d.data.products;
-        tbody.innerHTML = prods.length ? prods.map(p => `
+        tbody.innerHTML = prods.length ? prods.map(function(product) {
+          return `
           <tr>
-            <td><img src="${p.primary_image || 'https://via.placeholder.com/50x65/f5f5f0/6b4c3b?text=No+Img'}" class="product-thumb" alt=""></td>
-            <td><strong>${p.name}</strong></td>
-            <td style="font-family:monospace;font-size:0.75rem;">${p.sku || '—'}</td>
-            <td>TZS ${parseFloat(p.base_price||0).toLocaleString()}</td>
-            <td>${p.total_stock != null ? p.total_stock : '—'}</td>
-            <td><span style="color:${p.is_active ? '#27ae60' : '#c0392b'};">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td><img src="${product.primary_image || 'https://via.placeholder.com/50x65/f5f5f0/6b4c3b?text=No+Img'}" class="product-thumb" alt=""></td>
+            <td><strong>${product.name}</strong></td>
+            <td style="font-family:monospace;font-size:0.75rem;">${product.sku || '—'}</td>
+            <td>TZS ${parseFloat(product.base_price||0).toLocaleString()}</td>
+            <td>${product.total_stock != null ? product.total_stock : '—'}</td>
+            <td><span style="color:${product.is_active ? '#27ae60' : '#c0392b'};">${product.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
-              <a href="/products/${p.slug}" class="btn btn-ghost btn-sm">View</a>
+              <a href="/admin/products/${product.id}/edit" class="btn btn-ghost btn-sm">Edit</a>
             </td>
-          </tr>
-        `).join('') : '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>';
+          </tr>`;
+        }).join('') : '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>';
 
-        // Pagination
         const pg = d.data.pagination;
         document.getElementById('productsInfo').textContent = `${pg.total} total`;
         const pagDiv = document.getElementById('productsPag');
@@ -154,7 +154,7 @@
   .then(r => r.json())
   .then(d => {
     const sel = document.querySelector('.filter-select');
-    if (d.success && d.data) {
+    if (d.data) {
       d.data.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.id;

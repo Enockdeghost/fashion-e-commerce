@@ -5,7 +5,7 @@
   .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
   .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
   .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
-  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn { padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; border: none; text-decoration: none; }
   .btn-primary { background: var(--gold); color: var(--brown); }
   .btn-primary:hover { background: var(--gold-lt); }
   .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
@@ -16,89 +16,77 @@
   .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
   .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .upload-zone { border: 1.5px dashed var(--parchment); padding: 2rem; text-align: center; background: var(--off-white); cursor: pointer; }
-  .upload-zone:hover { border-color: var(--gold); background: var(--gold-dim); }
-  .upload-zone input { display: none; }
-  .upload-preview { max-width: 100%; max-height: 200px; margin-top: 0.75rem; border: 1px solid var(--parchment); }
-  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
-  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
-  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
-  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
   .btn-row { display: flex; gap: 1rem; margin-top: 1.5rem; }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .preview-image { max-width: 300px; margin-top: 0.5rem; border: 1px solid var(--parchment); display: block; }
+  .file-select-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
+  .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
+  .file-input-wrapper { position: relative; display: inline-block; }
+  .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="admin-page">
-  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
-  <div class="sidebar">
-    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
-    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
-    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
-    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
-    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
-    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
-    <a href="{{ url_for('frontend.admin_blog_list') }}" class="active">Blog</a>
-  </div>
-
+  <a href="{{ url_for('frontend.admin_blog_list') }}" class="back-link">← All Posts</a>
   <div class="admin-header">
     <h1>{% if post %}Edit Blog Post{% else %}New Blog Post{% endif %}</h1>
-    <a href="{{ url_for('frontend.admin_blog_list') }}" class="btn btn-ghost">← All Posts</a>
   </div>
 
   <div class="card">
     <form id="blogForm" enctype="multipart/form-data">
       <div class="form-row">
         <div class="form-group">
-          <label>Cover Image</label>
-          <div class="upload-zone" onclick="document.getElementById('coverFile').click()">
-            <input type="file" id="coverFile" accept="image/*">
-            <div>Click to upload cover image</div>
-            <div style="font-size:0.7rem;color:var(--brown-lt);">1200×630 recommended</div>
+          <label>Cover Image — Upload</label>
+          <div class="file-input-wrapper">
+            <input type="file" id="coverFile" name="file" accept="image/*">
+            <span class="file-select-btn">Choose Image File</span>
           </div>
-          <img id="coverPreview" class="upload-preview" {% if post and post.cover_image_url %}src="{{ post.cover_image_url }}"{% endif %} style="{% if not post or not post.cover_image_url %}display:none{% endif %}">
-          <div style="margin-top:0.5rem;">
-            <label style="font-size:0.65rem;color:var(--brown-lt);">…or paste image URL</label>
-            <input type="url" id="coverImageUrl" placeholder="https://…" value="{{ post.cover_image_url if post else '' }}">
-          </div>
+          <span class="file-name" id="fileName"></span>
         </div>
         <div class="form-group">
-          <label>Status</label>
-          <select id="blogPublished">
-            <option value="false" {% if post and not post.is_published %}selected{% endif %}>Draft</option>
-            <option value="true" {% if post and post.is_published %}selected{% endif %}>Published</option>
-          </select>
+          <label>Or paste Image URL (optional)</label>
+          <input type="url" id="coverImageUrl" name="cover_image_url" placeholder="https://…" value="{{ post.cover_image_url if post else '' }}">
         </div>
       </div>
+      <img id="coverPreview" class="preview-image" {% if post and post.cover_image_url %}src="{{ post.cover_image_url }}"{% else %}style="display:none"{% endif %} alt="Preview">
 
       <div class="form-group">
         <label>Title *</label>
-        <input type="text" id="blogTitle" required value="{{ post.title if post else '' }}">
+        <input type="text" id="blogTitle" name="title" value="{{ post.title if post else '' }}" required>
       </div>
 
       <div class="form-group">
-        <label>Excerpt (short description)</label>
-        <textarea id="blogExcerpt" rows="2">{{ post.excerpt if post else '' }}</textarea>
+        <label>Excerpt</label>
+        <textarea id="blogExcerpt" name="excerpt" rows="2">{{ post.excerpt if post else '' }}</textarea>
       </div>
 
       <div class="form-group">
         <label>Content (HTML)</label>
-        <textarea id="blogContent" rows="8">{{ post.content if post else '' }}</textarea>
+        <textarea id="blogContent" name="content" rows="8">{{ post.content if post else '' }}</textarea>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Meta Title (SEO)</label>
-          <input type="text" id="blogMetaTitle" value="{{ post.meta_title if post else '' }}">
+          <label>Meta Title</label>
+          <input type="text" id="blogMetaTitle" name="meta_title" value="{{ post.meta_title if post else '' }}">
         </div>
         <div class="form-group">
-          <label>Meta Description (SEO)</label>
-          <input type="text" id="blogMetaDescription" value="{{ post.meta_description if post else '' }}">
+          <label>Meta Description</label>
+          <input type="text" id="blogMetaDescription" name="meta_description" value="{{ post.meta_description if post else '' }}">
         </div>
       </div>
 
+      <div class="form-group">
+        <label>Status</label>
+        <select id="blogPublished" name="is_published">
+          <option value="false" {% if post and not post.is_published %}selected{% endif %}>Draft</option>
+          <option value="true" {% if post and post.is_published %}selected{% endif %}>Published</option>
+        </select>
+      </div>
+
       <div class="btn-row">
-        <button type="submit" class="btn btn-primary">{% if post %}Update Post{% else %}Create Post{% endif %}</button>
+        <button type="submit" class="btn btn-primary">{% if post %}Update{% else %}Create{% endif %}</button>
         <a href="{{ url_for('frontend.admin_blog_list') }}" class="btn btn-ghost">Cancel</a>
       </div>
     </form>
@@ -111,38 +99,36 @@
   const token = localStorage.getItem('admin_token');
   if (!token) { window.location.href = '/admin'; }
 
-  // Preview uploaded image
-  document.getElementById('coverFile').addEventListener('change', function() {
-    const file = this.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Only images allowed.'); return; }
-    if (file.size > 10*1024*1024) { alert('Max 10 MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const preview = document.getElementById('coverPreview');
-      preview.src = e.target.result;
-      preview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
+  const coverFile = document.getElementById('coverFile');
+  const fileName = document.getElementById('fileName');
+  const coverPreview = document.getElementById('coverPreview');
+  const coverImageUrlInput = document.getElementById('coverImageUrl');
+
+  coverFile.addEventListener('change', function() {
+    const file = coverFile.files[0];
+    if (file) {
+      fileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) { coverPreview.src = e.target.result; coverPreview.style.display = 'block'; };
+      reader.readAsDataURL(file);
+      coverImageUrlInput.value = '';
+    }
   });
 
-  // Submit form
+  coverImageUrlInput.addEventListener('input', function() {
+    if (this.value) {
+      coverPreview.src = this.value;
+      coverPreview.style.display = 'block';
+      coverFile.value = '';
+      fileName.textContent = '';
+    }
+  });
+
   document.getElementById('blogForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const file = document.getElementById('coverFile').files[0];
-    const formData = new FormData();
-    formData.append('title', document.getElementById('blogTitle').value.trim());
-    formData.append('excerpt', document.getElementById('blogExcerpt').value.trim());
-    formData.append('content', document.getElementById('blogContent').value);
-    formData.append('is_published', document.getElementById('blogPublished').value);
-    formData.append('meta_title', document.getElementById('blogMetaTitle').value.trim());
-    formData.append('meta_description', document.getElementById('blogMetaDescription').value.trim());
-    formData.append('cover_image_url', document.getElementById('coverImageUrl').value.trim());
-    if (file) formData.append('file', file);
-
+    const formData = new FormData(this);
     const method = '{{ "PUT" if post else "POST" }}';
     const url = '{{ "/api/blog/" + post.id if post else "/api/blog" }}';
-
     fetch(url, {
       method,
       headers: {'Authorization': 'Bearer ' + token},
@@ -150,12 +136,8 @@
     })
     .then(r => r.json())
     .then(d => {
-      if (d.success) {
-        alert('Blog post saved!');
-        window.location.href = '/admin/blog';
-      } else {
-        alert(d.error || 'Save failed');
-      }
+      if (d.success) { alert('Blog post saved!'); window.location.href = '/admin/blog'; }
+      else alert(d.error || 'Save failed');
     });
   });
 </script>

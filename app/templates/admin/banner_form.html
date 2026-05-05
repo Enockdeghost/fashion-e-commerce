@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{% if banner %}Edit{% else %}New{% endif %} Banner | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .form-card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 700px; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
+  .btn { padding: 0.8rem 2rem; border: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .current-image, .preview-image { max-width: 300px; margin-top: 0.5rem; border: 1px solid var(--parchment); display: block; }
+  .upload-section { display: flex; flex-direction: column; gap: 0.5rem; }
+  .file-input-wrapper { position: relative; }
+  .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
+  .file-input-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
+  .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_banners') }}" class="back-link">← Back to Banners</a>
+  <div class="admin-header">
+    <h1>{% if banner %}Edit Banner{% else %}New Banner{% endif %}</h1>
+  </div>
+
+  <div class="form-card">
+    <form id="bannerForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ banner.title if banner else '' }}" placeholder="Spring Collection">
+      </div>
+      <div class="form-group">
+        <label>Subtitle</label>
+        <input type="text" name="subtitle" value="{{ banner.subtitle if banner else '' }}" placeholder="Limited Edition">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Link URL</label>
+          <input type="text" name="link_url" value="{{ banner.link_url if banner else '' }}" placeholder="/products?category=new">
+        </div>
+        <div class="form-group">
+          <label>Link Text</label>
+          <input type="text" name="link_text" value="{{ banner.link_text if banner else '' }}" placeholder="Shop Now">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Position</label>
+          <select name="position">
+            <option value="homepage_hero" {% if banner and banner.position == 'homepage_hero' %}selected{% endif %}>Homepage Hero</option>
+            <option value="homepage_secondary" {% if banner and banner.position == 'homepage_secondary' %}selected{% endif %}>Homepage Secondary</option>
+            <option value="lookbook_hero" {% if banner and banner.position == 'lookbook_hero' %}selected{% endif %}>Lookbook Hero</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sort Order</label>
+          <input type="number" name="sort_order" value="{{ banner.sort_order if banner else '0' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Image Upload</label>
+        <div class="upload-section">
+          <div class="file-input-wrapper">
+            <input type="file" id="imageFile" name="file" accept="image/*">
+            <span class="file-input-btn">Choose File</span>
+          </div>
+          <span class="file-name" id="fileName"></span>
+          <img id="imagePreview" class="preview-image" {% if banner and banner.image_url %}src="{{ banner.image_url }}"{% else %}style="display:none"{% endif %} alt="Preview">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Or paste Image URL (if not uploading)</label>
+        <input type="url" id="imageUrl" placeholder="https://…" value="{% if banner and not request.files %}{{ banner.image_url }}{% endif %}">
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" name="is_active" value="true" {% if banner and banner.is_active %}checked{% endif %}> Active
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">{% if banner %}Update{% else %}Create{% endif %}</button>
+        <a href="{{ url_for('frontend.admin_banners') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  // Show file name and preview when a file is chosen
+  const fileInput = document.getElementById('imageFile');
+  const fileName = document.getElementById('fileName');
+  const imagePreview = document.getElementById('imagePreview');
+  const imageUrlInput = document.getElementById('imageUrl');
+
+  fileInput.addEventListener('change', function() {
+    const file = fileInput.files[0];
+    if (file) {
+      fileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imagePreview.src = e.target.result;
+        imagePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      imageUrlInput.value = ''; // clear URL field
+    } else {
+      fileName.textContent = '';
+    }
+  });
+
+  // Also show preview when pasting URL
+  imageUrlInput.addEventListener('input', function() {
+    if (this.value) {
+      imagePreview.src = this.value;
+      imagePreview.style.display = 'block';
+      fileInput.value = '';
+      fileName.textContent = '';
+    }
+  });
+
+  // Submit as multipart/form-data
+  document.getElementById('bannerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = this;
+    const formData = new FormData(form);
+    // Ensure is_active is not lost when unchecked
+    if (!formData.get('is_active')) {
+      formData.append('is_active', 'false');
+    }
+
+    const method = '{{ "PUT" if banner else "POST" }}';
+    const url = '{{ "/api/banners/" + banner.id if banner else "/api/banners" }}';
+
+    fetch(url, {
+      method: method,
+      headers: {'Authorization': 'Bearer ' + token},
+      body: formData
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Banner saved!');
+        window.location.href = '/admin/banners';
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+</script>
+{% endblock %}

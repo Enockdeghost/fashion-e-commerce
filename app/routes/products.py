@@ -1,3 +1,5 @@
+import os
+import uuid
 from flask import Blueprint, request, g
 from sqlalchemy import or_
 from app.extensions import db, limiter
@@ -14,12 +16,16 @@ from app.services.media_service import (
     delete_media,
 )
 from slugify import slugify
+from werkzeug.utils import secure_filename
 
 products_bp = Blueprint("products", __name__, url_prefix="/products")
 cat_bp = Blueprint("categories", __name__, url_prefix="/categories")
 brand_bp = Blueprint("brands", __name__, url_prefix="/brands")
 col_bp = Blueprint("collections", __name__, url_prefix="/collections")
 tag_bp = Blueprint("tags", __name__, url_prefix="/tags")
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'products')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @products_bp.route("", methods=["GET"])
@@ -87,7 +93,9 @@ def get_product(product_id):
 @products_bp.route("", methods=["POST"])
 @admin_required
 def create_product():
-    data = request.get_json(force=True)
+    # Accept both multipart/form-data and JSON
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
 
     name = sanitise_text(data.get("name", ""))
     price = data.get("base_price")
@@ -95,6 +103,20 @@ def create_product():
         return err("Product name is required")
     if not price:
         return err("base_price is required")
+
+    # Handle image (file upload or URL)
+    primary_image = None
+    if file and file.filename:
+        ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
+        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+            return err("Invalid image type")
+        save_name = f"{uuid.uuid4().hex}.{ext}"
+        file.save(os.path.join(UPLOAD_FOLDER, save_name))
+        primary_image = f"/static/uploads/products/{save_name}"
+    else:
+        primary_image = sanitise_text(data.get("primary_image", ""))
+        if primary_image and not primary_image.startswith("http"):
+            primary_image = f"/static{primary_image}"
 
     product = Product(
         name=name,
@@ -150,6 +172,16 @@ def create_product():
             weight=v_data.get("weight"),
         )
         db.session.add(variant)
+
+    if primary_image:
+        img = ProductImage(
+            product_id=product.id,
+            url=primary_image,
+            is_primary=True,
+            alt_text=name,
+            sort_order=0,
+        )
+        db.session.add(img)
 
     db.session.commit()
     return ok(product.to_dict(full=True), "Product created", 201)
