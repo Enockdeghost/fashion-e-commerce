@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Brands | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .thumb { width: 80px; height: 36px; object-fit: contain; border-radius: 2px; background: var(--off-white); padding: 4px; }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%; }
+  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
+  .form-group input:focus { border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}" class="active">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Brands</h1>
+    <button class="btn btn-primary" onclick="openBrandModal()">+ Add Brand</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Logo</th><th>Name</th><th>Slug</th><th>Active</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="brandsTableBody">
+        <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading brands…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="brandModal">
+  <div class="modal">
+    <h2 id="brandModalTitle">New Brand</h2>
+    <form id="brandForm">
+      <input type="hidden" id="brandId">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="brandName" required>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="brandDesc">
+      </div>
+      <div class="form-group">
+        <label>Logo URL</label>
+        <input type="url" id="brandLogoUrl" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="brandActive" checked> Active
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeBrandModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Brand</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadBrands() {
+    fetch('/api/admin/manage/brands', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('brandsTableBody');
+      if (d.success && d.data) {
+        const brands = Array.isArray(d.data) ? d.data : (d.data.brands || []);
+        tbody.innerHTML = brands.length ? brands.map(b => `
+          <tr>
+            <td><img src="${b.logo_url || 'https://via.placeholder.com/80x36/f5f5f0/6b4c3b?text=No+Logo'}" class="thumb" alt=""></td>
+            <td><strong>${b.name}</strong></td>
+            <td style="font-family:monospace;font-size:0.75rem;">${b.slug}</td>
+            <td><span style="color:${b.is_active ? '#27ae60' : '#c0392b'};">${b.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="#" class="action-link" onclick="editBrand('${b.id}')">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteBrand('${b.id}')">Delete</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;">No brands yet.</td></tr>';
+      }
+    });
+  }
+
+  function openBrandModal(brand) {
+    document.getElementById('brandModalTitle').textContent = brand ? 'Edit Brand' : 'New Brand';
+    document.getElementById('brandId').value = brand ? brand.id : '';
+    document.getElementById('brandName').value = brand ? brand.name : '';
+    document.getElementById('brandDesc').value = brand ? (brand.description || '') : '';
+    document.getElementById('brandLogoUrl').value = brand ? (brand.logo_url || '') : '';
+    document.getElementById('brandActive').checked = brand ? brand.is_active : true;
+    document.getElementById('brandModal').classList.add('open');
+  }
+
+  function closeBrandModal() {
+    document.getElementById('brandModal').classList.remove('open');
+  }
+
+  document.getElementById('brandForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('brandId').value;
+    const payload = {
+      name: document.getElementById('brandName').value.trim(),
+      description: document.getElementById('brandDesc').value.trim(),
+      logo_url: document.getElementById('brandLogoUrl').value.trim(),
+      is_active: document.getElementById('brandActive').checked,
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/brands/${id}` : '/api/admin/manage/brands';
+
+    fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Brand saved!');
+        closeBrandModal();
+        loadBrands();
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+
+  async function editBrand(id) {
+    const res = await fetch('/api/admin/manage/brands', {
+      headers: {'Authorization': 'Bearer ' + token}
+    });
+    const d = await res.json();
+    const brands = Array.isArray(d.data) ? d.data : (d.data?.brands || []);
+    const brand = brands.find(b => b.id === id);
+    if (brand) openBrandModal(brand);
+  }
+
+  function deleteBrand(id) {
+    if (!confirm('Delete this brand?')) return;
+    fetch('/api/admin/manage/brands/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadBrands(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadBrands);
+</script>
+{% endblock %}

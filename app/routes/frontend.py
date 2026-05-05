@@ -7,16 +7,14 @@ frontend_bp = Blueprint('frontend', __name__)
 def _now():
     return datetime.now(timezone.utc)
 
+# ── PUBLIC PAGES 
+
 @frontend_bp.route('/')
 def index():
     banners = Banner.query.filter_by(is_active=True).all()
     categories = Category.query.filter_by(is_active=True, parent_id=None).all()
     products = Product.query.filter_by(is_active=True, is_deleted=False, is_featured=True).limit(6).all()
-    return render_template('index.html',
-                           banners=banners,
-                           categories=categories,
-                           products=products,
-                           now=_now())
+    return render_template('index.html', banners=banners, categories=categories, products=products, now=_now())
 
 @frontend_bp.route('/login')
 def login():
@@ -43,12 +41,7 @@ def products():
     if brand_slug:
         product_query = product_query.filter(Product.brand.has(slug=brand_slug))
     products_list = product_query.order_by(Product.created_at.desc()).limit(24).all()
-    return render_template('products/list.html',
-                           products=products_list,
-                           categories=categories,
-                           brands=brands,
-                           category_name=category_name,
-                           now=_now())
+    return render_template('products/list.html', products=products_list, categories=categories, brands=brands, category_name=category_name, now=_now())
 
 @frontend_bp.route('/products/<product_slug>')
 def product_detail(product_slug):
@@ -93,22 +86,6 @@ def orders():
 def order_detail(order_number):
     return render_template('user/order_detail.html', order_number=order_number, now=_now())
 
-@frontend_bp.route('/admin')
-def admin_login():
-    return render_template('admin/login.html', now=_now())
-
-@frontend_bp.route('/admin/dashboard')
-def admin_dashboard():
-    return render_template('admin/dashboard.html', now=_now())
-
-@frontend_bp.route('/admin/products')
-def admin_products():
-    return render_template('admin/products.html', now=_now())
-
-@frontend_bp.route('/admin/orders')
-def admin_orders():
-    return render_template('admin/orders.html', now=_now())
-
 @frontend_bp.route('/page/<slug>')
 def cms_page(slug):
     page = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
@@ -135,6 +112,20 @@ def lookbook_category(category):
     products = Product.query.filter_by(category_id=cat.id, is_active=True, is_deleted=False).order_by(Product.created_at.desc()).limit(24).all()
     return render_template('products/category.html', category=cat, products=products, now=_now())
 
+# ── ADMIN PAGES
+
+@frontend_bp.route('/admin')
+def admin_login():
+    return render_template('admin/login.html', now=_now())
+
+@frontend_bp.route('/admin/dashboard')
+def admin_dashboard():
+    return render_template('admin/dashboard.html', now=_now())
+
+@frontend_bp.route('/admin/products')
+def admin_products():
+    return render_template('admin/products.html', now=_now())
+
 @frontend_bp.route('/admin/products/new')
 def admin_product_new():
     return render_template('admin/product_form.html', product=None, now=_now())
@@ -143,6 +134,14 @@ def admin_product_new():
 def admin_product_edit(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('admin/product_form.html', product=product, now=_now())
+
+@frontend_bp.route('/admin/orders')
+def admin_orders():
+    return render_template('admin/orders.html', now=_now())
+
+@frontend_bp.route('/admin/categories')
+def admin_categories():
+    return render_template('admin/categories.html', now=_now())
 
 @frontend_bp.route('/admin/categories/new')
 def admin_category_new():
@@ -153,6 +152,10 @@ def admin_category_edit(category_id):
     category = Category.query.get_or_404(category_id)
     return render_template('admin/category_form.html', category=category, now=_now())
 
+@frontend_bp.route('/admin/brands')
+def admin_brands():
+    return render_template('admin/brands.html', now=_now())
+
 @frontend_bp.route('/admin/brands/new')
 def admin_brand_new():
     return render_template('admin/brand_form.html', brand=None, now=_now())
@@ -161,6 +164,10 @@ def admin_brand_new():
 def admin_brand_edit(brand_id):
     brand = Brand.query.get_or_404(brand_id)
     return render_template('admin/brand_form.html', brand=brand, now=_now())
+
+@frontend_bp.route('/admin/coupons')
+def admin_coupons():
+    return render_template('admin/coupons.html', now=_now())
 
 @frontend_bp.route('/admin/banners')
 def admin_banners():
@@ -174,3 +181,24 @@ def admin_banner_new():
 def admin_banner_edit(banner_id):
     banner = Banner.query.get_or_404(banner_id)
     return render_template('admin/banner_form.html', banner=banner, now=_now())
+
+@frontend_bp.route('/admin/blog')
+def admin_blog_list():
+    return render_template('admin/blog_list.html', now=_now())
+
+@frontend_bp.route('/admin/blog/new')
+def admin_blog_new():
+    return render_template('admin/blog_form.html', post=None, now=_now())
+
+@frontend_bp.route('/admin/blog/<post_id>/edit')
+def admin_blog_edit(post_id):
+    post = BlogPost.query.get_or_404(post_id)
+    return render_template('admin/blog_form.html', post=post, now=_now())
+
+@frontend_bp.route('/admin/pages')
+def admin_pages():
+    return render_template('admin/pages.html', now=_now())
+
+@frontend_bp.route('/admin/admins')
+def admin_admins():
+    return render_template('admin/admins.html', now=_now())

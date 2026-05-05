@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}{% if post %}Edit{% else %}New{% endif %} Blog Post | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 800px; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .upload-zone { border: 1.5px dashed var(--parchment); padding: 2rem; text-align: center; background: var(--off-white); cursor: pointer; }
+  .upload-zone:hover { border-color: var(--gold); background: var(--gold-dim); }
+  .upload-zone input { display: none; }
+  .upload-preview { max-width: 100%; max-height: 200px; margin-top: 0.75rem; border: 1px solid var(--parchment); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .btn-row { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}" class="active">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>{% if post %}Edit Blog Post{% else %}New Blog Post{% endif %}</h1>
+    <a href="{{ url_for('frontend.admin_blog_list') }}" class="btn btn-ghost">← All Posts</a>
+  </div>
+
+  <div class="card">
+    <form id="blogForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cover Image</label>
+          <div class="upload-zone" onclick="document.getElementById('coverFile').click()">
+            <input type="file" id="coverFile" accept="image/*">
+            <div>Click to upload cover image</div>
+            <div style="font-size:0.7rem;color:var(--brown-lt);">1200×630 recommended</div>
+          </div>
+          <img id="coverPreview" class="upload-preview" {% if post and post.cover_image_url %}src="{{ post.cover_image_url }}"{% endif %} style="{% if not post or not post.cover_image_url %}display:none{% endif %}">
+          <div style="margin-top:0.5rem;">
+            <label style="font-size:0.65rem;color:var(--brown-lt);">…or paste image URL</label>
+            <input type="url" id="coverImageUrl" placeholder="https://…" value="{{ post.cover_image_url if post else '' }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="blogPublished">
+            <option value="false" {% if post and not post.is_published %}selected{% endif %}>Draft</option>
+            <option value="true" {% if post and post.is_published %}selected{% endif %}>Published</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="blogTitle" required value="{{ post.title if post else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label>Excerpt (short description)</label>
+        <textarea id="blogExcerpt" rows="2">{{ post.excerpt if post else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Content (HTML)</label>
+        <textarea id="blogContent" rows="8">{{ post.content if post else '' }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Meta Title (SEO)</label>
+          <input type="text" id="blogMetaTitle" value="{{ post.meta_title if post else '' }}">
+        </div>
+        <div class="form-group">
+          <label>Meta Description (SEO)</label>
+          <input type="text" id="blogMetaDescription" value="{{ post.meta_description if post else '' }}">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">{% if post %}Update Post{% else %}Create Post{% endif %}</button>
+        <a href="{{ url_for('frontend.admin_blog_list') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  // Preview uploaded image
+  document.getElementById('coverFile').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Only images allowed.'); return; }
+    if (file.size > 10*1024*1024) { alert('Max 10 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('coverPreview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Submit form
+  document.getElementById('blogForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const file = document.getElementById('coverFile').files[0];
+    const formData = new FormData();
+    formData.append('title', document.getElementById('blogTitle').value.trim());
+    formData.append('excerpt', document.getElementById('blogExcerpt').value.trim());
+    formData.append('content', document.getElementById('blogContent').value);
+    formData.append('is_published', document.getElementById('blogPublished').value);
+    formData.append('meta_title', document.getElementById('blogMetaTitle').value.trim());
+    formData.append('meta_description', document.getElementById('blogMetaDescription').value.trim());
+    formData.append('cover_image_url', document.getElementById('coverImageUrl').value.trim());
+    if (file) formData.append('file', file);
+
+    const method = '{{ "PUT" if post else "POST" }}';
+    const url = '{{ "/api/admin/manage/blog/" + post.id if post else "/api/admin/manage/blog" }}';
+
+    fetch(url, {
+      method,
+      headers: {'Authorization': 'Bearer ' + token},
+      body: formData
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Blog post saved!');
+        window.location.href = '/admin/blog';
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+</script>
+{% endblock %}

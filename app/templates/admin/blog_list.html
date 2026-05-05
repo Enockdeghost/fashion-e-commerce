@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Blog | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .thumb { width: 100px; height: 55px; object-fit: cover; border-radius: 2px; }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}" class="active">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Blog Posts</h1>
+    <a href="{{ url_for('frontend.admin_blog_new') }}" class="btn btn-primary">+ New Post</a>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Cover</th><th>Title</th><th>Status</th><th>Published</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="blogTableBody">
+        <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading posts…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadBlogPosts() {
+    fetch('/api/admin/manage/blog', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('blogTableBody');
+      if (d.success && d.data && d.data.blog_posts) {
+        const posts = d.data.blog_posts;
+        tbody.innerHTML = posts.length ? posts.map(p => `
+          <tr>
+            <td><img src="${p.cover_image_url || 'https://via.placeholder.com/100x55/f5f5f0/6b4c3b?text=No+Cover'}" class="thumb" alt=""></td>
+            <td><strong>${p.title}</strong></td>
+            <td><span style="color:${p.is_published ? '#27ae60' : '#c0392b'};">${p.is_published ? 'Published' : 'Draft'}</span></td>
+            <td>${p.published_at ? new Date(p.published_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+            <td>
+              <a href="/admin/blog/${p.id}/edit" class="action-link">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteBlogPost('${p.id}')">Delete</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;">No posts yet.</td></tr>';
+      }
+    });
+  }
+
+  function deleteBlogPost(id) {
+    if (!confirm('Delete this blog post?')) return;
+    fetch('/api/admin/manage/blog/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadBlogPosts(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadBlogPosts);
+</script>
+{% endblock %}

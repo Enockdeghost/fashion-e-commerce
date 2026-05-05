@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Pages & FAQs | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1, .admin-header h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; color: var(--brown); }
+  .admin-header h1 { font-size: 2.2rem; }
+  .admin-header h2 { font-size: 1.5rem; }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); margin-bottom: 2rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 520px; width: 90%; }
+  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+    <a href="{{ url_for('frontend.admin_pages') }}" class="active">Pages & FAQs</a>
+  </div>
+
+  <!-- Static Pages Section -->
+  <div class="admin-header">
+    <h2>Static Pages</h2>
+    <button class="btn btn-primary" onclick="openPageModal()">+ Add Page</button>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Slug</th><th>Title</th><th>Published</th><th>Actions</th></tr></thead>
+      <tbody id="pagesTableBody">
+        <tr><td colspan="4" style="text-align:center;padding:2rem;">Loading pages…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FAQs Section -->
+  <div class="admin-header" style="margin-top:3rem;">
+    <h2>FAQs</h2>
+    <button class="btn btn-primary" onclick="openFAQModal()">+ Add FAQ</button>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Question</th><th>Category</th><th>Active</th><th>Actions</th></tr></thead>
+      <tbody id="faqsTableBody">
+        <tr><td colspan="4" style="text-align:center;padding:2rem;">Loading FAQs…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Page Modal -->
+<div class="modal-backdrop" id="pageModal">
+  <div class="modal">
+    <h2 id="pageModalTitle">New Page</h2>
+    <form id="pageForm">
+      <input type="hidden" id="pageId">
+      <div class="form-group"><label>Slug *</label><input type="text" id="pageSlug" required placeholder="about"></div>
+      <div class="form-group"><label>Title *</label><input type="text" id="pageTitle" required></div>
+      <div class="form-group"><label>Content (HTML)</label><textarea id="pageContent" rows="6"></textarea></div>
+      <div class="form-group"><label style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" id="pagePublished" checked> Published</label></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closePageModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Page</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- FAQ Modal -->
+<div class="modal-backdrop" id="faqModal">
+  <div class="modal">
+    <h2 id="faqModalTitle">New FAQ</h2>
+    <form id="faqForm">
+      <input type="hidden" id="faqId">
+      <div class="form-group"><label>Question *</label><input type="text" id="faqQuestion" required></div>
+      <div class="form-group"><label>Answer *</label><textarea id="faqAnswer" rows="4" required></textarea></div>
+      <div class="form-group"><label>Category</label><input type="text" id="faqCategory" placeholder="general, shipping…"></div>
+      <div class="form-group"><label>Sort Order</label><input type="number" id="faqSort" value="0"></div>
+      <div class="form-group"><label style="display:flex;align-items:center;gap:0.5rem;"><input type="checkbox" id="faqActive" checked> Active</label></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeFAQModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save FAQ</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  // ──────── PAGES ────────
+  function loadPages() {
+    fetch('/api/admin/manage/pages', {headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json()).then(d=>{
+      const tbody=document.getElementById('pagesTableBody');
+      const pages = d.data ? (Array.isArray(d.data) ? d.data : []) : [];
+      tbody.innerHTML = pages.length ? pages.map(p=>`
+        <tr>
+          <td style="font-family:monospace;">${p.slug}</td>
+          <td><strong>${p.title}</strong></td>
+          <td><span style="color:${p.is_published?'#27ae60':'#c0392b'};">${p.is_published?'Published':'Draft'}</span></td>
+          <td>
+            <a href="#" class="action-link" onclick="editPage('${p.id}')">Edit</a>
+            <a href="#" class="action-link delete" onclick="deletePage('${p.id}')">Delete</a>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">No pages yet.</td></tr>';
+    });
+  }
+
+  function openPageModal(page) {
+    document.getElementById('pageModalTitle').textContent = page ? 'Edit Page' : 'New Page';
+    document.getElementById('pageId').value = page ? page.id : '';
+    document.getElementById('pageSlug').value = page ? page.slug : '';
+    document.getElementById('pageTitle').value = page ? page.title : '';
+    document.getElementById('pageContent').value = page ? (page.content||'') : '';
+    document.getElementById('pagePublished').checked = page ? page.is_published : true;
+    document.getElementById('pageModal').classList.add('open');
+  }
+  function closePageModal() { document.getElementById('pageModal').classList.remove('open'); }
+  document.getElementById('pageForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const id = document.getElementById('pageId').value;
+    const payload = { slug:document.getElementById('pageSlug').value.trim(), title:document.getElementById('pageTitle').value.trim(), content:document.getElementById('pageContent').value, is_published:document.getElementById('pagePublished').checked };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/pages/${id}` : '/api/admin/manage/pages';
+    fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(d=>{ if(d.success){ alert('Page saved!'); closePageModal(); loadPages(); } else alert(d.error||'Save failed'); });
+  });
+  async function editPage(id) {
+    const res = await fetch('/api/admin/manage/pages', {headers:{'Authorization':'Bearer '+token}});
+    const d = await res.json();
+    const pages = d.data ? (Array.isArray(d.data)?d.data:[]) : [];
+    const page = pages.find(p=>p.id===id);
+    if(page) openPageModal(page);
+  }
+  function deletePage(id) {
+    if(!confirm('Delete this page?')) return;
+    fetch('/api/admin/manage/pages/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json()).then(d=>{ if(d.success){ alert('Deleted.'); loadPages(); } else alert(d.error||'Delete failed'); });
+  }
+
+  // ──────── FAQS ────────
+  function loadFAQs() {
+    fetch('/api/admin/manage/faqs', {headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json()).then(d=>{
+      const tbody=document.getElementById('faqsTableBody');
+      const faqs = d.data ? (Array.isArray(d.data) ? d.data : (d.data.faqs||[])) : [];
+      tbody.innerHTML = faqs.length ? faqs.map(f=>`
+        <tr>
+          <td>${f.question}</td>
+          <td>${f.category||'general'}</td>
+          <td><span style="color:${f.is_active?'#27ae60':'#c0392b'};">${f.is_active?'Active':'Inactive'}</span></td>
+          <td>
+            <a href="#" class="action-link" onclick="editFAQ('${f.id}')">Edit</a>
+            <a href="#" class="action-link delete" onclick="deleteFAQ('${f.id}')">Delete</a>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">No FAQs yet.</td></tr>';
+    });
+  }
+
+  function openFAQModal(faq) {
+    document.getElementById('faqModalTitle').textContent = faq ? 'Edit FAQ' : 'New FAQ';
+    document.getElementById('faqId').value = faq ? faq.id : '';
+    document.getElementById('faqQuestion').value = faq ? faq.question : '';
+    document.getElementById('faqAnswer').value = faq ? faq.answer : '';
+    document.getElementById('faqCategory').value = faq ? (faq.category||'general') : 'general';
+    document.getElementById('faqSort').value = faq ? (faq.sort_order||0) : 0;
+    document.getElementById('faqActive').checked = faq ? faq.is_active : true;
+    document.getElementById('faqModal').classList.add('open');
+  }
+  function closeFAQModal() { document.getElementById('faqModal').classList.remove('open'); }
+  document.getElementById('faqForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const id = document.getElementById('faqId').value;
+    const payload = { question:document.getElementById('faqQuestion').value.trim(), answer:document.getElementById('faqAnswer').value.trim(), category:document.getElementById('faqCategory').value.trim()||'general', sort_order:parseInt(document.getElementById('faqSort').value)||0, is_active:document.getElementById('faqActive').checked };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/faqs/${id}` : '/api/admin/manage/faqs';
+    fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(d=>{ if(d.success){ alert('FAQ saved!'); closeFAQModal(); loadFAQs(); } else alert(d.error||'Save failed'); });
+  });
+  async function editFAQ(id) {
+    const res = await fetch('/api/admin/manage/faqs', {headers:{'Authorization':'Bearer '+token}});
+    const d = await res.json();
+    const faqs = d.data ? (Array.isArray(d.data)?d.data:(d.data.faqs||[])) : [];
+    const faq = faqs.find(f=>f.id===id);
+    if(faq) openFAQModal(faq);
+  }
+  function deleteFAQ(id) {
+    if(!confirm('Delete this FAQ?')) return;
+    fetch('/api/admin/manage/faqs/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json()).then(d=>{ if(d.success){ alert('Deleted.'); loadFAQs(); } else alert(d.error||'Delete failed'); });
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', ()=>{ loadPages(); loadFAQs(); });
+</script>
+{% endblock %}

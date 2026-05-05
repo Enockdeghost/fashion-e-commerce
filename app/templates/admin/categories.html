@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Categories | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-sm { padding: 0.4rem 1rem; font-size: 0.6rem; }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .thumb { width: 60px; height: 45px; object-fit: cover; border-radius: 2px; }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%; }
+  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
+  .form-group input:focus { border-color: var(--gold); }
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}" class="active">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Categories</h1>
+    <button class="btn btn-primary" onclick="openCategoryModal()">+ Add Category</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Image</th><th>Name</th><th>Slug</th><th>Active</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="categoriesTableBody">
+        <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading categories…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div class="modal-backdrop" id="categoryModal">
+  <div class="modal">
+    <h2 id="categoryModalTitle">New Category</h2>
+    <form id="categoryForm">
+      <input type="hidden" id="categoryId">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="categoryName" required>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="categoryDesc">
+      </div>
+      <div class="form-group">
+        <label>Image URL</label>
+        <input type="url" id="categoryImageUrl" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="categoryActive" checked> Active
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeCategoryModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Category</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadCategories() {
+    fetch('/api/admin/manage/categories', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('categoriesTableBody');
+      if (d.success && d.data) {
+        const cats = Array.isArray(d.data) ? d.data : (d.data.categories || []);
+        tbody.innerHTML = cats.length ? cats.map(c => `
+          <tr>
+            <td><img src="${c.image_url || 'https://via.placeholder.com/60x45/f5f5f0/6b4c3b?text=No+Img'}" class="thumb" alt=""></td>
+            <td><strong>${c.name}</strong></td>
+            <td style="font-family:monospace;font-size:0.75rem;">${c.slug}</td>
+            <td><span style="color:${c.is_active ? '#27ae60' : '#c0392b'};">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="#" class="action-link" onclick="editCategory('${c.id}')">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteCategory('${c.id}')">Delete</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;">No categories yet.</td></tr>';
+      }
+    });
+  }
+
+  function openCategoryModal(cat) {
+    document.getElementById('categoryModalTitle').textContent = cat ? 'Edit Category' : 'New Category';
+    document.getElementById('categoryId').value = cat ? cat.id : '';
+    document.getElementById('categoryName').value = cat ? cat.name : '';
+    document.getElementById('categoryDesc').value = cat ? (cat.description || '') : '';
+    document.getElementById('categoryImageUrl').value = cat ? (cat.image_url || '') : '';
+    document.getElementById('categoryActive').checked = cat ? cat.is_active : true;
+    document.getElementById('categoryModal').classList.add('open');
+  }
+
+  function closeCategoryModal() {
+    document.getElementById('categoryModal').classList.remove('open');
+  }
+
+  document.getElementById('categoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('categoryId').value;
+    const payload = {
+      name: document.getElementById('categoryName').value.trim(),
+      description: document.getElementById('categoryDesc').value.trim(),
+      image_url: document.getElementById('categoryImageUrl').value.trim(),
+      is_active: document.getElementById('categoryActive').checked,
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/categories/${id}` : '/api/admin/manage/categories';
+
+    fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Category saved!');
+        closeCategoryModal();
+        loadCategories();
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+
+  async function editCategory(id) {
+    const res = await fetch('/api/admin/manage/categories', {
+      headers: {'Authorization': 'Bearer ' + token}
+    });
+    const d = await res.json();
+    const cats = Array.isArray(d.data) ? d.data : (d.data?.categories || []);
+    const cat = cats.find(c => c.id === id);
+    if (cat) openCategoryModal(cat);
+  }
+
+  function deleteCategory(id) {
+    if (!confirm('Delete this category? It may still have products.')) return;
+    fetch('/api/admin/manage/categories/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadCategories(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCategories);
+</script>
+{% endblock %}

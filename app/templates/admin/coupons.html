@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Coupons | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  code { background: var(--gold-dim); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--gold); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%; }
+  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group select { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}" class="active">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Coupons</h1>
+    <button class="btn btn-primary" onclick="openCouponModal()">+ Add Coupon</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Type</th><th>Value</th><th>Used</th><th>Expires</th><th>Active</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="couponsTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;">Loading coupons…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="couponModal">
+  <div class="modal">
+    <h2 id="couponModalTitle">New Coupon</h2>
+    <form id="couponForm">
+      <input type="hidden" id="couponId">
+      <div class="form-group">
+        <label>Code *</label>
+        <input type="text" id="couponCode" required placeholder="SUMMER25" maxlength="30">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Discount Type *</label>
+          <select id="couponType" required>
+            <option value="percentage">Percentage (%)</option>
+            <option value="fixed">Fixed Amount (TZS)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Discount Value *</label>
+          <input type="number" id="couponValue" required step="0.01" min="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Min Purchase (TZS)</label>
+          <input type="number" id="couponMinPurchase" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+          <label>Max Discount (TZS) – % only</label>
+          <input type="number" id="couponMaxDiscount" step="0.01" placeholder="Optional cap">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Usage Limit</label>
+          <input type="number" id="couponUsageLimit" placeholder="Unlimited">
+        </div>
+        <div class="form-group">
+          <label>Expires At</label>
+          <input type="datetime-local" id="couponExpiresAt">
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="couponActive" checked> Active
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeCouponModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Coupon</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadCoupons() {
+    fetch('/api/admin/manage/coupons', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('couponsTableBody');
+      if (d.success && d.data && d.data.coupons) {
+        const coupons = d.data.coupons;
+        tbody.innerHTML = coupons.length ? coupons.map(c => `
+          <tr>
+            <td><code>${c.code}</code></td>
+            <td style="text-transform:capitalize;">${c.discount_type}</td>
+            <td>${c.discount_type === 'percentage' ? c.discount_value + '%' : 'TZS ' + parseFloat(c.discount_value).toLocaleString()}</td>
+            <td>${c.used_count || 0}${c.usage_limit ? '/' + c.usage_limit : ''}</td>
+            <td>${c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : 'Never'}</td>
+            <td><span style="color:${c.is_active ? '#27ae60' : '#c0392b'};">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="#" class="action-link" onclick="editCoupon('${c.id}')">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteCoupon('${c.id}')">Delete</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="7" style="text-align:center;">No coupons yet.</td></tr>';
+      }
+    });
+  }
+
+  function openCouponModal(coupon) {
+    document.getElementById('couponModalTitle').textContent = coupon ? 'Edit Coupon' : 'New Coupon';
+    document.getElementById('couponId').value = coupon ? coupon.id : '';
+    document.getElementById('couponCode').value = coupon ? coupon.code : '';
+    document.getElementById('couponType').value = coupon ? coupon.discount_type : 'percentage';
+    document.getElementById('couponValue').value = coupon ? coupon.discount_value : '';
+    document.getElementById('couponMinPurchase').value = coupon ? (coupon.minimum_purchase || 0) : 0;
+    document.getElementById('couponMaxDiscount').value = coupon ? (coupon.maximum_discount || '') : '';
+    document.getElementById('couponUsageLimit').value = coupon ? (coupon.usage_limit || '') : '';
+    document.getElementById('couponExpiresAt').value = coupon && coupon.expires_at ? coupon.expires_at.slice(0, 16) : '';
+    document.getElementById('couponActive').checked = coupon ? coupon.is_active : true;
+    document.getElementById('couponModal').classList.add('open');
+  }
+
+  function closeCouponModal() {
+    document.getElementById('couponModal').classList.remove('open');
+  }
+
+  document.getElementById('couponForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('couponId').value;
+    const payload = {
+      code: document.getElementById('couponCode').value.trim().toUpperCase(),
+      discount_type: document.getElementById('couponType').value,
+      discount_value: parseFloat(document.getElementById('couponValue').value),
+      minimum_purchase: parseFloat(document.getElementById('couponMinPurchase').value) || 0,
+      maximum_discount: document.getElementById('couponMaxDiscount').value ? parseFloat(document.getElementById('couponMaxDiscount').value) : null,
+      usage_limit: document.getElementById('couponUsageLimit').value ? parseInt(document.getElementById('couponUsageLimit').value) : null,
+      expires_at: document.getElementById('couponExpiresAt').value || null,
+      is_active: document.getElementById('couponActive').checked,
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/coupons/${id}` : '/api/admin/manage/coupons';
+
+    fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Coupon saved!');
+        closeCouponModal();
+        loadCoupons();
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+
+  async function editCoupon(id) {
+    const res = await fetch('/api/admin/manage/coupons', {
+      headers: {'Authorization': 'Bearer ' + token}
+    });
+    const d = await res.json();
+    const coupons = d.data?.coupons || [];
+    const coupon = coupons.find(c => c.id === id);
+    if (coupon) openCouponModal(coupon);
+  }
+
+  function deleteCoupon(id) {
+    if (!confirm('Delete this coupon?')) return;
+    fetch('/api/admin/manage/coupons/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadCoupons(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCoupons);
+</script>
+{% endblock %}

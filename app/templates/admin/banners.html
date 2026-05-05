@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Banners | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .thumb { width: 120px; height: 50px; object-fit: cover; border-radius: 2px; }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}" class="active">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Banners</h1>
+    <a href="{{ url_for('frontend.admin_banner_new') }}" class="btn btn-primary">+ Add Banner</a>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Image</th><th>Title</th><th>Position</th><th>Active</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="bannersTableBody">
+        <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading banners…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadBanners() {
+    fetch('/api/admin/manage/banners', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('bannersTableBody');
+      if (d.success && d.data && d.data.banners) {
+        const banners = d.data.banners;
+        tbody.innerHTML = banners.length ? banners.map(b => `
+          <tr>
+            <td><img src="${b.image_url || 'https://via.placeholder.com/120x50/f5f5f0/6b4c3b?text=No+Image'}" class="thumb" alt=""></td>
+            <td><strong>${b.title || '—'}</strong></td>
+            <td>${b.position || '—'}</td>
+            <td><span style="color:${b.is_active ? '#27ae60' : '#c0392b'};">${b.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="/admin/banners/${b.id}/edit" class="action-link">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteBanner('${b.id}')">Delete</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;">No banners yet.</td></tr>';
+      }
+    });
+  }
+
+  function deleteBanner(id) {
+    if (!confirm('Delete this banner?')) return;
+    fetch('/api/admin/manage/banners/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadBanners(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadBanners);
+</script>
+{% endblock %}

@@ -1,122 +1,189 @@
 {% extends "base.html" %}
-{% block title %}Manage Orders | Fred Vunjabei{% endblock %}
+{% block title %}Orders | Fred Vunjabei Admin{% endblock %}
 {% block head %}
 <style>
-  .admin-orders-page {
-    padding: 6rem 5% 4rem;
-    min-height: 100vh;
-    background: var(--cream);
-  }
-  .admin-header {
-    margin-bottom: 2.5rem;
-  }
-  .admin-header h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2.2rem;
-    font-weight: 300;
-    letter-spacing: 2px;
-    color: var(--brown);
-  }
-  .orders-table {
-    width: 100%;
-    background: var(--white);
-    border: 1px solid var(--parchment);
-    border-collapse: collapse;
-  }
-  .orders-table th {
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    padding: 1.2rem 1.5rem;
-    text-align: left;
-    border-bottom: 1px solid var(--parchment);
-    font-weight: 600;
-  }
-  .orders-table td {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.04);
-    font-size: 0.85rem;
-    color: var(--brown);
-  }
-  .status-badge {
-    display: inline-block;
-    padding: 0.3rem 1rem;
-    font-size: 0.6rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border: 1px solid;
-  }
-  .status-pending { color: #b8933a; border-color: #b8933a; }
-  .status-paid { color: #2e7d32; border-color: #2e7d32; }
-  .status-shipped { color: #1565c0; border-color: #1565c0; }
-  .status-delivered { color: #1a0f00; border-color: #1a0f00; }
-  .status-cancelled { color: #c0392b; border-color: #c0392b; }
-  @media (max-width: 768px) {
-    .orders-table {
-      display: block;
-      overflow-x: auto;
-    }
-  }
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-sm { padding: 0.4rem 1rem; font-size: 0.6rem; }
+  .toolbar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .search-input { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; width: 260px; background: var(--white); color: var(--brown); outline: none; }
+  .search-input:focus { border-color: var(--gold); }
+  .filter-select { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; background: var(--white); color: var(--brown); outline: none; }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .status-badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; }
+  .status-pending { background: rgba(230,126,34,0.1); color: #e67e22; }
+  .status-paid { background: rgba(39,174,96,0.1); color: #27ae60; }
+  .status-processing { background: rgba(41,128,185,0.1); color: #2980b9; }
+  .status-shipped { background: rgba(142,68,173,0.1); color: #8e44ad; }
+  .status-delivered { background: rgba(39,174,96,0.1); color: #27ae60; }
+  .status-cancelled { background: rgba(192,57,43,0.1); color: #c0392b; }
+  .status-refunded { background: rgba(0,0,0,0.05); color: var(--brown-lt); }
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-top: 1px solid var(--parchment); font-size: 0.75rem; }
+  .pag-btn { background: var(--off-white); border: 1px solid var(--parchment); padding: 0.3rem 0.7rem; border-radius: 4px; font-size: 0.7rem; color: var(--brown-lt); cursor: pointer; }
+  .pag-btn.active { background: var(--gold); color: var(--brown); border-color: var(--gold); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .order-detail-btn { background: none; border: none; font-size: 0.7rem; color: var(--gold); cursor: pointer; text-decoration: underline; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-orders-page">
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}" class="active">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
   <div class="admin-header">
     <h1>Orders</h1>
   </div>
-  <table class="orders-table">
-    <thead>
-      <tr>
-        <th>Order #</th>
-        <th>Customer</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="ordersTableBody">
-      <tr>
-        <td colspan="5" style="text-align:center; padding:3rem;">Loading orders…</td>
-      </tr>
-    </tbody>
-  </table>
+
+  <div class="toolbar">
+    <input type="text" class="search-input" placeholder="Order #, email, name…" oninput="loadOrders(1, this.value)">
+    <select class="filter-select" id="orderStatusFilter" onchange="loadOrders(1, null, this.value)">
+      <option value="">All statuses</option>
+      <option>pending</option><option>paid</option><option>processing</option>
+      <option>shipped</option><option>delivered</option><option>cancelled</option><option>refunded</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="ordersTableBody">
+        <tr><td colspan="6" style="text-align:center;padding:2rem;">Loading orders…</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span id="ordersInfo"></span>
+      <div id="ordersPag"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Order detail modal (simple) -->
+<div class="modal-backdrop" id="orderModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+  <div style="background:var(--white); border:1px solid var(--parchment); max-width:700px; width:90%; max-height:80vh; overflow-y:auto; padding:2rem; border-radius:8px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+      <h2 style="font-family:'Cormorant Garamond',serif; font-weight:300;">Order Detail</h2>
+      <button onclick="document.getElementById('orderModal').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--brown-lt);">&times;</button>
+    </div>
+    <div id="orderDetailContent"></div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  function formatPrice(amount) {
-    if (amount == null) return '0 TZS';
-    var num = parseFloat(amount);
-    if (isNaN(num)) return '0 TZS';
-    return 'TZS ' + num.toLocaleString();
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  let currentPage = 1;
+  let currentQuery = '';
+  let currentStatus = '';
+
+  function loadOrders(page, q, status) {
+    if (page) currentPage = page;
+    if (q !== undefined) currentQuery = q;
+    if (status !== undefined) currentStatus = status;
+
+    const params = new URLSearchParams({
+      page: currentPage,
+      per_page: 20,
+      q: currentQuery,
+      status: currentStatus,
+    });
+
+    fetch('/api/admin/manage/orders?' + params, {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('ordersTableBody');
+      if (d.success && d.data && d.data.orders) {
+        const orders = d.data.orders;
+        tbody.innerHTML = orders.length ? orders.map(o => {
+          const statusClass = `status-${o.status || 'pending'}`;
+          return `<tr>
+            <td style="font-family:monospace;font-size:0.8rem;">${o.order_number}</td>
+            <td>${o.customer_name || 'Guest'}<br><span style="font-size:0.7rem;color:var(--brown-lt);">${o.customer_email || ''}</span></td>
+            <td>TZS ${parseFloat(o.total||0).toLocaleString()}</td>
+            <td><span class="status-badge ${statusClass}">${o.status || 'pending'}</span></td>
+            <td>${new Date(o.created_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</td>
+            <td><button class="order-detail-btn" onclick="viewOrder('${o.id}')">View</button></td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="6" style="text-align:center;">No orders found.</td></tr>';
+
+        const pg = d.data.pagination;
+        document.getElementById('ordersInfo').textContent = `${pg.total} total`;
+        const pagDiv = document.getElementById('ordersPag');
+        if (pg.pages > 1) {
+          let html = '';
+          if (pg.has_prev) html += `<button class="pag-btn" onclick="loadOrders(${pg.page-1})">‹</button>`;
+          for (let i = 1; i <= pg.pages; i++) {
+            html += `<button class="pag-btn ${i === pg.page ? 'active' : ''}" onclick="loadOrders(${i})">${i}</button>`;
+          }
+          if (pg.has_next) html += `<button class="pag-btn" onclick="loadOrders(${pg.page+1})">›</button>`;
+          pagDiv.innerHTML = html;
+        } else {
+          pagDiv.innerHTML = '';
+        }
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No orders found.</td></tr>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;">Failed to load.</td></tr>';
+    });
   }
 
-  fetch('/api/orders?per_page=50', {
-    headers: {'Authorization': 'Bearer ' + (localStorage.getItem('admin_token')||'')}
-  })
-  .then(r => r.json())
-  .then(d => {
-    var tbody = document.getElementById('ordersTableBody');
-    if (d.success && d.data && d.data.length) {
-      tbody.innerHTML = d.data.map(function(order) {
-        var statusClass = 'status-' + (order.status || 'pending');
-        return '<tr>' +
-          '<td>' + (order.order_number || '—') + '</td>' +
-          '<td>' + (order.customer_name || '—') + '</td>' +
-          '<td>' + formatPrice(order.total) + '</td>' +
-          '<td><span class="status-badge ' + statusClass + '">' + (order.status || 'pending') + '</span></td>' +
-          '<td>' + (order.created_at ? new Date(order.created_at).toLocaleDateString() : '') + '</td>' +
-        '</tr>';
-      }).join('');
-    } else {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem;">No orders found.</td></tr>';
-    }
-  })
-  .catch(() => {
-    document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center; padding:3rem;">Could not load orders.</td></tr>';
-  });
+  function viewOrder(orderId) {
+    fetch('/api/admin/manage/orders/' + orderId, {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.data) {
+        const o = d.data;
+        let itemsHtml = '';
+        if (o.items && o.items.length) {
+          itemsHtml = '<table style="width:100%; margin-top:1rem;"><thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead><tbody>' +
+            o.items.map(i => `<tr><td>${i.product_name}${i.size ? ' ('+i.size+')' : ''}</td><td>${i.quantity}</td><td>TZS ${parseFloat(i.line_total||0).toLocaleString()}</td></tr>`).join('') +
+            '</tbody></table>';
+        }
+        const ship = o.shipping_address || {};
+        document.getElementById('orderDetailContent').innerHTML = `
+          <p><strong>Order:</strong> ${o.order_number}</p>
+          <p><strong>Customer:</strong> ${o.customer_name || 'Guest'} (${o.customer_email || ''})</p>
+          <p><strong>Status:</strong> ${o.status}</p>
+          <p><strong>Total:</strong> TZS ${parseFloat(o.total||0).toLocaleString()}</p>
+          <p><strong>Shipping Address:</strong> ${ship.street || ''}, ${ship.city || ''}, ${ship.country || ''}</p>
+          ${itemsHtml}
+        `;
+        document.getElementById('orderModal').style.display = 'flex';
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => loadOrders(1));
 </script>
 {% endblock %}

@@ -1,152 +1,111 @@
-"""
-Media service — image & video upload / deletion via Cloudinary.
-Supports compression, transformation, CDN delivery.
-"""
 import os
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+import uuid
 from flask import current_app
+from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "mov", "avi", "webm"}
+MAX_IMAGE_BYTES = 10 * 1024 * 1024      
+MAX_VIDEO_BYTES = 200 * 1024 * 1024     #
 
-def _init_cloudinary():
-    cloudinary.config(
-        cloud_name=current_app.config["CLOUDINARY_CLOUD_NAME"],
-        api_key=current_app.config["CLOUDINARY_API_KEY"],
-        api_secret=current_app.config["CLOUDINARY_API_SECRET"],
-        secure=True,
-    )
+
+def _local_upload_dir(subfolder=""):
+    """Return the absolute path to the local upload directory."""
+    base = os.path.join(current_app.root_path, "static", "uploads")
+    if subfolder:
+        base = os.path.join(base, subfolder)
+    os.makedirs(base, exist_ok=True)
+    return base
+
+
+def _save_file(file_obj, subfolder, is_image=True):
+
+    ext = secure_filename(file_obj.filename).rsplit(".", 1)[-1].lower()
+    if is_image and ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError(f"Invalid image extension .{ext}")
+    if not is_image and ext not in ALLOWED_VIDEO_EXTENSIONS:
+        raise ValueError(f"Invalid video extension .{ext}")
+
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    folder = _local_upload_dir(subfolder)
+    filepath = os.path.join(folder, filename)
+    file_obj.seek(0)
+    file_obj.save(filepath)
+
+    rel_path = os.path.join("uploads", subfolder, filename).replace("\\", "/")
+    url = f"/static/{rel_path}"
+
+    thumbnail_url = url
+    if is_image:
+        try:
+            thumb_dir = _local_upload_dir(os.path.join(subfolder, "thumbnails"))
+            thumb_path = os.path.join(thumb_dir, filename)
+            img = Image.open(filepath)
+            img.thumbnail((400, 500))
+            img.save(thumb_path, format="WEBP" if ext == "webp" else img.format)
+            thumbnail_url = f"/static/uploads/{subfolder}/thumbnails/{filename}"
+        except Exception:
+            pass  # thumbnail generation failed – use original
+
+    return {
+        "url": url,
+        "thumbnail_url": thumbnail_url,
+        "public_id": filename,          # used for deletion
+    }
 
 
 
 def upload_product_image(file_obj, product_id: str, is_primary: bool = False) -> dict:
-    """
-    Upload a product image to Cloudinary.
-    Returns {"url", "thumbnail_url", "public_id"}.
-    """
-    _init_cloudinary()
-
-    folder = f"fashion/products/{product_id}"
-    result = cloudinary.uploader.upload(
-        file_obj,
-        folder=folder,
-        transformation=[
-            {"width": 1200, "height": 1500, "crop": "limit", "quality": "auto:good"},
-        ],
-        format="webp",
-        overwrite=False,
-        resource_type="image",
-    )
-
-    # Generate a thumbnail URL via Cloudinary transformations
-    thumbnail_url = cloudinary.CloudinaryImage(result["public_id"]).build_url(
-        width=400, height=500, crop="fill", quality="auto", format="webp"
-    )
-
-    return {
-        "url": result["secure_url"],
-        "thumbnail_url": thumbnail_url,
-        "public_id": result["public_id"],
-    }
+    return _save_file(file_obj, f"products/{product_id}")
 
 
 def upload_banner_image(file_obj, position: str = "homepage") -> dict:
-    _init_cloudinary()
-    folder = f"fashion/banners/{position}"
-    result = cloudinary.uploader.upload(
-        file_obj,
-        folder=folder,
-        transformation=[{"width": 1920, "height": 800, "crop": "limit", "quality": "auto:good"}],
-        format="webp",
-    )
-    mobile_url = cloudinary.CloudinaryImage(result["public_id"]).build_url(
-        width=768, height=500, crop="fill", quality="auto", format="webp"
-    )
-    return {
-        "url": result["secure_url"],
-        "mobile_url": mobile_url,
-        "public_id": result["public_id"],
-    }
+    return _save_file(file_obj, f"banners/{position}")
 
 
 def upload_brand_logo(file_obj, brand_name: str) -> dict:
-    _init_cloudinary()
-    result = cloudinary.uploader.upload(
-        file_obj,
-        folder="fashion/brands",
-        transformation=[{"width": 300, "height": 150, "crop": "limit", "quality": "auto"}],
-        format="webp",
-    )
-    return {"url": result["secure_url"], "public_id": result["public_id"]}
+    return _save_file(file_obj, "brands")
 
 
 def upload_blog_cover(file_obj, post_slug: str) -> dict:
-    _init_cloudinary()
-    result = cloudinary.uploader.upload(
-        file_obj,
-        folder=f"fashion/blog",
-        public_id=post_slug,
-        transformation=[{"width": 1200, "height": 630, "crop": "fill", "quality": "auto"}],
-        format="webp",
-        overwrite=True,
-    )
-    return {"url": result["secure_url"], "public_id": result["public_id"]}
-
+    return _save_file(file_obj, f"blog/{post_slug}")
 
 
 def upload_product_video(file_obj, product_id: str) -> dict:
-    _init_cloudinary()
-    folder = f"fashion/products/{product_id}/videos"
-    result = cloudinary.uploader.upload(
-        file_obj,
-        folder=folder,
-        resource_type="video",
-        transformation=[{"quality": "auto", "width": 1280, "crop": "limit"}],
-    )
-    # Generate a video thumbnail
-    thumbnail_url = cloudinary.CloudinaryImage(result["public_id"]).build_url(
-        resource_type="video", format="jpg", transformation=[
-            {"width": 640, "height": 360, "crop": "fill"}
-        ]
-    )
-    return {
-        "url": result["secure_url"],
-        "thumbnail_url": thumbnail_url,
-        "public_id": result["public_id"],
-        "duration_seconds": int(result.get("duration", 0)),
-    }
-
+    result = _save_file(file_obj, f"products/{product_id}/videos", is_image=False)
+    # Thumbnail not generated for videos – keep URL as placeholder
+    result["duration_seconds"] = 0
+    return result
 
 
 def delete_media(public_id: str, resource_type: str = "image") -> bool:
-    _init_cloudinary()
+    """Delete a file by its public_id (filename)."""
     try:
-        result = cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-        return result.get("result") == "ok"
+        
+        base = os.path.join(current_app.root_path, "static", "uploads")
+        for root, dirs, files in os.walk(base):
+            if public_id in files:
+                os.remove(os.path.join(root, public_id))
+                return True
+        return False
     except Exception:
         return False
 
 
-
 def delete_product_all_media(product_id: str):
-    _init_cloudinary()
+    """Remove the entire product media folder."""
+    folder = os.path.join(current_app.root_path, "static", "uploads", "products", product_id)
     try:
-        cloudinary.api.delete_resources_by_prefix(f"fashion/products/{product_id}")
+        import shutil
+        shutil.rmtree(folder, ignore_errors=True)
     except Exception:
         pass
 
 
 
-ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-ALLOWED_VIDEO_MIME = {"video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"}
-MAX_IMAGE_BYTES = 10 * 1024 * 1024    # 10MB
-MAX_VIDEO_BYTES = 200 * 1024 * 1024   # 200MB
-
-
 def validate_image(file_obj) -> tuple[bool, str]:
-    """Returns (is_valid, error_message)."""
     if not file_obj:
         return False, "No file provided"
     file_obj.seek(0, 2)

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Products | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-sm { padding: 0.4rem 1rem; font-size: 0.6rem; }
+  .toolbar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .search-input { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; width: 260px; background: var(--white); color: var(--brown); outline: none; }
+  .search-input:focus { border-color: var(--gold); }
+  .filter-select { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; background: var(--white); color: var(--brown); outline: none; }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .product-thumb { width: 50px; height: 65px; object-fit: cover; background: var(--off-white); }
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-top: 1px solid var(--parchment); font-size: 0.75rem; }
+  .pag-btn { background: var(--off-white); border: 1px solid var(--parchment); padding: 0.3rem 0.7rem; border-radius: 4px; font-size: 0.7rem; color: var(--brown-lt); cursor: pointer; }
+  .pag-btn.active { background: var(--gold); color: var(--brown); border-color: var(--gold); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}" class="active">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Products</h1>
+    <a href="#" class="btn btn-primary">+ Add Product</a>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" class="search-input" placeholder="Search products…" oninput="loadProducts(1, this.value)">
+    <select class="filter-select" onchange="loadProducts(1, null, this.value)">
+      <option value="">All categories</option>
+    </select>
+    <select class="filter-select" onchange="loadProducts(1, null, null, this.value)">
+      <option value="">All status</option>
+      <option value="true">Active</option>
+      <option value="false">Inactive</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Image</th><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="productsTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;">Loading products…</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <span id="productsInfo"></span>
+      <div id="productsPag"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  let currentPage = 1;
+  let currentQuery = '';
+  let currentCategory = '';
+  let currentActive = '';
+
+  function loadProducts(page, q, cat, active) {
+    if (page) currentPage = page;
+    if (q !== undefined) currentQuery = q;
+    if (cat !== undefined) currentCategory = cat;
+    if (active !== undefined) currentActive = active;
+
+    const params = new URLSearchParams({
+      page: currentPage,
+      per_page: 20,
+      q: currentQuery,
+      category_id: currentCategory,
+      active: currentActive
+    });
+
+    fetch('/api/admin/manage/products?' + params, {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('productsTableBody');
+      if (d.success && d.data && d.data.products) {
+        const prods = d.data.products;
+        tbody.innerHTML = prods.length ? prods.map(p => `
+          <tr>
+            <td><img src="${p.primary_image || 'https://via.placeholder.com/50x65/f5f5f0/6b4c3b?text=No+Img'}" class="product-thumb" alt=""></td>
+            <td><strong>${p.name}</strong></td>
+            <td style="font-family:monospace;font-size:0.75rem;">${p.sku || '—'}</td>
+            <td>TZS ${parseFloat(p.base_price||0).toLocaleString()}</td>
+            <td>${p.total_stock != null ? p.total_stock : '—'}</td>
+            <td><span style="color:${p.is_active ? '#27ae60' : '#c0392b'};">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="/products/${p.slug}" class="btn btn-ghost btn-sm">View</a>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>';
+
+        // Pagination
+        const pg = d.data.pagination;
+        document.getElementById('productsInfo').textContent = `${pg.total} total`;
+        const pagDiv = document.getElementById('productsPag');
+        if (pg.pages > 1) {
+          let html = '';
+          if (pg.has_prev) html += `<button class="pag-btn" onclick="loadProducts(${pg.page-1})">‹</button>`;
+          for (let i = 1; i <= pg.pages; i++) {
+            html += `<button class="pag-btn ${i === pg.page ? 'active' : ''}" onclick="loadProducts(${i})">${i}</button>`;
+          }
+          if (pg.has_next) html += `<button class="pag-btn" onclick="loadProducts(${pg.page+1})">›</button>`;
+          pagDiv.innerHTML = html;
+        } else {
+          pagDiv.innerHTML = '';
+        }
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('productsTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;">Failed to load.</td></tr>';
+    });
+  }
+
+  // Load categories for filter dropdown
+  fetch('/api/admin/manage/categories', {
+    headers: {'Authorization': 'Bearer ' + token}
+  })
+  .then(r => r.json())
+  .then(d => {
+    const sel = document.querySelector('.filter-select');
+    if (d.success && d.data) {
+      d.data.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => loadProducts(1));
+</script>
+{% endblock %}

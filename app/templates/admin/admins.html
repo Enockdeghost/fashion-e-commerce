@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Admin Users | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-danger { background: rgba(192,57,43,0.1); color: #c0392b; border-color: transparent; }
+  .btn-danger:hover { background: rgba(192,57,43,0.2); }
+  .card { background: var(--white); border: 1px solid var(--parchment); }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
+  .action-link.delete { color: #c0392b; }
+  .avatar-initials { width: 36px; height: 36px; border-radius: 50%; background: var(--gold-dim); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: var(--gold); flex-shrink: 0; }
+  .admin-user-cell { display: flex; align-items: center; gap: 0.75rem; }
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 520px; width: 90%; }
+  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group select { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+  .password-hint { font-size: 0.68rem; color: var(--brown-lt); margin-top: -0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <div class="sidebar">
+    <a href="{{ url_for('frontend.admin_products') }}">Products</a>
+    <a href="{{ url_for('frontend.admin_orders') }}">Orders</a>
+    <a href="{{ url_for('frontend.admin_categories') }}">Categories</a>
+    <a href="{{ url_for('frontend.admin_brands') }}">Brands</a>
+    <a href="{{ url_for('frontend.admin_coupons') }}">Coupons</a>
+    <a href="{{ url_for('frontend.admin_banners') }}">Banners</a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}">Blog</a>
+    <a href="{{ url_for('frontend.admin_admins') }}" class="active">Admin Users</a>
+  </div>
+
+  <div class="admin-header">
+    <h1>Admin Users</h1>
+    <button class="btn btn-primary" onclick="openAdminModal()">+ Add Admin</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Admin</th><th>Email</th><th>Role</th><th>Last Login</th><th>Active</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="adminsTableBody">
+        <tr><td colspan="6" style="text-align:center;padding:2rem;">Loading admin users…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-backdrop" id="adminModal">
+  <div class="modal">
+    <h2 id="adminModalTitle">New Admin User</h2>
+    <form id="adminForm">
+      <input type="hidden" id="adminId">
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input type="text" id="adminFirstName"></div>
+        <div class="form-group"><label>Last Name</label><input type="text" id="adminLastName"></div>
+      </div>
+      <div class="form-group"><label>Email *</label><input type="email" id="adminEmail" required></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role *</label>
+          <select id="adminRole" required>
+            <option value="staff">Staff</option>
+            <option value="manager">Manager</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="adminPassword" placeholder="Min 10 characters">
+          <div class="password-hint">Must include uppercase, lowercase, number, and special character.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="adminActive" checked> Active
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeAdminModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Admin</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function loadAdmins() {
+    fetch('/api/admin/manage/admins', {headers: {'Authorization': 'Bearer ' + token}})
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('adminsTableBody');
+      if (d.success && d.data) {
+        const admins = Array.isArray(d.data) ? d.data : [];
+        tbody.innerHTML = admins.length ? admins.map(a => {
+          const initials = ((a.first_name||'') + ' ' + (a.last_name||'')).trim().split(' ').map(n => n[0]||'').join('').toUpperCase() || '?';
+          const roleBadge = a.role === 'super_admin' ? 'color:var(--gold);font-weight:500;' : '';
+          return `<tr>
+            <td>
+              <div class="admin-user-cell">
+                <div class="avatar-initials">${initials}</div>
+                <div>
+                  <div style="font-weight:500;">${a.first_name||''} ${a.last_name||''}</div>
+                </div>
+              </div>
+            </td>
+            <td>${a.email}</td>
+            <td><span style="${roleBadge}text-transform:capitalize;">${(a.role||'').replace('_',' ')}</span></td>
+            <td>${a.last_login ? new Date(a.last_login).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Never'}</td>
+            <td><span style="color:${a.is_active ? '#27ae60' : '#c0392b'};">${a.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+              <a href="#" class="action-link" onclick="editAdmin('${a.id}')">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteAdmin('${a.id}','${a.email}')">Delete</a>
+            </td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="6" style="text-align:center;">No admin users yet.</td></tr>';
+      }
+    });
+  }
+
+  function openAdminModal(admin) {
+    document.getElementById('adminModalTitle').textContent = admin ? 'Edit Admin' : 'New Admin';
+    document.getElementById('adminId').value = admin ? admin.id : '';
+    document.getElementById('adminFirstName').value = admin ? (admin.first_name || '') : '';
+    document.getElementById('adminLastName').value = admin ? (admin.last_name || '') : '';
+    document.getElementById('adminEmail').value = admin ? (admin.email || '') : '';
+    document.getElementById('adminRole').value = admin ? (admin.role || 'staff') : 'staff';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('adminPassword').required = !admin;
+    document.getElementById('adminActive').checked = admin ? admin.is_active : true;
+    document.getElementById('adminModal').classList.add('open');
+  }
+
+  function closeAdminModal() {
+    document.getElementById('adminModal').classList.remove('open');
+  }
+
+  document.getElementById('adminForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('adminId').value;
+    const password = document.getElementById('adminPassword').value;
+    const payload = {
+      first_name: document.getElementById('adminFirstName').value.trim(),
+      last_name: document.getElementById('adminLastName').value.trim(),
+      email: document.getElementById('adminEmail').value.trim(),
+      role: document.getElementById('adminRole').value,
+      is_active: document.getElementById('adminActive').checked,
+    };
+    if (password) payload.password = password;
+    if (!id && !password) {
+      alert('Password is required for new admins.');
+      return;
+    }
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/admin/manage/admins/${id}` : '/api/admin/manage/admins';
+
+    fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        alert('Admin saved!');
+        closeAdminModal();
+        loadAdmins();
+      } else {
+        alert(d.error || 'Save failed');
+      }
+    });
+  });
+
+  async function editAdmin(id) {
+    const res = await fetch('/api/admin/manage/admins', {headers: {'Authorization': 'Bearer ' + token}});
+    const d = await res.json();
+    const admins = Array.isArray(d.data) ? d.data : [];
+    const admin = admins.find(a => a.id === id);
+    if (admin) openAdminModal(admin);
+  }
+
+  function deleteAdmin(id, email) {
+    if (!confirm(`Delete admin "${email}"? They will lose all access.`)) return;
+    fetch('/api/admin/manage/admins/' + id, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) { alert('Deleted.'); loadAdmins(); }
+      else alert(d.error || 'Delete failed');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAdmins);
+</script>
+{% endblock %}
