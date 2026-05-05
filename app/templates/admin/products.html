@@ -101,7 +101,7 @@
       active: currentActive
     });
 
-    fetch('/api/admin/manage/products?' + params, {
+    fetch('/api/products?' + params, {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())
@@ -148,7 +148,7 @@
   }
 
   // Load categories for filter dropdown
-  fetch('/api/admin/manage/categories', {
+  fetch('/api/categories', {
     headers: {'Authorization': 'Bearer ' + token}
   })
   .then(r => r.json())

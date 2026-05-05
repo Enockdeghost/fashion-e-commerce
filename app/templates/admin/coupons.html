@@ -126,7 +126,7 @@
   if (!token) { window.location.href = '/admin'; }
 
   function loadCoupons() {
-    fetch('/api/admin/manage/coupons', {
+    fetch('/api/coupons', {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())
@@ -184,7 +184,7 @@
       is_active: document.getElementById('couponActive').checked,
     };
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/admin/manage/coupons/${id}` : '/api/admin/manage/coupons';
+    const url = id ? `/api/coupons/${id}` : '/api/coupons';
 
     fetch(url, {
       method,
@@ -204,7 +204,7 @@
   });
 
   async function editCoupon(id) {
-    const res = await fetch('/api/admin/manage/coupons', {
+    const res = await fetch('/api/coupons', {
       headers: {'Authorization': 'Bearer ' + token}
     });
     const d = await res.json();
@@ -215,7 +215,7 @@
 
   function deleteCoupon(id) {
     if (!confirm('Delete this coupon?')) return;
-    fetch('/api/admin/manage/coupons/' + id, {
+    fetch('/api/coupons/' + id, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer ' + token}
     })

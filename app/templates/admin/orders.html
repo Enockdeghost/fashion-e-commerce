@@ -113,7 +113,7 @@
       status: currentStatus,
     });
 
-    fetch('/api/admin/manage/orders?' + params, {
+    fetch('/api/orders?' + params, {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())
@@ -157,7 +157,7 @@
   }
 
   function viewOrder(orderId) {
-    fetch('/api/admin/manage/orders/' + orderId, {
+    fetch('/api/orders/' + orderId, {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())

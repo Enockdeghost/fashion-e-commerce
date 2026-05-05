@@ -122,7 +122,7 @@
 
   // ──────── PAGES ────────
   function loadPages() {
-    fetch('/api/admin/manage/pages', {headers:{'Authorization':'Bearer '+token}})
+    fetch('/api/pages', {headers:{'Authorization':'Bearer '+token}})
     .then(r=>r.json()).then(d=>{
       const tbody=document.getElementById('pagesTableBody');
       const pages = d.data ? (Array.isArray(d.data) ? d.data : []) : [];
@@ -154,12 +154,12 @@
     const id = document.getElementById('pageId').value;
     const payload = { slug:document.getElementById('pageSlug').value.trim(), title:document.getElementById('pageTitle').value.trim(), content:document.getElementById('pageContent').value, is_published:document.getElementById('pagePublished').checked };
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/admin/manage/pages/${id}` : '/api/admin/manage/pages';
+    const url = id ? `/api/pages/${id}` : '/api/pages';
     fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload)})
     .then(r=>r.json()).then(d=>{ if(d.success){ alert('Page saved!'); closePageModal(); loadPages(); } else alert(d.error||'Save failed'); });
   });
   async function editPage(id) {
-    const res = await fetch('/api/admin/manage/pages', {headers:{'Authorization':'Bearer '+token}});
+    const res = await fetch('/api/pages', {headers:{'Authorization':'Bearer '+token}});
     const d = await res.json();
     const pages = d.data ? (Array.isArray(d.data)?d.data:[]) : [];
     const page = pages.find(p=>p.id===id);
@@ -167,13 +167,13 @@
   }
   function deletePage(id) {
     if(!confirm('Delete this page?')) return;
-    fetch('/api/admin/manage/pages/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
+    fetch('/api/pages/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
     .then(r=>r.json()).then(d=>{ if(d.success){ alert('Deleted.'); loadPages(); } else alert(d.error||'Delete failed'); });
   }
 
   // ──────── FAQS ────────
   function loadFAQs() {
-    fetch('/api/admin/manage/faqs', {headers:{'Authorization':'Bearer '+token}})
+    fetch('/api/faqs', {headers:{'Authorization':'Bearer '+token}})
     .then(r=>r.json()).then(d=>{
       const tbody=document.getElementById('faqsTableBody');
       const faqs = d.data ? (Array.isArray(d.data) ? d.data : (d.data.faqs||[])) : [];
@@ -206,12 +206,12 @@
     const id = document.getElementById('faqId').value;
     const payload = { question:document.getElementById('faqQuestion').value.trim(), answer:document.getElementById('faqAnswer').value.trim(), category:document.getElementById('faqCategory').value.trim()||'general', sort_order:parseInt(document.getElementById('faqSort').value)||0, is_active:document.getElementById('faqActive').checked };
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/admin/manage/faqs/${id}` : '/api/admin/manage/faqs';
+    const url = id ? `/api/faqs/${id}` : '/api/faqs';
     fetch(url, {method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(payload)})
     .then(r=>r.json()).then(d=>{ if(d.success){ alert('FAQ saved!'); closeFAQModal(); loadFAQs(); } else alert(d.error||'Save failed'); });
   });
   async function editFAQ(id) {
-    const res = await fetch('/api/admin/manage/faqs', {headers:{'Authorization':'Bearer '+token}});
+    const res = await fetch('/api/faqs', {headers:{'Authorization':'Bearer '+token}});
     const d = await res.json();
     const faqs = d.data ? (Array.isArray(d.data)?d.data:(d.data.faqs||[])) : [];
     const faq = faqs.find(f=>f.id===id);
@@ -219,7 +219,7 @@
   }
   function deleteFAQ(id) {
     if(!confirm('Delete this FAQ?')) return;
-    fetch('/api/admin/manage/faqs/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
+    fetch('/api/faqs/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}})
     .then(r=>r.json()).then(d=>{ if(d.success){ alert('Deleted.'); loadFAQs(); } else alert(d.error||'Delete failed'); });
   }
 

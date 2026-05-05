@@ -1,154 +1,176 @@
 {% extends "base.html" %}
-{% block title %}{% if product %}Edit{% else %}New{% endif %} Product | Fred Vunjabei{% endblock %}
+{% block title %}{% if product %}Edit{% else %}New{% endif %} Product | Fred Vunjabei Admin{% endblock %}
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .form-card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 800px; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
+  .btn { padding: 0.8rem 2rem; border: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="padding:6rem 5% 4rem; max-width:800px; margin:0 auto;">
-  <h1 style="font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.2rem;">
-    {% if product %}Edit Product{% else %}Add New Product{% endif %}
-  </h1>
+<div class="admin-page">
+  <a href="{{ url_for('frontend.admin_products') }}" class="back-link">← Back to Products</a>
+  <div class="admin-header">
+    <h1>{% if product %}Edit Product{% else %}Add New Product{% endif %}</h1>
+  </div>
 
-  <form id="productForm" style="display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem;">
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Name</label>
-      <input name="name" value="{{ product.name if product else '' }}" required
-             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-      <div>
-        <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Price (TZS)</label>
-        <input name="base_price" type="number" step="0.01" value="{{ product.base_price if product else '' }}" required
-               style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
+  <div class="form-card">
+    <form id="productForm">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="name" value="{{ product.name if product else '' }}" required>
       </div>
-      <div>
-        <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Compare at Price</label>
-        <input name="compare_price" type="number" step="0.01" value="{{ product.compare_price if product else '' }}"
-               style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-      </div>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-      <div>
-        <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Category</label>
-        <select id="categorySelect" name="category_id" required
-                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-          <option value="">— Select —</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Brand</label>
-        <select id="brandSelect" name="brand_id"
-                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-          <option value="">— None —</option>
-        </select>
-      </div>
-    </div>
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Description</label>
-      <textarea name="description" rows="4"
-                style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">{{ product.description if product else '' }}</textarea>
-    </div>
-    <div>
-      <label style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">Meta Title (SEO)</label>
-      <input name="meta_title" value="{{ product.meta_title if product else '' }}"
-             style="width:100%;padding:0.9rem;border:1px solid var(--parchment);font-size:0.9rem;">
-    </div>
 
-    <button type="submit" class="btn-lv" style="align-self:flex-start;">
-      <span>{% if product %}Update Product{% else %}Create Product{% endif %}</span>
-    </button>
-  </form>
-  <div id="formMessage" style="margin-top:2rem;"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (TZS) *</label>
+          <input type="number" id="base_price" step="0.01" value="{{ product.base_price if product else '' }}" required>
+        </div>
+        <div class="form-group">
+          <label>Compare at Price</label>
+          <input type="number" id="compare_price" step="0.01" value="{{ product.compare_price if product else '' }}">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="category_id">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Brand</label>
+          <select id="brand_id">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" rows="4">{{ product.description if product else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Primary Image URL</label>
+        <input type="url" id="primary_image" placeholder="https://…" value="{{ product.primary_image or '' }}">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="is_active" {% if product and product.is_active %}checked{% endif %}> Active
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="is_featured" {% if product and product.is_featured %}checked{% endif %}> Featured
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="is_new_arrival" {% if product and product.is_new_arrival %}checked{% endif %}> New Arrival
+          </label>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">
+          {% if product %}Update Product{% else %}Create Product{% endif %}
+        </button>
+        <a href="{{ url_for('frontend.admin_products') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Load categories and brands for dropdowns
-  fetch('/api/categories').then(r => r.json()).then(d => {
-    const sel = document.getElementById('categorySelect');
-    if (d.data) {
-      d.data.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; sel.appendChild(o); });
-    }
-    {% if product and product.category_id %}
-      sel.value = '{{ product.category_id }}';
-    {% endif %}
-  });
-  fetch('/api/brands').then(r => r.json()).then(d => {
-    const sel = document.getElementById('brandSelect');
-    if (d.data) {
-      d.data.forEach(b => { const o = document.createElement('option'); o.value = b.id; o.textContent = b.name; sel.appendChild(o); });
-    }
-    {% if product and product.brand_id %}
-      sel.value = '{{ product.brand_id }}';
-    {% endif %}
-  });
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
 
+  // Load categories and brands for dropdowns
+  fetch('/api/categories', {headers: {'Authorization': 'Bearer ' + token}})
+    .then(r => r.json())
+    .then(d => {
+      const sel = document.getElementById('category_id');
+      if (d.data) {
+        d.data.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id; o.textContent = c.name;
+          sel.appendChild(o);
+        });
+      }
+      {% if product and product.category_id %}
+        sel.value = '{{ product.category_id }}';
+      {% endif %}
+    });
+
+  fetch('/api/brands', {headers: {'Authorization': 'Bearer ' + token}})
+    .then(r => r.json())
+    .then(d => {
+      const sel = document.getElementById('brand_id');
+      if (d.data) {
+        d.data.forEach(b => {
+          const o = document.createElement('option');
+          o.value = b.id; o.textContent = b.name;
+          sel.appendChild(o);
+        });
+      }
+      {% if product and product.brand_id %}
+        sel.value = '{{ product.brand_id }}';
+      {% endif %}
+    });
+
+  // Handle form submission
   document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const formData = new FormData(this);
-    const payload = Object.fromEntries(formData);
-    payload.base_price = parseFloat(payload.base_price);
-    if (payload.compare_price) payload.compare_price = parseFloat(payload.compare_price);
+    const payload = {
+      name: document.getElementById('name').value.trim(),
+      base_price: parseFloat(document.getElementById('base_price').value),
+      compare_price: document.getElementById('compare_price').value ? parseFloat(document.getElementById('compare_price').value) : null,
+      category_id: document.getElementById('category_id').value || null,
+      brand_id: document.getElementById('brand_id').value || null,
+      description: document.getElementById('description').value.trim(),
+      primary_image: document.getElementById('primary_image').value.trim(),
+      is_active: document.getElementById('is_active').checked,
+      is_featured: document.getElementById('is_featured').checked,
+      is_new_arrival: document.getElementById('is_new_arrival').checked,
+    };
 
-    const token = localStorage.getItem('admin_token');
     const method = '{{ 'PUT' if product else 'POST' }}';
     const url = '{{ '/api/products/' + product.id if product else '/api/products' }}';
 
     fetch(url, {
-      method: method,
+      method,
       headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
     .then(d => {
-      const msg = document.getElementById('formMessage');
       if (d.success) {
-        alert('Product saved. Redirecting...', 'success');
+        alert('Product saved!');
         window.location.href = '/admin/products';
       } else {
-        alert(d.error || 'Error saving product', 'error');
+        alert(d.error || 'Save failed');
       }
     });
   });
-    document.getElementById('uploadImageBtn').addEventListener('click', function() {
-  const fileInput = document.getElementById('imageFile');
-  const file = fileInput.files[0];
-  if (!file) {
-    alert('Please select an image file.', 'error');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('image', file);
-  const token = localStorage.getItem('admin_token');
-  const productId = '{{ product.id if product else '' }}';
-
-  if (!productId) {
-    alert('Save the product first, then upload images.', 'info');
-    return;
-  }
-
-  fetch('/api/products/' + productId + '/images', {
-    method: 'POST',
-    headers: {'Authorization': 'Bearer ' + token},
-    body: formData
-  })
-  .then(r => r.json())
-  .then(d => {
-    if (d.success) {
-      const img = document.createElement('img');
-      img.src = d.data.url;
-      img.style.width = '100px';
-      img.style.height = '100px';
-      img.style.objectFit = 'cover';
-      img.style.border = '1px solid var(--parchment)';
-      document.getElementById('imagePreview').appendChild(img);
-      fileInput.value = '';
-      alert('Image uploaded.', 'success');
-    } else {
-      alert(d.error || 'Upload failed', 'error');
-    }
-  });
-});
-  
 </script>
 {% endblock %}
-
-

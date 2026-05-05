@@ -141,7 +141,7 @@
     if (file) formData.append('file', file);
 
     const method = '{{ "PUT" if post else "POST" }}';
-    const url = '{{ "/api/admin/manage/blog/" + post.id if post else "/api/admin/manage/blog" }}';
+    const url = '{{ "/api/blog/" + post.id if post else "/api/blog" }}';
 
     fetch(url, {
       method,

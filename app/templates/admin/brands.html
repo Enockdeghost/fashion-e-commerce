@@ -100,7 +100,7 @@
   if (!token) { window.location.href = '/admin'; }
 
   function loadBrands() {
-    fetch('/api/admin/manage/brands', {
+    fetch('/api/brands', {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())
@@ -148,7 +148,7 @@
       is_active: document.getElementById('brandActive').checked,
     };
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/admin/manage/brands/${id}` : '/api/admin/manage/brands';
+    const url = id ? `/api/brands/${id}` : '/api/brands';
 
     fetch(url, {
       method,
@@ -168,7 +168,7 @@
   });
 
   async function editBrand(id) {
-    const res = await fetch('/api/admin/manage/brands', {
+    const res = await fetch('/api/brands', {
       headers: {'Authorization': 'Bearer ' + token}
     });
     const d = await res.json();
@@ -179,7 +179,7 @@
 
   function deleteBrand(id) {
     if (!confirm('Delete this brand?')) return;
-    fetch('/api/admin/manage/brands/' + id, {
+    fetch('/api/brands/' + id, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer ' + token}
     })

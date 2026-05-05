@@ -115,7 +115,7 @@
   if (!token) { window.location.href = '/admin'; }
 
   function loadAdmins() {
-    fetch('/api/admin/manage/admins', {headers: {'Authorization': 'Bearer ' + token}})
+    fetch('/api/admins', {headers: {'Authorization': 'Bearer ' + token}})
     .then(r => r.json())
     .then(d => {
       const tbody = document.getElementById('adminsTableBody');
@@ -181,7 +181,7 @@
       return;
     }
     const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/admin/manage/admins/${id}` : '/api/admin/manage/admins';
+    const url = id ? `/api/admins/${id}` : '/api/admins';
 
     fetch(url, {
       method,
@@ -201,7 +201,7 @@
   });
 
   async function editAdmin(id) {
-    const res = await fetch('/api/admin/manage/admins', {headers: {'Authorization': 'Bearer ' + token}});
+    const res = await fetch('/api/admins', {headers: {'Authorization': 'Bearer ' + token}});
     const d = await res.json();
     const admins = Array.isArray(d.data) ? d.data : [];
     const admin = admins.find(a => a.id === id);
@@ -210,7 +210,7 @@
 
   function deleteAdmin(id, email) {
     if (!confirm(`Delete admin "${email}"? They will lose all access.`)) return;
-    fetch('/api/admin/manage/admins/' + id, {
+    fetch('/api/admins/' + id, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer ' + token}
     })

@@ -61,7 +61,7 @@
   if (!token) { window.location.href = '/admin'; }
 
   function loadBanners() {
-    fetch('/api/admin/manage/banners', {
+    fetch('/api/banners', {
       headers: {'Authorization': 'Bearer ' + token}
     })
     .then(r => r.json())
@@ -87,7 +87,7 @@
 
   function deleteBanner(id) {
     if (!confirm('Delete this banner?')) return;
-    fetch('/api/admin/manage/banners/' + id, {
+    fetch('/api/banners/' + id, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer ' + token}
     })

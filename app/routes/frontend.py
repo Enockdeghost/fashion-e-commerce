@@ -202,3 +202,13 @@ def admin_pages():
 @frontend_bp.route('/admin/admins')
 def admin_admins():
     return render_template('admin/admins.html', now=_now())
+
+
+# @frontend_bp.route('/admin/products/new')
+# def admin_product_new():
+#     return render_template('admin/product_form.html', product=None, now=_now())
+
+# @frontend_bp.route('/admin/products/<product_id>/edit')
+# def admin_product_edit(product_id):
+#     product = Product.query.get_or_404(product_id)
+#     return render_template('admin/product_form.html', product=product, now=_now())
