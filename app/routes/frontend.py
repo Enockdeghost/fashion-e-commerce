@@ -161,3 +161,16 @@ def admin_brand_new():
 def admin_brand_edit(brand_id):
     brand = Brand.query.get_or_404(brand_id)
     return render_template('admin/brand_form.html', brand=brand, now=_now())
+
+@frontend_bp.route('/admin/banners')
+def admin_banners():
+    return render_template('admin/banners.html', now=_now())
+
+@frontend_bp.route('/admin/banners/new')
+def admin_banner_new():
+    return render_template('admin/banner_form.html', banner=None, now=_now())
+
+@frontend_bp.route('/admin/banners/<banner_id>/edit')
+def admin_banner_edit(banner_id):
+    banner = Banner.query.get_or_404(banner_id)
+    return render_template('admin/banner_form.html', banner=banner, now=_now())

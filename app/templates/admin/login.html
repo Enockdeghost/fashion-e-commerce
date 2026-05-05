@@ -73,8 +73,8 @@
 <script>
   function handleAdminLogin(e) {
     e.preventDefault();
-    var email = document.getElementById('email').value.trim();
-    var password = document.getElementById('password').value;
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
     fetch('/api/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
