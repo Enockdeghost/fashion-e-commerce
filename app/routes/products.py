@@ -90,9 +90,13 @@ def get_product(product_id):
     return ok(product.to_dict(full=True))
 
 
-@products_bp.route("", methods=["POST"])
+@products_bp.route("", methods=["POST", "OPTIONS"])
 @admin_required
 def create_product():
+    # Handle CORS preflight
+    if request.method == "OPTIONS":
+        return ok({})
+
     # Accept both multipart/form-data and JSON
     file = request.files.get('file') if request.files else None
     data = request.form if request.files else (request.get_json(force=True) or {})
