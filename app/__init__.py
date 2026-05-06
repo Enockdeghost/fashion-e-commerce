@@ -23,14 +23,58 @@ def create_app(config_name: str = None) -> Flask:
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
 
-    # Register all blueprints (frontend pages, admin, etc.)
+    # ═══════════════════════════════════════════════
+    #  PUBLIC DIRECT ROUTES (must come first)
+    # ═══════════════════════════════════════════════
+    @app.route('/api/categories', methods=['GET'])
+    def direct_list_categories():
+        from app.models import Category
+        cats = Category.query.filter_by(is_active=True, parent_id=None).all()
+        return ok([c.to_dict() for c in cats])
+
+    @app.route('/api/brands', methods=['GET'])
+    def direct_list_brands():
+        from app.models import Brand
+        brands = Brand.query.filter_by(is_active=True).all()
+        return ok([b.to_dict() for b in brands])
+
+    @app.route('/api/products', methods=['GET'])
+    def direct_list_products():
+        from app.models import Product, Category, Brand
+        from app.utils.security import validate_pagination
+        from sqlalchemy import or_
+        page, per_page = validate_pagination(request.args)
+        q = Product.query.filter_by(is_deleted=False, is_active=True)
+
+        if cat := request.args.get("category"):
+            q = q.join(Category).filter(or_(Category.id == cat, Category.slug == cat))
+        if brand := request.args.get("brand"):
+            q = q.join(Brand).filter(or_(Brand.id == brand, Brand.slug == brand))
+        if search := request.args.get("q"):
+            like = f"%{search}%"
+            q = q.filter(or_(Product.name.ilike(like), Product.description.ilike(like)))
+
+        sort_key = request.args.get("sort", "newest")
+        sort_map = {
+            "newest": Product.created_at.desc(),
+            "price_asc": Product.base_price.asc(),
+            "price_desc": Product.base_price.desc(),
+        }
+        q = q.order_by(sort_map.get(sort_key, Product.created_at.desc()))
+
+        paginated = q.paginate(page=page, per_page=per_page, error_out=False)
+        return ok({
+            "products": [p.to_dict() for p in paginated.items],
+            "pagination": {
+                "page": page, "per_page": per_page,
+                "total": paginated.total, "pages": paginated.pages,
+            },
+        })
+
+    # Now register all blueprints (their routes won't interfere with the above)
     register_blueprints(app)
 
-    # ───────────────────────────────────────────────────
-    #  DIRECT ROUTES – guaranteed to work, no conflicts
-    # ───────────────────────────────────────────────────
-
-    # ── Customer Auth ─────────────────────────────────
+    # ── Direct customer auth routes ──
     @app.route("/api/auth/register", methods=["POST", "OPTIONS"])
     def direct_auth_register():
         if request.method == "OPTIONS":
@@ -79,7 +123,7 @@ def create_app(config_name: str = None) -> Flask:
         refresh_token = create_refresh_token(identity=user.id)
         return ok({"user": user.to_dict(), "access_token": access_token, "refresh_token": refresh_token}, "Login successful")
 
-    # ── Product creation (file upload + URL) ──────────
+    # ── Direct product creation route ──
     UPLOAD_PRODUCT_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'products')
     os.makedirs(UPLOAD_PRODUCT_FOLDER, exist_ok=True)
 
@@ -88,7 +132,6 @@ def create_app(config_name: str = None) -> Flask:
         if request.method == 'OPTIONS':
             return ok({})
 
-        # Authenticate admin (for product creation)
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return err("Unauthorised", 401)
@@ -164,9 +207,9 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok(product.to_dict(full=True), "Product created", 201)
 
-    # ── Cart – GET ────────────────────────────────────
-    @app.route('/api/cart/', methods=['GET', 'OPTIONS'])
+    # ── Direct cart routes ──
     @app.route('/api/cart', methods=['GET', 'OPTIONS'])
+    @app.route('/api/cart/', methods=['GET', 'OPTIONS'])
     def direct_get_cart():
         if request.method == 'OPTIONS':
             return ok({})
@@ -179,7 +222,6 @@ def create_app(config_name: str = None) -> Flask:
             return ok({"cart": None})
         return ok({"cart": cart.to_dict(), "token": token})
 
-    # ── Cart – ADD ────────────────────────────────────
     @app.route('/api/cart/add', methods=['POST', 'OPTIONS'])
     def direct_cart_add():
         if request.method == 'OPTIONS':
@@ -201,7 +243,6 @@ def create_app(config_name: str = None) -> Flask:
         if variant_id:
             variant = ProductVariant.query.get(variant_id)
 
-        # get or create cart
         cart = Cart.query.filter_by(session_token=token).first()
         if not cart:
             from datetime import datetime, timezone, timedelta
@@ -210,7 +251,6 @@ def create_app(config_name: str = None) -> Flask:
             db.session.add(cart)
             db.session.flush()
 
-        # upsert item
         existing = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id, variant_id=variant_id).first()
         if existing:
             existing.quantity += quantity
@@ -222,51 +262,7 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({"cart": cart.to_dict(), "token": token}, "Item added")
 
-    # ── Cart – UPDATE (quantity) ──────────────────────
-    @app.route('/api/cart/update/', methods=['PATCH', 'POST', 'OPTIONS'])
-    @app.route('/api/cart/update', methods=['PATCH', 'POST', 'OPTIONS'])
-    def direct_cart_update():
-        if request.method == 'OPTIONS':
-            return ok({})
-        data = request.get_json(force=True)
-        token = data.get('token') or request.headers.get('X-Cart-Token')
-        item_id = data.get('item_id')
-        quantity = int(data.get('quantity', 1))
-
-        from app.models import CartItem, Cart
-        item = CartItem.query.get(item_id)
-        if not item:
-            return err("Cart item not found")
-        if quantity <= 0:
-            # remove item
-            cart_id = item.cart_id
-            db.session.delete(item)
-            db.session.commit()
-            cart = Cart.query.get(cart_id)
-            return ok({"cart": cart.to_dict() if cart else None, "token": token})
-        else:
-            item.quantity = quantity
-            db.session.commit()
-            cart = Cart.query.get(item.cart_id)
-            return ok({"cart": cart.to_dict() if cart else None, "token": token})
-
-    # ── Cart – REMOVE item ────────────────────────────
-    @app.route('/api/cart/remove/<item_id>/', methods=['DELETE', 'OPTIONS'])
-    @app.route('/api/cart/remove/<item_id>', methods=['DELETE', 'OPTIONS'])
-    def direct_cart_remove(item_id):
-        if request.method == 'OPTIONS':
-            return ok({})
-        from app.models import CartItem, Cart
-        item = CartItem.query.get(item_id)
-        if item:
-            cart_id = item.cart_id
-            db.session.delete(item)
-            db.session.commit()
-            cart = Cart.query.get(cart_id)
-            return ok({"cart": cart.to_dict() if cart else None})
-        return err("Item not found", 404)
-
-    # ── Wishlist – GET ────────────────────────────────
+    # ── Direct wishlist routes ──
     @app.route('/api/wishlist', methods=['GET', 'OPTIONS'])
     def direct_get_wishlist():
         if request.method == 'OPTIONS':
@@ -302,7 +298,20 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({"wishlist": entry.to_dict(), "token": token}, "Added to wishlist")
 
-    # ── Jinja currency filter ─────────────────────────
+    @app.route('/api/wishlist/<item_id>', methods=['DELETE', 'OPTIONS'])
+    @app.route('/api/wishlist/<item_id>/', methods=['DELETE', 'OPTIONS'])
+    def direct_wishlist_remove(item_id):
+        if request.method == 'OPTIONS':
+            return ok({})
+        from app.models import Wishlist
+        entry = Wishlist.query.get(item_id)
+        if not entry:
+            return err("Wishlist item not found", 404)
+        db.session.delete(entry)
+        db.session.commit()
+        return ok({}, "Removed from wishlist")
+
+    # ── Jinja currency filter ──
     def format_currency(value, currency=None):
         if value is None:
             return ""
