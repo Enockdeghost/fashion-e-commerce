@@ -23,9 +23,7 @@ def create_app(config_name: str = None) -> Flask:
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
 
-    # ═══════════════════════════════════════════════
-    #  PUBLIC DIRECT ROUTES (must come first)
-    # ═══════════════════════════════════════════════
+
     @app.route('/api/categories', methods=['GET'])
     def direct_list_categories():
         from app.models import Category
@@ -71,7 +69,7 @@ def create_app(config_name: str = None) -> Flask:
             },
         })
 
-    # Now register all blueprints (their routes won't interfere with the above)
+    # Now register all blueprints
     register_blueprints(app)
 
     # ── Direct customer auth routes ──
@@ -261,6 +259,21 @@ def create_app(config_name: str = None) -> Flask:
             db.session.add(item)
         db.session.commit()
         return ok({"cart": cart.to_dict(), "token": token}, "Item added")
+
+    @app.route('/api/cart/remove/<item_id>/', methods=['DELETE', 'OPTIONS'])
+    @app.route('/api/cart/remove/<item_id>', methods=['DELETE', 'OPTIONS'])
+    def direct_cart_remove(item_id):
+        if request.method == 'OPTIONS':
+            return ok({})
+        from app.models import CartItem, Cart
+        item = CartItem.query.get(item_id)
+        if item:
+            cart_id = item.cart_id
+            db.session.delete(item)
+            db.session.commit()
+            cart = Cart.query.get(cart_id)
+            return ok({"cart": cart.to_dict() if cart else None})
+        return err("Item not found", 404)
 
     # ── Direct wishlist routes ──
     @app.route('/api/wishlist', methods=['GET', 'OPTIONS'])
