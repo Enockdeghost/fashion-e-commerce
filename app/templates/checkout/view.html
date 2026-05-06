@@ -1,194 +1,360 @@
 {% extends "base.html" %}
 {% block title %}Checkout | Fred Vunjabei{% endblock %}
-{% block head %}
-<style>
-  .checkout-wrapper {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 8rem 5% 6rem;
-  }
-  .checkout-wrapper .back-link {
-    display: inline-block;
-    font-size: 0.6rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--brown-lt);
-    margin-bottom: 2rem;
-    border-bottom: 1px solid transparent;
-    transition: color 0.3s, border-color 0.3s;
-  }
-  .checkout-wrapper .back-link:hover {
-    color: var(--gold);
-    border-color: var(--gold);
-  }
-  .checkout-form {
-    background: var(--white);
-    padding: 3.5rem 3rem;
-    border: 1px solid var(--parchment);
-  }
-  .checkout-form h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2.4rem;
-    font-weight: 300;
-    letter-spacing: 2px;
-    color: var(--brown);
-    margin-bottom: 0.5rem;
-  }
-  .checkout-form .subtitle {
-    font-size: 0.7rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--brown-lt);
-    margin-bottom: 2.5rem;
-  }
-  .form-group {
-    margin-bottom: 1.8rem;
-  }
-  .form-group label {
-    display: block;
-    font-size: 0.6rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.6rem;
-    font-weight: 600;
-  }
-  .form-group input {
-    width: 100%;
-    padding: 0.9rem 0;
-    font-size: 0.9rem;
-    border: none;
-    border-bottom: 1px solid var(--parchment);
-    background: transparent;
-    color: var(--brown);
-    font-family: 'Montserrat', sans-serif;
-    outline: none;
-    transition: border-color 0.3s;
-  }
-  .form-group input:focus {
-    border-bottom-color: var(--gold);
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-  }
-  .checkout-btn {
-    width: 100%;
-    padding: 1.2rem;
-    background: var(--brown);
-    color: var(--cream);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.3s;
-    margin-top: 1rem;
-  }
-  .checkout-btn:hover {
-    background: var(--gold);
-    color: var(--brown);
-    transform: translateY(-2px);
-  }
-  .success-message {
-    text-align: center;
-    padding: 3rem 0;
-    display: none;
-  }
-  .success-message p {
-    font-size: 0.9rem;
-    color: var(--gold);
-    margin-bottom: 0.5rem;
-  }
-  .success-message .order-number {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.5rem;
-    color: var(--brown);
-  }
-  @media (max-width: 768px) {
-    .checkout-form {
-      padding: 2rem 1.5rem;
-    }
-    .form-row {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-{% endblock %}
 
 {% block content %}
-<div class="checkout-wrapper">
-  <a href="{{ url_for('frontend.cart') }}" class="back-link">← Back to Bag</a>
-  
-  <form class="checkout-form" id="checkoutForm">
-    <h1>Complete Your Order</h1>
-    <p class="subtitle">A private, secure checkout</p>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" name="customer_name" placeholder="Your full name" required>
-      </div>
-      <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" name="customer_email" placeholder="you@example.com" required>
-      </div>
-    </div>
+<div id="fv-toast" aria-live="polite" aria-atomic="true"></div>
 
-    <div class="form-group">
-      <label>Tigo Pesa Number</label>
-      <input type="tel" name="phone_number" placeholder="07XXXXXXXX" required>
-      <span style="font-size:0.6rem; color:var(--brown-lt); margin-top:0.4rem; display:block;">You will be prompted to confirm on your phone.</span>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Street Address</label>
-        <input type="text" name="shipping_street" placeholder="House number, street" required>
-      </div>
-      <div class="form-group">
-        <label>City</label>
-        <input type="text" name="shipping_city" placeholder="Dar es Salaam" required>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Region</label>
-        <input type="text" name="shipping_region" placeholder="Dar es Salaam">
-      </div>
-      <div class="form-group">
-        <label>Country</label>
-        <input type="text" name="shipping_country" value="Tanzania" readonly style="color:var(--brown-lt); cursor:not-allowed;">
-      </div>
-    </div>
-
-    <button type="submit" class="checkout-btn">Pay with Tigo Pesa</button>
-  </form>
-
-  <div class="success-message" id="checkoutMessage">
-    <p id="messageText"></p>
-    <div class="order-number" id="orderNumber"></div>
-    <p style="font-size:0.8rem; margin-top:1rem; color:var(--brown-lt);">Please check your phone to complete the payment.</p>
+<section class="co-hero">
+  <div class="co-hero__back">
+    <a href="/cart" class="co-back-link">← Back to Bag</a>
   </div>
-</div>
+  <div class="co-hero__inner">
+    <div class="co-eyebrow">Finalise Your Order</div>
+    <h1 class="co-title">Checkout</h1>
+    <div class="co-meta">Complete your purchase securely</div>
+  </div>
+  <div class="co-hero__line"></div>
+</section>
+
+<section class="co-section">
+  <div class="co-layout">
+
+    <!-- LEFT: checkout form -->
+    <div class="co-form-col">
+      <form id="checkoutForm" class="co-form" autocomplete="on">
+        <div class="co-field">
+          <label class="co-label" for="customer_name">Full Name</label>
+          <input type="text" id="customer_name" name="customer_name" class="co-input" placeholder="Your full name" required>
+        </div>
+        <div class="co-field">
+          <label class="co-label" for="customer_email">Email Address</label>
+          <input type="email" id="customer_email" name="customer_email" class="co-input" placeholder="you@example.com" required>
+        </div>
+        <div class="co-field">
+          <label class="co-label" for="phone_number">Tigo Pesa Number</label>
+          <input type="tel" id="phone_number" name="phone_number" class="co-input" placeholder="07XXXXXXXX" required>
+          <span class="co-hint">You will be prompted to confirm on your phone.</span>
+        </div>
+        <div class="co-field">
+          <label class="co-label" for="shipping_street">Street Address</label>
+          <input type="text" id="shipping_street" name="shipping_street" class="co-input" placeholder="House number, street" required>
+        </div>
+        <div class="co-field co-field--half">
+          <label class="co-label" for="shipping_city">City</label>
+          <input type="text" id="shipping_city" name="shipping_city" class="co-input" placeholder="Dar es Salaam" required>
+        </div>
+        <div class="co-field co-field--half">
+          <label class="co-label" for="shipping_region">Region</label>
+          <input type="text" id="shipping_region" name="shipping_region" class="co-input" placeholder="Dar es Salaam">
+        </div>
+        <div class="co-field">
+          <label class="co-label" for="shipping_country">Country</label>
+          <input type="text" id="shipping_country" name="shipping_country" class="co-input" value="Tanzania" readonly>
+        </div>
+
+        <button type="submit" class="co-submit-btn" id="coSubmitBtn">
+          <span>Pay with Tigo Pesa</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </form>
+
+      <!-- SUCCESS STATE -->
+      <div class="co-success" id="coSuccess" hidden>
+        <div class="co-success__icon">✓</div>
+        <h2 class="co-success__title">Order Initiated</h2>
+        <p class="co-success__msg" id="coSuccessMsg"></p>
+        <p class="co-success__sub">Please check your phone to complete the payment.</p>
+      </div>
+
+      <!-- ERROR STATE -->
+      <div class="co-error" id="coError" hidden>
+        <p class="co-error__msg" id="coErrorMsg">Something went wrong. Please try again.</p>
+        <button class="co-btn co-btn--outline" onclick="resetForm()">Try Again</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: order summary (minimal) -->
+    <aside class="co-summary">
+      <div class="co-summary__inner">
+        <h2 class="co-summary__title">Order Summary</h2>
+        <p class="co-summary__text">Your items will be calculated at checkout.</p>
+        <div class="co-summary__divider"></div>
+        <div class="co-summary__line">
+          <span>Shipping</span>
+          <span>Free over TZS 500</span>
+        </div>
+        <div class="co-summary__line">
+          <span>Returns</span>
+          <span>Free within 30 days</span>
+        </div>
+        <a href="/cart" class="co-back-link" style="display:block;margin-top:1.5rem;">← Back to Bag</a>
+      </div>
+    </aside>
+
+  </div>
+</section>
+
 {% endblock %}
 
+
 {% block scripts %}
+<style>
+:root {
+  --gold:       #c9a96e;
+  --gold-lt:    #e8d5b0;
+  --ink:        #0d0d0d;
+  --cream:      #f8f4ef;
+  --parchment:  #ede8e2;
+  --muted:      #888;
+  --ease-lux:   cubic-bezier(.25,.46,.45,.94);
+  --trans:      0.38s var(--ease-lux);
+}
+
+#fv-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+.fv-toast__item {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1.4rem;
+  border-left: 3px solid var(--gold);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: toastIn 0.35s var(--ease-lux) forwards,
+             toastOut 0.35s var(--ease-lux) 2.8s forwards;
+  pointer-events: auto;
+}
+.fv-toast__item--error { border-color: #c0392b; }
+@keyframes toastIn  { to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { to { opacity:0; transform:translateY(-8px); } }
+
+.co-hero {
+  padding: 8rem 5% 3rem;
+}
+.co-hero__back { margin-bottom: 1.8rem; }
+.co-back-link {
+  font-size: 0.62rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--trans);
+}
+.co-back-link:hover { color: var(--gold); }
+.co-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.8rem;
+}
+.co-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 0.8rem;
+}
+.co-meta {
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.co-hero__line {
+  width: 60px; height: 1px;
+  background: var(--gold);
+  margin-top: 2rem;
+  opacity: 0.5;
+}
+
+.co-section { padding: 2rem 5% 7rem; }
+.co-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 3rem;
+  align-items: start;
+}
+@media(max-width:900px) {
+  .co-layout { grid-template-columns: 1fr; }
+}
+
+.co-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 600px;
+}
+.co-field {}
+.co-field--half {
+  width: 48%;
+  display: inline-block;
+}
+.co-label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+.co-input {
+  width: 100%;
+  padding: 0.9rem 0;
+  font-size: 0.9rem;
+  border: none;
+  border-bottom: 1px solid var(--parchment);
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--trans);
+}
+.co-input:focus { border-bottom-color: var(--gold); }
+.co-input[readonly] { color: var(--muted); cursor: not-allowed; }
+.co-hint {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+
+.co-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.2rem 2rem;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: background var(--trans), color var(--trans);
+  margin-top: 1rem;
+}
+.co-submit-btn:hover { background: transparent; color: var(--ink); }
+.co-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.co-success, .co-error {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+.co-success__icon {
+  font-size: 2.6rem;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+.co-success__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.8rem;
+}
+.co-success__msg { font-size: 0.9rem; margin-bottom: 0.6rem; }
+.co-success__sub { font-size: 0.8rem; color: var(--muted); }
+.co-error__msg { color: var(--muted); margin-bottom: 1.5rem; }
+
+.co-summary {
+  position: sticky;
+  top: 6rem;
+}
+.co-summary__inner {
+  background: var(--cream);
+  padding: 2.2rem 2rem;
+  border: 1px solid var(--parchment);
+}
+.co-summary__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--ink);
+  margin: 0 0 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--parchment);
+}
+.co-summary__text { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+.co-summary__divider { height: 1px; background: var(--parchment); margin: 1rem 0; }
+.co-summary__line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.7rem;
+  color: var(--ink);
+}
+.co-btn {
+  display: inline-block;
+  padding: 0.85rem 2.2rem;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--trans);
+  border: 1px solid;
+}
+.co-btn--outline { color:var(--ink); border-color:var(--ink); background: none; }
+.co-btn--outline:hover { background:var(--ink); color:#fff; }
+</style>
+
 <script>
+(function() {
+  'use strict';
+
+  function toast(msg, isError) {
+    var wrap = document.getElementById('fv-toast');
+    var el = document.createElement('div');
+    el.className = 'fv-toast__item' + (isError ? ' fv-toast__item--error' : '');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(function() { wrap.removeChild(el); }, 3400);
+  }
+
   document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     e.preventDefault();
     var form = this;
-    var formData = new FormData(form);
-    var payload = Object.fromEntries(formData);
-    var token = localStorage.getItem('cart_token');
-    if (!token) {
-      alert('Your cart is empty or expired.');
+    var submitBtn = document.getElementById('coSubmitBtn');
+
+    var cartToken = localStorage.getItem('cart_token');
+    if (!cartToken) {
+      toast('Your cart is empty or expired. Please add items first.', true);
       return;
     }
-    payload.cart_token = token;
+
+    var payload = {
+      cart_token: cartToken,
+      customer_name: document.getElementById('customer_name').value.trim(),
+      customer_email: document.getElementById('customer_email').value.trim(),
+      phone_number: document.getElementById('phone_number').value.trim(),
+      shipping_street: document.getElementById('shipping_street').value.trim(),
+      shipping_city: document.getElementById('shipping_city').value.trim(),
+      shipping_region: document.getElementById('shipping_region').value.trim(),
+      shipping_country: document.getElementById('shipping_country').value.trim(),
+    };
+
+    // Basic validation
+    if (!payload.customer_name || !payload.customer_email || !payload.phone_number || !payload.shipping_street || !payload.shipping_city) {
+      toast('Please fill in all required fields.', true);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span>Processing…</span>';
 
     fetch('/api/checkout', {
       method: 'POST',
@@ -198,17 +364,30 @@
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.success) {
-        document.getElementById('checkoutMessage').style.display = 'block';
-        document.getElementById('messageText').textContent = d.data.message;
-        document.getElementById('orderNumber').textContent = 'Order: ' + d.data.order_number;
-        form.style.display = 'none';
+        document.getElementById('coSuccess').removeAttribute('hidden');
+        document.getElementById('coSuccessMsg').textContent = d.data.message || 'Order placed successfully.';
+        form.setAttribute('hidden', '');
       } else {
-        alert(d.error || 'Payment could not be initiated. Please try again.');
+        document.getElementById('coError').removeAttribute('hidden');
+        document.getElementById('coErrorMsg').textContent = d.error || 'Payment initiation failed.';
+        form.setAttribute('hidden', '');
       }
     })
     .catch(function() {
-      alert('An error occurred. Please try again.');
+      toast('Network error. Please try again.', true);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Pay with Tigo Pesa</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
     });
   });
+
+  window.resetForm = function() {
+    document.getElementById('coError').setAttribute('hidden', '');
+    document.getElementById('coSuccess').setAttribute('hidden', '');
+    document.getElementById('checkoutForm').removeAttribute('hidden');
+    var submitBtn = document.getElementById('coSubmitBtn');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<span>Pay with Tigo Pesa</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  };
+})();
 </script>
 {% endblock %}

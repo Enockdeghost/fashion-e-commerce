@@ -23,9 +23,14 @@ def create_app(config_name: str = None) -> Flask:
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
 
+    # Register all blueprints (frontend pages, admin, etc.)
     register_blueprints(app)
 
-    # ── Direct customer auth routes (bypass any blueprint conflicts) ──
+    # ───────────────────────────────────────────────────
+    #  DIRECT ROUTES – guaranteed to work, no conflicts
+    # ───────────────────────────────────────────────────
+
+    # ── Customer Auth ─────────────────────────────────
     @app.route("/api/auth/register", methods=["POST", "OPTIONS"])
     def direct_auth_register():
         if request.method == "OPTIONS":
@@ -74,6 +79,7 @@ def create_app(config_name: str = None) -> Flask:
         refresh_token = create_refresh_token(identity=user.id)
         return ok({"user": user.to_dict(), "access_token": access_token, "refresh_token": refresh_token}, "Login successful")
 
+    # ── Product creation (file upload + URL) ──────────
     UPLOAD_PRODUCT_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'products')
     os.makedirs(UPLOAD_PRODUCT_FOLDER, exist_ok=True)
 
@@ -82,7 +88,7 @@ def create_app(config_name: str = None) -> Flask:
         if request.method == 'OPTIONS':
             return ok({})
 
-        # Authenticate admin
+        # Authenticate admin (for product creation)
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return err("Unauthorised", 401)
@@ -158,7 +164,145 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok(product.to_dict(full=True), "Product created", 201)
 
-    # ── Jinja currency filter ──
+    # ── Cart – GET ────────────────────────────────────
+    @app.route('/api/cart/', methods=['GET', 'OPTIONS'])
+    @app.route('/api/cart', methods=['GET', 'OPTIONS'])
+    def direct_get_cart():
+        if request.method == 'OPTIONS':
+            return ok({})
+        token = request.headers.get('X-Cart-Token')
+        if not token:
+            return ok({"cart": None})
+        from app.models import Cart
+        cart = Cart.query.filter_by(session_token=token).first()
+        if not cart:
+            return ok({"cart": None})
+        return ok({"cart": cart.to_dict(), "token": token})
+
+    # ── Cart – ADD ────────────────────────────────────
+    @app.route('/api/cart/add', methods=['POST', 'OPTIONS'])
+    def direct_cart_add():
+        if request.method == 'OPTIONS':
+            return ok({})
+        data = request.get_json(force=True)
+        token = data.get('token') or request.headers.get('X-Cart-Token')
+        if not token:
+            return err("Cart token required")
+        product_id = data.get('product_id')
+        variant_id = data.get('variant_id')
+        quantity = int(data.get('quantity', 1))
+
+        from app.models import Product, ProductVariant, Cart, CartItem
+        product = Product.query.get(product_id)
+        if not product:
+            return err("Product not found")
+
+        variant = None
+        if variant_id:
+            variant = ProductVariant.query.get(variant_id)
+
+        # get or create cart
+        cart = Cart.query.filter_by(session_token=token).first()
+        if not cart:
+            from datetime import datetime, timezone, timedelta
+            expiry = datetime.now(timezone.utc) + timedelta(hours=72)
+            cart = Cart(session_token=token, expires_at=expiry)
+            db.session.add(cart)
+            db.session.flush()
+
+        # upsert item
+        existing = CartItem.query.filter_by(cart_id=cart.id, product_id=product.id, variant_id=variant_id).first()
+        if existing:
+            existing.quantity += quantity
+        else:
+            price = float(variant.price) if variant and variant.price else float(product.base_price)
+            item = CartItem(cart_id=cart.id, product_id=product.id, variant_id=variant_id,
+                            quantity=quantity, unit_price=price)
+            db.session.add(item)
+        db.session.commit()
+        return ok({"cart": cart.to_dict(), "token": token}, "Item added")
+
+    # ── Cart – UPDATE (quantity) ──────────────────────
+    @app.route('/api/cart/update/', methods=['PATCH', 'POST', 'OPTIONS'])
+    @app.route('/api/cart/update', methods=['PATCH', 'POST', 'OPTIONS'])
+    def direct_cart_update():
+        if request.method == 'OPTIONS':
+            return ok({})
+        data = request.get_json(force=True)
+        token = data.get('token') or request.headers.get('X-Cart-Token')
+        item_id = data.get('item_id')
+        quantity = int(data.get('quantity', 1))
+
+        from app.models import CartItem, Cart
+        item = CartItem.query.get(item_id)
+        if not item:
+            return err("Cart item not found")
+        if quantity <= 0:
+            # remove item
+            cart_id = item.cart_id
+            db.session.delete(item)
+            db.session.commit()
+            cart = Cart.query.get(cart_id)
+            return ok({"cart": cart.to_dict() if cart else None, "token": token})
+        else:
+            item.quantity = quantity
+            db.session.commit()
+            cart = Cart.query.get(item.cart_id)
+            return ok({"cart": cart.to_dict() if cart else None, "token": token})
+
+    # ── Cart – REMOVE item ────────────────────────────
+    @app.route('/api/cart/remove/<item_id>/', methods=['DELETE', 'OPTIONS'])
+    @app.route('/api/cart/remove/<item_id>', methods=['DELETE', 'OPTIONS'])
+    def direct_cart_remove(item_id):
+        if request.method == 'OPTIONS':
+            return ok({})
+        from app.models import CartItem, Cart
+        item = CartItem.query.get(item_id)
+        if item:
+            cart_id = item.cart_id
+            db.session.delete(item)
+            db.session.commit()
+            cart = Cart.query.get(cart_id)
+            return ok({"cart": cart.to_dict() if cart else None})
+        return err("Item not found", 404)
+
+    # ── Wishlist – GET ────────────────────────────────
+    @app.route('/api/wishlist', methods=['GET', 'OPTIONS'])
+    def direct_get_wishlist():
+        if request.method == 'OPTIONS':
+            return ok({})
+        token = request.headers.get('X-Cart-Token')
+        if not token:
+            return ok({"wishlist": []})
+        from app.models import Wishlist
+        items = Wishlist.query.filter_by(session_token=token).order_by(Wishlist.created_at.desc()).all()
+        return ok({"wishlist": [i.to_dict() for i in items], "token": token})
+
+    @app.route('/api/wishlist', methods=['POST', 'OPTIONS'])
+    def direct_wishlist_add():
+        if request.method == 'OPTIONS':
+            return ok({})
+        data = request.get_json(force=True)
+        token = data.get('token') or request.headers.get('X-Cart-Token')
+        if not token:
+            return err("Wishlist token required")
+        product_id = data.get('product_id')
+        variant_id = data.get('variant_id')
+        if not product_id:
+            return err("product_id is required")
+        from app.models import Wishlist, Product
+        product = Product.query.get(product_id)
+        if not product:
+            return err("Product not found")
+        exists = Wishlist.query.filter_by(session_token=token, product_id=product_id, variant_id=variant_id).first()
+        if exists:
+            return ok({"wishlist": exists.to_dict(), "token": token}, "Already in wishlist")
+        entry = Wishlist(session_token=token, product_id=product_id, variant_id=variant_id)
+        db.session.add(entry)
+        db.session.commit()
+        return ok({"wishlist": entry.to_dict(), "token": token}, "Added to wishlist")
+
+    # ── Jinja currency filter ─────────────────────────
     def format_currency(value, currency=None):
         if value is None:
             return ""

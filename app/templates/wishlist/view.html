@@ -1,70 +1,531 @@
 {% extends "base.html" %}
 {% block title %}Wishlist | Fred Vunjabei{% endblock %}
+
 {% block content %}
-<section style="padding:8rem 5% 2rem;">
-  <div class="section-header">
-    <div>
-      <div class="section-eyebrow">Your Favorites</div>
-      <h1 class="section-title">My<br/><em>Wishlist</em></h1>
+
+<div id="fv-toast" aria-live="polite" aria-atomic="true"></div>
+
+<section class="wl-hero">
+  <div class="wl-hero__inner">
+    <div class="wl-eyebrow">Your Favorites</div>
+    <h1 class="wl-title">My <em>Wishlist</em></h1>
+    <div class="wl-meta" id="wlMeta">&nbsp;</div>
+  </div>
+  <div class="wl-hero__line"></div>
+</section>
+
+<section class="wl-section">
+  <div class="wl-grid" id="wishlistGrid">
+    {% for i in "123456" %}
+    <div class="wl-card wl-skeleton">
+      <div class="wl-card__img-wrap">
+        <div class="wl-card__img sk-block"></div>
+      </div>
+      <div class="wl-card__body">
+        <div class="sk-line sk-line--short"></div>
+        <div class="sk-line"></div>
+        <div class="sk-line sk-line--mid"></div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
+
+  <div class="wl-empty" id="wlEmpty" hidden>
+    <div class="wl-empty__icon">♡</div>
+    <h2 class="wl-empty__title">Nothing saved yet</h2>
+    <p class="wl-empty__sub">Explore our collection and heart the pieces that speak to you.</p>
+    <a href="/products" class="wl-btn wl-btn--gold">Discover Pieces</a>
+  </div>
+
+  <div class="wl-error" id="wlError" hidden>
+    <p class="wl-error__msg" id="wlErrorMsg">Could not load your wishlist.</p>
+    <button class="wl-btn wl-btn--outline" onclick="loadWishlist()">Try Again</button>
   </div>
 </section>
 
-<section style="padding:2rem 5% 6rem;">
-  <div class="products-grid" id="wishlistGrid">
-    <p style="text-align:center;padding:4rem;grid-column:1/-1;">Loading your wishlist…</p>
-  </div>
-</section>
 {% endblock %}
 
 {% block scripts %}
+<style>
+:root {
+  --gold:    #c9a96e;
+  --gold-lt: #e8d5b0;
+  --ink:     #0d0d0d;
+  --cream:   #f8f4ef;
+  --muted:   #888;
+  --radius:  2px;
+  --ease-luxury: cubic-bezier(.25,.46,.45,.94);
+  --transition: 0.4s var(--ease-luxury);
+}
+
+#fv-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+.fv-toast__item {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1.4rem;
+  border-left: 3px solid var(--gold);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: toastIn 0.35s var(--ease-luxury) forwards,
+             toastOut 0.35s var(--ease-luxury) 2.8s forwards;
+  pointer-events: auto;
+}
+.fv-toast__item--error { border-color: #c0392b; }
+@keyframes toastIn  { to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { to { opacity:0; transform:translateY(-8px); } }
+
+.wl-hero {
+  padding: 8rem 5% 3rem;
+  position: relative;
+}
+.wl-hero__inner { max-width: 800px; }
+.wl-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+.wl-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 1rem;
+}
+.wl-title em { font-style: italic; color: var(--gold); }
+.wl-meta {
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  min-height: 1.2em;
+}
+.wl-hero__line {
+  width: 60px;
+  height: 1px;
+  background: var(--gold);
+  margin-top: 2rem;
+  opacity: 0.5;
+}
+
+.wl-section { padding: 2rem 5% 7rem; }
+
+.wl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2.5rem 2rem;
+}
+
+.wl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  animation: cardReveal 0.6s var(--ease-luxury) both;
+}
+@keyframes cardReveal {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.wl-card:nth-child(1){animation-delay:.05s}
+.wl-card:nth-child(2){animation-delay:.10s}
+.wl-card:nth-child(3){animation-delay:.15s}
+.wl-card:nth-child(4){animation-delay:.20s}
+.wl-card:nth-child(5){animation-delay:.25s}
+.wl-card:nth-child(6){animation-delay:.30s}
+
+.wl-card__img-wrap {
+  overflow: hidden;
+  position: relative;
+  background: var(--cream);
+}
+.wl-card__img-wrap a { display:block; }
+.wl-card__img {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s var(--ease-luxury);
+}
+.wl-card:hover .wl-card__img { transform: scale(1.04); }
+
+.wl-remove-btn {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.92);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--ink);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.wl-card:hover .wl-remove-btn,
+.wl-remove-btn:focus { opacity:1; transform:scale(1); }
+.wl-remove-btn:hover { background: #fff; color: #c0392b; }
+
+.wl-card__body { padding: 1rem 0 0; flex:1; display:flex; flex-direction:column; }
+.wl-card__brand {
+  font-size: 0.58rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.35rem;
+}
+.wl-card__name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+  text-decoration: none;
+  display: block;
+}
+.wl-card__name:hover { color: var(--gold); }
+.wl-card__price {
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  color: var(--ink);
+  margin-bottom: 0.9rem;
+}
+.wl-card__price span { color: var(--gold); font-weight: 500; }
+
+.wl-atc-btn {
+  display: inline-block;
+  margin-top: auto;
+  padding: 0.7rem 1.4rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: 0.62rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition),
+              border-color var(--transition);
+  width: 100%;
+}
+.wl-atc-btn:hover {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.wl-atc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wl-skeleton { pointer-events:none; }
+.sk-block {
+  background: linear-gradient(90deg, #ede8e2 25%, #e2dbd3 50%, #ede8e2 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.wl-skeleton .wl-card__img { background: #ede8e2; }
+.sk-line {
+  height: 12px;
+  border-radius: 2px;
+  margin-bottom: 0.5rem;
+}
+.sk-line { width: 100%; }
+.sk-line--short { width: 45%; }
+.sk-line--mid  { width: 65%; }
+
+.wl-empty, .wl-error {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+.wl-empty__icon {
+  font-size: 3rem;
+  color: var(--gold);
+  margin-bottom: 1.2rem;
+  opacity: 0.5;
+}
+.wl-empty__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  margin-bottom: 0.6rem;
+}
+.wl-empty__sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+.wl-error__msg { color: var(--muted); margin-bottom: 1.5rem; }
+
+.wl-btn {
+  display: inline-block;
+  padding: 0.85rem 2.2rem;
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid;
+}
+.wl-btn--gold  { background:var(--gold); color:#fff; border-color:var(--gold); }
+.wl-btn--gold:hover { background:transparent; color:var(--gold); }
+.wl-btn--outline { background:transparent; color:var(--ink); border-color:var(--ink); }
+.wl-btn--outline:hover { background:var(--ink); color:#fff; }
+
+@media(max-width:600px){
+  .wl-title { font-size: 2.8rem; }
+  .wl-grid  { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:1.5rem; }
+  .wl-card__img { height:280px; }
+}
+</style>
+
 <script>
-function formatPrice(amount) {
-  if (amount == null) return '0 TZS';
-  var num = parseFloat(amount);
-  if (isNaN(num)) return '0 TZS';
-  return 'TZS ' + num.toLocaleString();
-}
+(function() {
+  'use strict';
 
-function getWishlistToken() {
-  var token = localStorage.getItem('wishlist_token');
-  if (!token) {
-    token = 'wish_' + Math.random().toString(36).substr(2,9);
-    localStorage.setItem('wishlist_token', token);
+  function formatPrice(amount) {
+    var n = parseFloat(amount);
+    return isNaN(n) ? '0 TZS' : 'TZS\u00a0' + n.toLocaleString('en-US', { minimumFractionDigits: 0 });
   }
-  return token;
-}
 
-function loadWishlist() {
-  var token = getWishlistToken();
-  fetch('/api/wishlist', {headers:{'X-Cart-Token':token}})
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      var grid = document.getElementById('wishlistGrid');
-      if (d.success && d.data && d.data.wishlist && d.data.wishlist.length) {
-        grid.innerHTML = d.data.wishlist.map(function(item) {
-          var p = item.product || {};
-          var img = p.primary_image || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=400&q=85';
-          return '<div class="prod-card">' +
-            '<a href="/products/' + (p.slug || '') + '">' +
-              '<div class="prod-img" style="height:350px;">' +
-                '<img src="' + img + '" alt="' + p.name + '" style="height:100%;">' +
-              '</div>' +
-            '</a>' +
-            '<div class="prod-brand" style="font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin:0.8rem 0 0.3rem;">Fred Vunjabei</div>' +
-            '<div class="prod-name" style="font-family:\'Cormorant Garamond\',serif; font-size:1.1rem;">' + p.name + '</div>' +
-            '<div class="prod-price"><span class="price-main">' + formatPrice(p.base_price) + '</span></div>' +
-          '</div>';
-        }).join('');
-      } else {
-        grid.innerHTML = '<p style="text-align:center;padding:4rem;grid-column:1/-1;">Your wishlist is empty. <a href="' + '{{ url_for("frontend.products") }}' + '" style="color:var(--gold);">Discover pieces</a></p>';
-      }
-    })
-    .catch(function() {
-      document.getElementById('wishlistGrid').innerHTML = '<p style="text-align:center;padding:4rem;grid-column:1/-1;">Could not load wishlist.</p>';
+  function getToken(key) {
+    try {
+      var t = localStorage.getItem(key);
+      if (!t) { t = key + '_' + Math.random().toString(36).slice(2,11); localStorage.setItem(key, t); }
+      return t;
+    } catch(e) { return key + '_guest'; }
+  }
+
+  function toast(msg, isError) {
+    var wrap = document.getElementById('fv-toast');
+    var el = document.createElement('div');
+    el.className = 'fv-toast__item' + (isError ? ' fv-toast__item--error' : '');
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(function() { wrap.removeChild(el); }, 3400);
+  }
+
+  function apiHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'X-Cart-Token':     getToken('cart_token'),
+      'X-Wishlist-Token': getToken('wishlist_token'),
+      'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || ''
+    };
+  }
+
+  function apiFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign(apiHeaders(), opts.headers || {});
+    return fetch(url, opts)
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' – ' + r.statusText);
+        return r.json();
+      })
+      .then(function(json) {
+        if (Array.isArray(json))                       return json;
+        if (json.data && Array.isArray(json.data.wishlist)) return json.data.wishlist;
+        if (Array.isArray(json.wishlist))              return json.wishlist;
+        if (json.data && Array.isArray(json.data))     return json.data;
+        return [];
+      });
+  }
+
+  function renderGrid(items) {
+    var grid  = document.getElementById('wishlistGrid');
+    var empty = document.getElementById('wlEmpty');
+    var meta  = document.getElementById('wlMeta');
+
+    grid.innerHTML = '';
+
+    if (!items || !items.length) {
+      empty.removeAttribute('hidden');
+      meta.textContent = '0 items';
+      return;
+    }
+
+    meta.textContent = items.length + (items.length === 1 ? ' item' : ' items') + ' saved';
+
+    items.forEach(function(item, idx) {
+      var p = (item.product && item.product.id) ? item.product : item;
+      var wishlistItemId = item.id || null;
+
+      var img = p.primary_image
+             || (p.images && p.images[0] && p.images[0].image)
+             || 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80';
+
+      var slug  = p.slug || '';
+      var name  = p.name || 'Unnamed Piece';
+      var price = p.base_price || p.price || 0;
+      var productId = p.id || '';
+
+      var card = document.createElement('div');
+      card.className = 'wl-card';
+      card.style.animationDelay = (idx * 0.05) + 's';
+      card.dataset.wishlistId   = wishlistItemId;
+      card.dataset.productId    = productId;
+
+      card.innerHTML =
+        '<div class="wl-card__img-wrap">' +
+          '<a href="/products/' + escHtml(slug) + '">' +
+            '<img class="wl-card__img" src="' + escHtml(img) + '"' +
+               ' alt="' + escHtml(name) + '"' +
+               ' loading="lazy"' +
+               ' onerror="this.src=\'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80\'">' +
+          '</a>' +
+          '<button class="wl-remove-btn" title="Remove from wishlist" aria-label="Remove ' + escHtml(name) + ' from wishlist">' +
+            '&#x2715;' +
+          '</button>' +
+        '</div>' +
+        '<div class="wl-card__body">' +
+          '<div class="wl-card__brand">Fred Vunjabei</div>' +
+          '<a class="wl-card__name" href="/products/' + escHtml(slug) + '">' + escHtml(name) + '</a>' +
+          '<div class="wl-card__price"><span>' + formatPrice(price) + '</span></div>' +
+          '<button class="wl-atc-btn" data-product-id="' + escHtml(String(productId)) + '">Add to Cart</button>' +
+        '</div>';
+
+      card.querySelector('.wl-remove-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        removeFromWishlist(card, wishlistItemId, productId);
+      });
+
+      card.querySelector('.wl-atc-btn').addEventListener('click', function() {
+        addToCart(this, productId, name);
+      });
+
+      grid.appendChild(card);
     });
-}
+  }
 
-document.addEventListener('DOMContentLoaded', loadWishlist);
+  function removeFromWishlist(card, wishlistItemId, productId) {
+    var url = '/api/wishlist/' + wishlistItemId;
+
+    card.style.pointerEvents = 'none';
+    card.style.opacity = '0.5';
+
+    fetch(url, { method: 'DELETE', headers: apiHeaders() })
+      .then(function(r) {
+        if (!r.ok && r.status !== 204) throw new Error('HTTP ' + r.status);
+        card.style.transition = 'opacity 0.35s, transform 0.35s';
+        card.style.opacity    = '0';
+        card.style.transform  = 'scale(0.95)';
+        setTimeout(function() {
+          card.remove();
+          var remaining = document.querySelectorAll('.wl-card:not(.wl-skeleton)').length;
+          var meta = document.getElementById('wlMeta');
+          meta.textContent = remaining + (remaining === 1 ? ' item' : ' items') + ' saved';
+          if (!remaining) {
+            document.getElementById('wlEmpty').removeAttribute('hidden');
+          }
+        }, 380);
+        toast('Removed from wishlist');
+      })
+      .catch(function(err) {
+        card.style.pointerEvents = '';
+        card.style.opacity = '1';
+        toast('Could not remove item – ' + err.message, true);
+      });
+  }
+
+  function addToCart(btn, productId, name) {
+    if (!productId) { toast('Product ID missing', true); return; }
+    btn.disabled    = true;
+    btn.textContent = 'Adding…';
+
+    fetch('/api/cart/add', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ product_id: productId, quantity: 1 })
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function() {
+      btn.textContent = '✓ Added';
+      toast('\u201c' + name + '\u201d added to cart');
+      var badge = document.querySelector('[data-cart-count], .cart-count, #cartCount');
+      if (badge) {
+        var current = parseInt(badge.textContent, 10) || 0;
+        badge.textContent = current + 1;
+      }
+      setTimeout(function() {
+        btn.textContent = 'Add to Cart';
+        btn.disabled    = false;
+      }, 2200);
+    })
+    .catch(function(err) {
+      btn.textContent = 'Add to Cart';
+      btn.disabled    = false;
+      toast('Could not add to cart – ' + err.message, true);
+    });
+  }
+
+  function loadWishlist() {
+    var grid  = document.getElementById('wishlistGrid');
+    var empty = document.getElementById('wlEmpty');
+    var error = document.getElementById('wlError');
+
+    grid.innerHTML = '';
+    empty.setAttribute('hidden', '');
+    error.setAttribute('hidden', '');
+    for (var s = 0; s < 4; s++) {
+      var sk = document.createElement('div');
+      sk.className = 'wl-card wl-skeleton';
+      sk.innerHTML =
+        '<div class="wl-card__img-wrap">' +
+          '<div class="wl-card__img sk-block" style="height:360px"></div>' +
+        '</div>' +
+        '<div class="wl-card__body">' +
+          '<div class="sk-line sk-line--short sk-block"></div>' +
+          '<div class="sk-line sk-block"></div>' +
+          '<div class="sk-line sk-line--mid sk-block"></div>' +
+        '</div>';
+      grid.appendChild(sk);
+    }
+
+    apiFetch('/api/wishlist')
+      .then(renderGrid)
+      .catch(function(err) {
+        grid.innerHTML = '';
+        error.removeAttribute('hidden');
+        document.getElementById('wlErrorMsg').textContent =
+          'Could not load your wishlist (' + err.message + '). Check your connection and try again.';
+        console.error('[Wishlist]', err);
+      });
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  window.loadWishlist = loadWishlist;
+
+  document.addEventListener('DOMContentLoaded', loadWishlist);
+})();
 </script>
 {% endblock %}
