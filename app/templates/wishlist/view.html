@@ -329,7 +329,7 @@
   function apiHeaders() {
     return {
       'Content-Type': 'application/json',
-      'X-Cart-Token':     getToken('cart_token'),
+      'X-Cart-Token':     getToken('wishlist_token'),
       'X-Wishlist-Token': getToken('wishlist_token'),
       'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || ''
     };
