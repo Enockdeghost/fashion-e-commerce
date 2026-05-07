@@ -1,78 +1,199 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }} | Fred Vunjabei{% endblock %}
+
 {% block head %}
 <style>
-  .post-page {
-    padding: 8rem 5% 4rem;
-    min-height: 100vh;
+  .bp-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 7rem 5vw 5rem;
     background: var(--cream);
   }
-  .post-header {
-    margin-bottom: 3rem;
-    text-align: center;
-  }
-  .post-header .date {
-    font-size: 0.7rem;
+  .bp-back {
+    display: inline-block;
+    font-size: 0.6rem;
     letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-lt);
+    margin-bottom: 3rem;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, color 0.3s;
+  }
+  .bp-back:hover {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* Header */
+  .bp-header {
+    text-align: left;
+    margin-bottom: 2.5rem;
+  }
+  .bp-date {
+    font-size: 0.62rem;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--gold);
     margin-bottom: 1rem;
+    font-weight: 600;
   }
-  .post-header h1 {
+  .bp-title {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
     font-weight: 300;
-    letter-spacing: 2px;
+    line-height: 1.1;
     color: var(--brown);
-    max-width: 800px;
-    margin: 0 auto;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.01em;
   }
-  .post-cover {
-    width: 100%;
-    max-height: 600px;
-    object-fit: cover;
-    margin-bottom: 3rem;
-  }
-  .post-content {
-    max-width: 720px;
-    margin: 0 auto;
+  .bp-excerpt {
     font-size: 0.95rem;
-    line-height: 2;
     color: var(--brown-lt);
     font-weight: 300;
+    line-height: 1.7;
+    max-width: 560px;
   }
-  .post-content p {
+
+  /* Cover image – restrained size */
+  .bp-cover {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    display: block;
+    margin: 1.5rem 0 2.5rem;
+    border: 1px solid rgba(0,0,0,0.04);
+    filter: brightness(0.97);
+  }
+
+  /* Content */
+  .bp-content {
+    font-size: 0.92rem;
+    line-height: 1.85;
+    color: var(--brown-lt);
+    font-weight: 300;
+    max-width: 680px;
+  }
+  .bp-content p {
     margin-bottom: 1.5rem;
   }
-  .back-link {
-    display: block;
-    text-align: center;
-    margin-top: 4rem;
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
+  .bp-content h2,
+  .bp-content h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--brown);
+    font-weight: 400;
+    margin: 2.8rem 0 1rem;
+  }
+  .bp-content h2 { font-size: 1.8rem; }
+  .bp-content h3 { font-size: 1.4rem; }
+  .bp-content img {
+    width: 100%;
+    height: auto;
+    margin: 2rem 0;
+    max-height: 460px;
+    object-fit: cover;
+  }
+  .bp-content blockquote {
+    border-left: 3px solid var(--gold);
+    margin: 2rem 0;
+    padding: 0.6rem 0 0.6rem 1.6rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--brown);
+    line-height: 1.4;
+  }
+  .bp-content a {
     color: var(--gold);
+    text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: border-color 0.3s;
   }
-  .back-link:hover {
-    border-bottom-color: var(--gold);
+  .bp-content a:hover { border-bottom-color: var(--gold); }
+
+  /* Divider */
+  .bp-divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin: 3rem auto 2rem;
+    opacity: 0.5;
+  }
+
+  /* Footer */
+  .bp-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  .bp-share {
+    display: flex;
+    gap: 1rem;
+  }
+  .bp-share a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--parchment);
+    border-radius: 50%;
+    color: var(--brown-lt);
+    transition: all 0.3s;
+  }
+  .bp-share a:hover {
+    background: var(--brown);
+    color: var(--cream);
+    border-color: var(--brown);
+  }
+  .bp-share svg { width: 14px; height: 14px; fill: currentColor; }
+
+  @media (max-width: 600px) {
+    .bp-wrapper { padding-top: 5rem; }
+    .bp-cover { max-height: 280px; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="post-page">
-  <div class="post-header">
-    <div class="date">{{ post.published_at.strftime('%d %B %Y') if post.published_at else '' }}</div>
-    <h1>{{ post.title }}</h1>
-  </div>
+<article class="bp-wrapper">
+  <a href="{{ url_for('frontend.blog') }}" class="bp-back">← Back to Journal</a>
+
+  <header class="bp-header">
+    <div class="bp-date">{{ post.published_at.strftime('%d %B %Y') if post.published_at else '' }}</div>
+    <h1 class="bp-title">{{ post.title }}</h1>
+    {% if post.excerpt %}
+    <p class="bp-excerpt">{{ post.excerpt }}</p>
+    {% endif %}
+  </header>
+
   {% if post.cover_image_url %}
-  <img class="post-cover" src="{{ post.cover_image_url }}" alt="{{ post.title }}">
+  <img class="bp-cover" src="{{ post.cover_image_url }}" alt="{{ post.title }}">
   {% endif %}
-  <div class="post-content">
-    {{ post.content | safe if post.content else 'No content yet.' }}
+
+  <div class="bp-content">
+    {{ post.content | safe if post.content else '<p>This article is being written. Check back soon.</p>' }}
   </div>
-  <a href="{{ url_for('frontend.blog') }}" class="back-link">← Back to Journal</a>
-</div>
+
+  <div class="bp-divider"></div>
+
+  <footer class="bp-footer">
+    <a href="{{ url_for('frontend.blog') }}" class="bp-back">← Back to Journal</a>
+    <div class="bp-share">
+      <a href="#" aria-label="Share on Twitter">
+        <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+      </a>
+      <a href="#" aria-label="Share on Facebook">
+        <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+      </a>
+      <a href="#" aria-label="Copy link">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      </a>
+    </div>
+  </footer>
+</article>
 {% endblock %}

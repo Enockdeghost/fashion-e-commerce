@@ -127,8 +127,10 @@
   document.getElementById('blogForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
+
     const method = '{{ "PUT" if post else "POST" }}';
     const url = '{{ "/api/blog/" + post.id if post else "/api/blog" }}';
+
     fetch(url, {
       method,
       headers: {'Authorization': 'Bearer ' + token},

@@ -1,9 +1,9 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from .config import config
 from .extensions import db, migrate, jwt, limiter, cors, cache
 from .routes import register_blueprints
 from .utils.security import add_security_headers, ok, err, sanitise_text, sanitise_html, is_valid_email
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from .models import User
 import os
 import uuid
@@ -19,6 +19,11 @@ def create_app(config_name: str = None) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+
+    # ── JWT cookie configuration ─────────────────────────────
+    app.config["JWT_ACCESS_COOKIE_NAME"] = "admin_token"
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
+
     limiter.init_app(app)
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
@@ -68,6 +73,87 @@ def create_app(config_name: str = None) -> Flask:
             },
         })
 
+    @app.route('/api/blog', methods=['GET'])
+    def direct_list_blog_posts():
+        from app.models import BlogPost
+        posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
+        return ok({"blog_posts": [p.to_dict(full=True) for p in posts]})
+
+    @app.route('/api/blog/<post_id>', methods=['GET'])
+    def direct_get_blog_post(post_id):
+        from app.models import BlogPost
+        post = BlogPost.query.get_or_404(post_id)
+        return ok(post.to_dict(full=True))
+
+    @app.route('/api/blog/<post_id>', methods=['DELETE'])
+    @jwt_required()
+    def direct_delete_blog_post(post_id):
+        from app.models import BlogPost, AdminUser
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return err("Unauthorised", 401)
+        post = BlogPost.query.get_or_404(post_id)
+        db.session.delete(post)
+        db.session.commit()
+        return ok(message="Blog post deleted")
+
+    BLOG_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'blog')
+    os.makedirs(BLOG_UPLOAD_FOLDER, exist_ok=True)
+
+    @app.route('/api/blog', methods=['POST'])
+    @jwt_required()
+    def direct_create_blog_post():
+        from app.models import BlogPost, AdminUser
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return err("Unauthorised", 401)
+
+        file = request.files.get('file') if request.files else None
+        data = request.form if request.files else (request.get_json(force=True) or {})
+
+        title = sanitise_text(data.get("title", ""))
+        if not title:
+            return err("Title is required")
+
+        cover_url = None
+        if file and file.filename:
+            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
+            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+                return err("Invalid image type")
+            save_name = f"{uuid.uuid4().hex}.{ext}"
+            file.save(os.path.join(BLOG_UPLOAD_FOLDER, save_name))
+            cover_url = f"/static/uploads/blog/{save_name}"
+        else:
+            cover_url = sanitise_text(data.get("cover_image_url", ""))
+
+        post = BlogPost(
+            title=title,
+            slug=slugify(title),
+            excerpt=sanitise_text(data.get("excerpt", "")),
+            content=sanitise_html(data.get("content", "")),
+            cover_image_url=cover_url,
+            author_id=admin.id,
+            is_published=str(data.get("is_published", "false")).lower() == "true",
+            meta_title=sanitise_text(data.get("meta_title", "")),
+            meta_description=sanitise_text(data.get("meta_description", "")),
+        )
+        if post.is_published:
+            from datetime import datetime, timezone
+            post.published_at = datetime.now(timezone.utc)
+        db.session.add(post)
+        db.session.commit()
+        return ok(post.to_dict(full=True), "Blog post created", 201)
+
+    @app.route('/blog/<slug>')
+    def direct_blog_post(slug):
+        from app.models import BlogPost
+        post = BlogPost.query.filter_by(slug=slug).first_or_404()
+        from flask import render_template
+        from datetime import datetime, timezone
+        return render_template('blog/post.html', post=post, now=datetime.now(timezone.utc))
+
     @app.route('/lookbook/<category>')
     def direct_lookbook_category(category):
         from app.models import Category, Product
@@ -84,14 +170,10 @@ def create_app(config_name: str = None) -> Flask:
                                products=products,
                                now=datetime.now(timezone.utc))
 
-    # Now register all blueprints
     register_blueprints(app)
 
-    # ── Direct customer auth routes ──
-    @app.route("/api/auth/register", methods=["POST", "OPTIONS"])
+    @app.route("/api/auth/register", methods=["POST"])
     def direct_auth_register():
-        if request.method == "OPTIONS":
-            return ok({})
         data = request.get_json(force=True)
         email = sanitise_text(data.get("email", "")).lower().strip()
         password = data.get("password", "")
@@ -114,10 +196,8 @@ def create_app(config_name: str = None) -> Flask:
         refresh_token = create_refresh_token(identity=user.id)
         return ok({"user": user.to_dict(), "access_token": access_token, "refresh_token": refresh_token}, "Account created", 201)
 
-    @app.route("/api/auth/login", methods=["POST", "OPTIONS"])
+    @app.route("/api/auth/login", methods=["POST"])
     def direct_auth_login():
-        if request.method == "OPTIONS":
-            return ok({})
         data = request.get_json(force=True)
         email = sanitise_text(data.get("email", "")).lower().strip()
         password = data.get("password", "")
@@ -136,29 +216,18 @@ def create_app(config_name: str = None) -> Flask:
         refresh_token = create_refresh_token(identity=user.id)
         return ok({"user": user.to_dict(), "access_token": access_token, "refresh_token": refresh_token}, "Login successful")
 
-    # ── Direct product creation route ──
+    # ── Product creation (admin protected) ──
     UPLOAD_PRODUCT_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'products')
     os.makedirs(UPLOAD_PRODUCT_FOLDER, exist_ok=True)
 
-    @app.route('/api/products', methods=['POST', 'OPTIONS'])
+    @app.route('/api/products', methods=['POST'])
+    @jwt_required()
     def direct_create_product():
-        if request.method == 'OPTIONS':
-            return ok({})
-
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
+        from app.models import AdminUser, Product, ProductImage
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
             return err("Unauthorised", 401)
-        token = auth_header.split(' ')[1]
-        from flask_jwt_extended import decode_token
-        try:
-            payload = decode_token(token)
-            admin_id = payload['sub']
-            from app.models import AdminUser
-            admin = AdminUser.query.get(admin_id)
-            if not admin or not admin.is_active:
-                return err("Unauthorised", 401)
-        except Exception:
-            return err("Invalid token", 401)
 
         file = request.files.get('file') if request.files else None
         data = request.form if request.files else (request.get_json(force=True) or {})
@@ -181,7 +250,6 @@ def create_app(config_name: str = None) -> Flask:
             if primary_image and not primary_image.startswith("http"):
                 primary_image = f"/static{primary_image}"
 
-        from app.models import Product, ProductImage
         product = Product(
             name=name,
             slug=slugify(name),
@@ -220,12 +288,10 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok(product.to_dict(full=True), "Product created", 201)
 
-    # ── Direct cart routes ──
-    @app.route('/api/cart', methods=['GET', 'OPTIONS'])
-    @app.route('/api/cart/', methods=['GET', 'OPTIONS'])
+    # ── Cart routes (no auth required) ──
+    @app.route('/api/cart', methods=['GET'])
+    @app.route('/api/cart/', methods=['GET'])
     def direct_get_cart():
-        if request.method == 'OPTIONS':
-            return ok({})
         token = request.headers.get('X-Cart-Token')
         if not token:
             return ok({"cart": None})
@@ -235,10 +301,8 @@ def create_app(config_name: str = None) -> Flask:
             return ok({"cart": None})
         return ok({"cart": cart.to_dict(), "token": token})
 
-    @app.route('/api/cart/add', methods=['POST', 'OPTIONS'])
+    @app.route('/api/cart/add', methods=['POST'])
     def direct_cart_add():
-        if request.method == 'OPTIONS':
-            return ok({})
         data = request.get_json(force=True)
         token = data.get('token') or request.headers.get('X-Cart-Token')
         if not token:
@@ -275,11 +339,9 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({"cart": cart.to_dict(), "token": token}, "Item added")
 
-    @app.route('/api/cart/remove/<item_id>/', methods=['DELETE', 'OPTIONS'])
-    @app.route('/api/cart/remove/<item_id>', methods=['DELETE', 'OPTIONS'])
+    @app.route('/api/cart/remove/<item_id>/', methods=['DELETE'])
+    @app.route('/api/cart/remove/<item_id>', methods=['DELETE'])
     def direct_cart_remove(item_id):
-        if request.method == 'OPTIONS':
-            return ok({})
         from app.models import CartItem, Cart
         item = CartItem.query.get(item_id)
         if item:
@@ -290,11 +352,9 @@ def create_app(config_name: str = None) -> Flask:
             return ok({"cart": cart.to_dict() if cart else None})
         return err("Item not found", 404)
 
-    # ── Direct wishlist routes ──
-    @app.route('/api/wishlist', methods=['GET', 'OPTIONS'])
+    # ── Wishlist routes (no auth required) ──
+    @app.route('/api/wishlist', methods=['GET'])
     def direct_get_wishlist():
-        if request.method == 'OPTIONS':
-            return ok({})
         token = request.headers.get('X-Cart-Token')
         if not token:
             return ok({"wishlist": []})
@@ -302,10 +362,8 @@ def create_app(config_name: str = None) -> Flask:
         items = Wishlist.query.filter_by(session_token=token).order_by(Wishlist.created_at.desc()).all()
         return ok({"wishlist": [i.to_dict() for i in items], "token": token})
 
-    @app.route('/api/wishlist', methods=['POST', 'OPTIONS'])
+    @app.route('/api/wishlist', methods=['POST'])
     def direct_wishlist_add():
-        if request.method == 'OPTIONS':
-            return ok({})
         data = request.get_json(force=True)
         token = data.get('token') or request.headers.get('X-Cart-Token')
         if not token:
@@ -326,11 +384,9 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({"wishlist": entry.to_dict(), "token": token}, "Added to wishlist")
 
-    @app.route('/api/wishlist/<item_id>', methods=['DELETE', 'OPTIONS'])
-    @app.route('/api/wishlist/<item_id>/', methods=['DELETE', 'OPTIONS'])
+    @app.route('/api/wishlist/<item_id>', methods=['DELETE'])
+    @app.route('/api/wishlist/<item_id>/', methods=['DELETE'])
     def direct_wishlist_remove(item_id):
-        if request.method == 'OPTIONS':
-            return ok({})
         from app.models import Wishlist
         entry = Wishlist.query.get(item_id)
         if not entry:
@@ -338,6 +394,80 @@ def create_app(config_name: str = None) -> Flask:
         db.session.delete(entry)
         db.session.commit()
         return ok({}, "Removed from wishlist")
+
+    # ── Banner creation (admin protected) ──
+    BANNER_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'banners')
+    os.makedirs(BANNER_UPLOAD_FOLDER, exist_ok=True)
+
+    @app.route('/api/banners', methods=['POST'])
+    @jwt_required()
+    def direct_create_banner():
+        from app.models import AdminUser, Banner
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return err("Unauthorised", 401)
+
+        file = request.files.get('file') if request.files else None
+        data = request.form if request.files else (request.get_json(force=True) or {})
+
+        image_url = None
+        if file and file.filename:
+            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
+            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+                return err("Invalid image type")
+            save_name = f"{uuid.uuid4().hex}.{ext}"
+            file.save(os.path.join(BANNER_UPLOAD_FOLDER, save_name))
+            image_url = f"/static/uploads/banners/{save_name}"
+        else:
+            image_url = sanitise_text(data.get("image_url", ""))
+            if not image_url:
+                return err("image_url or file upload is required")
+
+        banner = Banner(
+            title=sanitise_text(data.get("title", "")),
+            subtitle=sanitise_text(data.get("subtitle", "")),
+            image_url=image_url,
+            link_url=sanitise_text(data.get("link_url", "")),
+            position=data.get("position", "homepage_hero"),
+            is_active=str(data.get("is_active", "true")).lower() != "false",
+        )
+        db.session.add(banner)
+        db.session.commit()
+        return ok(banner.to_dict(), "Banner created", 201)
+
+    # ── Admin login (sets HttpOnly cookie) ──
+    @app.route("/api/admin/login", methods=["POST"])
+    def direct_admin_login():
+        data = request.get_json(force=True)
+        email = sanitise_text(data.get("email", "")).lower().strip()
+        password = data.get("password", "")
+
+        from app.models import AdminUser
+        admin = AdminUser.query.filter_by(email=email).first()
+        if not admin or not admin.check_password(password):
+            return err("Invalid credentials", 401)
+        if not admin.is_active:
+            return err("Account deactivated", 403)
+
+        access_token = create_access_token(identity=admin.id)
+        resp = make_response(ok({"access_token": access_token, "admin": admin.to_dict()}, "Login successful"))
+        resp.set_cookie(
+            "admin_token",
+            access_token,
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=3600,
+            path="/"
+        )
+        return resp
+
+    @app.route("/api/admin/logout", methods=["POST"])
+    def direct_admin_logout():
+        resp = make_response(ok(message="Logged out"))
+        resp.set_cookie("admin_token", "", expires=0, path="/")
+        return resp
 
     # ── Jinja currency filter ──
     def format_currency(value, currency=None):

@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Blog | Fred Vunjabei Admin{% endblock %}
+{% block title %}Blog Posts | Fred Vunjabei Admin{% endblock %}
 {% block head %}
 <style>
   .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
   .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .admin-header h1 { font-family: 'Cormorant Garamond',serif; font-weight:300; font-size:2.2rem; color: var(--brown); }
   .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
   .btn-primary { background: var(--gold); color: var(--brown); }
   .btn-primary:hover { background: var(--gold-lt); }
   .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
   .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-sm { padding: 0.4rem 1rem; font-size: 0.6rem; }
   .card { background: var(--white); border: 1px solid var(--parchment); }
   table { width: 100%; border-collapse: collapse; }
   th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
@@ -67,9 +68,9 @@
     .then(r => r.json())
     .then(d => {
       const tbody = document.getElementById('blogTableBody');
-      if (d.success && d.data && d.data.blog_posts) {
-        const posts = d.data.blog_posts;
-        tbody.innerHTML = posts.length ? posts.map(p => `
+      const posts = (d.data && d.data.blog_posts) ? d.data.blog_posts : [];
+      if (posts.length) {
+        tbody.innerHTML = posts.map(p => `
           <tr>
             <td><img src="${p.cover_image_url || 'https://via.placeholder.com/100x55/f5f5f0/6b4c3b?text=No+Cover'}" class="thumb" alt=""></td>
             <td><strong>${p.title}</strong></td>
@@ -80,7 +81,9 @@
               <a href="#" class="action-link delete" onclick="deleteBlogPost('${p.id}')">Delete</a>
             </td>
           </tr>
-        `).join('') : '<tr><td colspan="5" style="text-align:center;">No posts yet.</td></tr>';
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No posts yet.</td></tr>';
       }
     });
   }

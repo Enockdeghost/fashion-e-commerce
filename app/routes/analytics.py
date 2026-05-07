@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from datetime import datetime, timezone, timedelta
 from app.extensions import db
-from app.models import Order, OrderItem, Product, AbandonedCart
+from app.models import Order, OrderItem, Product, AbandonedCart, Payment
 from app.utils.security import admin_required, ok, err
 from sqlalchemy import func
 

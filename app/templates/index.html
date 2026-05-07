@@ -613,7 +613,7 @@
         <div class="cat-tile-num">{{ '%02d' % loop.index }}</div>
         <h3>{{ cat.name }}</h3>
         <div class="cat-tile-meta">{{ cat.product_count }} Pieces</div>
-        <a href="{{ url_for('products.list_products', category=cat.slug) }}" class="cat-tile-btn">Explore →</a>
+        <a href="{{ url_for('frontend.category', slug=cat.slug) }}" class="cat-tile-btn">Explore →</a>
       </div>
     </div>
     {% endfor %}

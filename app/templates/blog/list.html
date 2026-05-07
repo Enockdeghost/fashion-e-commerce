@@ -2,14 +2,8 @@
 {% block title %}Journal | Fred Vunjabei{% endblock %}
 {% block head %}
 <style>
-  .blog-page {
-    padding: 8rem 5% 4rem;
-    min-height: 100vh;
-    background: var(--cream);
-  }
-  .blog-header {
-    margin-bottom: 3rem;
-  }
+  .blog-page { padding: 8rem 5% 4rem; min-height: 100vh; background: var(--cream); }
+  .blog-header { margin-bottom: 3rem; }
   .blog-header h1 {
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(2.5rem, 6vw, 4rem);
@@ -34,10 +28,10 @@
     border: 1px solid var(--parchment);
     overflow: hidden;
     transition: box-shadow 0.3s;
+    text-decoration: none;
+    color: inherit;
   }
-  .blog-card:hover {
-    box-shadow: 0 12px 30px rgba(0,0,0,0.05);
-  }
+  .blog-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.05); }
   .blog-card img {
     width: 100%;
     height: 280px;
@@ -45,12 +39,8 @@
     filter: brightness(0.95);
     transition: filter 0.6s;
   }
-  .blog-card:hover img {
-    filter: brightness(1);
-  }
-  .blog-card-body {
-    padding: 1.8rem;
-  }
+  .blog-card:hover img { filter: brightness(1); }
+  .blog-card-body { padding: 1.8rem; }
   .blog-card-body .date {
     font-size: 0.6rem;
     letter-spacing: 2px;
@@ -67,9 +57,7 @@
     margin-bottom: 0.8rem;
     transition: color 0.3s;
   }
-  .blog-card:hover .blog-card-body h2 {
-    color: var(--gold);
-  }
+  .blog-card:hover .blog-card-body h2 { color: var(--gold); }
   .blog-card-body .excerpt {
     font-size: 0.8rem;
     line-height: 1.8;
@@ -84,19 +72,9 @@
     border-bottom: 1px solid transparent;
     transition: border-color 0.3s;
   }
-  .blog-card:hover .read-more {
-    border-bottom-color: var(--gold);
-  }
-  @media (max-width: 900px) {
-    .blog-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  @media (max-width: 600px) {
-    .blog-grid {
-      grid-template-columns: 1fr;
-    }
-  }
+  .blog-card:hover .read-more { border-bottom-color: var(--gold); }
+  @media (max-width: 900px) { .blog-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .blog-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
@@ -114,12 +92,13 @@
 
 {% block scripts %}
 <script>
-  fetch('/api/cms/blog')
+  fetch('/api/blog')
     .then(r => r.json())
     .then(d => {
       var grid = document.getElementById('blogGrid');
-      if (d.success && d.data && d.data.posts && d.data.posts.length) {
-        grid.innerHTML = d.data.posts.map(function(post) {
+      var posts = (d.data && d.data.blog_posts) ? d.data.blog_posts : [];
+      if (posts.length) {
+        grid.innerHTML = posts.map(function(post) {
           var img = post.cover_image_url || 'https://images.unsplash.com/photo-1470309864662-7c3ac28d2ad0?w=600&q=85';
           var date = post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) : '';
           return '<a href="/blog/' + post.slug + '" class="blog-card">' +
