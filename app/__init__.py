@@ -23,7 +23,6 @@ def create_app(config_name: str = None) -> Flask:
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
 
-
     @app.route('/api/categories', methods=['GET'])
     def direct_list_categories():
         from app.models import Category
@@ -68,6 +67,22 @@ def create_app(config_name: str = None) -> Flask:
                 "total": paginated.total, "pages": paginated.pages,
             },
         })
+
+    @app.route('/lookbook/<category>')
+    def direct_lookbook_category(category):
+        from app.models import Category, Product
+        cat = Category.query.filter(
+            (Category.slug == category) | (Category.id == category)
+        ).first_or_404()
+        products = Product.query.filter_by(
+            category_id=cat.id, is_active=True, is_deleted=False
+        ).order_by(Product.created_at.desc()).limit(24).all()
+        from flask import render_template
+        from datetime import datetime, timezone
+        return render_template('lookbook/category.html',
+                               category=cat,
+                               products=products,
+                               now=datetime.now(timezone.utc))
 
     # Now register all blueprints
     register_blueprints(app)
