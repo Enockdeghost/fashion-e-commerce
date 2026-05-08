@@ -20,7 +20,6 @@ def create_app(config_name: str = None) -> Flask:
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # ── JWT cookie configuration ─────────────────────────────
     app.config["JWT_ACCESS_COOKIE_NAME"] = "admin_token"
     app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 
@@ -216,7 +215,6 @@ def create_app(config_name: str = None) -> Flask:
         refresh_token = create_refresh_token(identity=user.id)
         return ok({"user": user.to_dict(), "access_token": access_token, "refresh_token": refresh_token}, "Login successful")
 
-    # ── Product creation (admin protected) ──
     UPLOAD_PRODUCT_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'products')
     os.makedirs(UPLOAD_PRODUCT_FOLDER, exist_ok=True)
 
@@ -288,7 +286,107 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok(product.to_dict(full=True), "Product created", 201)
 
-    # ── Cart routes (no auth required) ──
+    @app.route('/api/products/<product_id>', methods=['PUT'])
+    @jwt_required()
+    def direct_update_product(product_id):
+        from app.models import AdminUser, Product, ProductImage
+        from sqlalchemy.exc import IntegrityError
+
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return err("Unauthorised", 401)
+
+        product = Product.query.get(product_id)
+        if not product:
+            return err("Product not found", 404)
+
+        file = request.files.get('file') if request.files else None
+
+        data = {}
+        try:
+            data = request.get_json(force=True) or {}
+        except Exception:
+            data = request.form or {}
+
+        if not data and not file:
+            return err("No data provided", 400)
+
+        original_name = product.name
+
+        if data.get("name"):
+            product.name = sanitise_text(data["name"])
+            product.slug = slugify(product.name)
+        if data.get("description"):
+            product.description = sanitise_html(data["description"])
+        if data.get("short_description"):
+            product.short_description = sanitise_text(data["short_description"])
+        if data.get("base_price"):
+            product.base_price = float(data["base_price"])
+        if data.get("compare_price"):
+            product.compare_price = float(data["compare_price"])
+        if data.get("cost_price"):
+            product.cost_price = float(data["cost_price"])
+        if data.get("currency"):
+            product.currency = data["currency"]
+        if data.get("category_id"):
+            product.category_id = data["category_id"]
+        if data.get("brand_id"):
+            product.brand_id = data["brand_id"]
+        if "is_featured" in data:
+            product.is_featured = bool(data["is_featured"])
+        if "is_new_arrival" in data:
+            product.is_new_arrival = bool(data["is_new_arrival"])
+        if "is_active" in data:
+            product.is_active = bool(data["is_active"])
+
+        if file and file.filename:
+            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
+            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
+                return err("Invalid image type")
+            save_name = f"{uuid.uuid4().hex}.{ext}"
+            file.save(os.path.join(UPLOAD_PRODUCT_FOLDER, save_name))
+            new_image_url = f"/static/uploads/products/{save_name}"
+
+            primary_image_obj = ProductImage.query.filter_by(product_id=product.id, is_primary=True).first()
+            if primary_image_obj:
+                primary_image_obj.url = new_image_url
+            else:
+                new_img = ProductImage(
+                    product_id=product.id,
+                    url=new_image_url,
+                    is_primary=True,
+                    alt_text=product.name,
+                    sort_order=0
+                )
+                db.session.add(new_img)
+        else:
+            primary_image_url = sanitise_text(data.get("primary_image", ""))
+            if primary_image_url and primary_image_url != getattr(product, 'primary_image', None):
+                existing_primary = ProductImage.query.filter_by(product_id=product.id, is_primary=True).first()
+                if existing_primary:
+                    existing_primary.url = primary_image_url
+                else:
+                    new_img = ProductImage(
+                        product_id=product.id,
+                        url=primary_image_url,
+                        is_primary=True,
+                        alt_text=product.name,
+                        sort_order=0
+                    )
+                    db.session.add(new_img)
+
+        try:
+            db.session.commit()
+        except IntegrityError as e:
+            db.session.rollback()
+            if "UNIQUE constraint failed: products.slug" in str(e):
+                return err("A product with this exact slug (URL identifier) already exists. Please change the product name to avoid a conflict.", 409)
+            else:
+                return err("Database integrity error occurred.", 400)
+
+        return ok(product.to_dict(full=True), "Product updated")
+
     @app.route('/api/cart', methods=['GET'])
     @app.route('/api/cart/', methods=['GET'])
     def direct_get_cart():
@@ -352,7 +450,6 @@ def create_app(config_name: str = None) -> Flask:
             return ok({"cart": cart.to_dict() if cart else None})
         return err("Item not found", 404)
 
-    # ── Wishlist routes (no auth required) ──
     @app.route('/api/wishlist', methods=['GET'])
     def direct_get_wishlist():
         token = request.headers.get('X-Cart-Token')
@@ -395,7 +492,6 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({}, "Removed from wishlist")
 
-    # ── Banner creation (admin protected) ──
     BANNER_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'banners')
     os.makedirs(BANNER_UPLOAD_FOLDER, exist_ok=True)
 
@@ -436,7 +532,6 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok(banner.to_dict(), "Banner created", 201)
 
-    # ── Admin login (sets HttpOnly cookie) ──
     @app.route("/api/admin/login", methods=["POST"])
     def direct_admin_login():
         data = request.get_json(force=True)
@@ -469,7 +564,6 @@ def create_app(config_name: str = None) -> Flask:
         resp.set_cookie("admin_token", "", expires=0, path="/")
         return resp
 
-    # ── Jinja currency filter ──
     def format_currency(value, currency=None):
         if value is None:
             return ""

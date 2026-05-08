@@ -23,6 +23,16 @@
   .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
   .file-input-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
   .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
+  @media (max-width: 768px) {
+    .admin-page { padding: 4rem 4% 2rem; }
+    .form-card { padding: 1.5rem; max-width: 100%; }
+    .form-row { grid-template-columns: 1fr; }
+    .btn-row { flex-direction: column; }
+    .btn-row .btn { width: 100%; text-align: center; }
+    .current-image { max-width: 100%; }
+    .file-input-wrapper { width: 100%; }
+    .file-input-btn { width: 100%; text-align: center; display: block; }
+  }
 </style>
 {% endblock %}
 
@@ -78,12 +88,16 @@
           <span class="file-input-btn">Choose File</span>
         </div>
         <span class="file-name" id="fileName"></span>
-        <img id="imagePreview" class="current-image" {% if product and product.primary_image %}src="{{ product.primary_image }}"{% else %}style="display:none"{% endif %} alt="Preview">
+        <img id="imagePreview" class="current-image"
+             {% if product and product.primary_image %}src="{{ product.primary_image }}"
+             {% else %}style="display:none"
+             {% endif %} alt="Preview">
       </div>
 
       <div class="form-group">
         <label>Or paste Image URL</label>
-        <input type="url" id="imageUrl" placeholder="https://…" value="{{ product.primary_image if product and not request.files else '' }}">
+        <input type="url" id="imageUrl" name="primary_image" placeholder="https://…"
+               value="{{ product.primary_image if product else '' }}">
       </div>
 
       <div class="form-row">
@@ -120,7 +134,6 @@
   const token = localStorage.getItem('admin_token');
   if (!token) { window.location.href = '/admin'; }
 
-  // Load categories and brands
   fetch('/api/categories', {headers:{'Authorization':'Bearer '+token}})
     .then(r => r.json()).then(d => {
       const sel = document.getElementById('categorySelect');
@@ -139,7 +152,6 @@
       {% if product and product.brand_id %} sel.value = '{{ product.brand_id }}'; {% endif %}
     });
 
-  // Preview image when file selected
   const fileInput = document.getElementById('imageFile');
   const fileName = document.getElementById('fileName');
   const imagePreview = document.getElementById('imagePreview');
@@ -164,34 +176,69 @@
       fileName.textContent = '';
     }
   });
-
-  // Submit via AJAX
+  
   document.getElementById('productForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const form = this;
-    const formData = new FormData(form);
-    if (!formData.get('is_active')) formData.append('is_active', 'false');
-    if (!formData.get('is_featured')) formData.append('is_featured', 'false');
-    if (!formData.get('is_new_arrival')) formData.append('is_new_arrival', 'false');
+    const hasFile = fileInput.files.length > 0;
 
     const method = '{{ "PUT" if product else "POST" }}';
     const url = '{{ "/api/products/" + product.id if product else "/api/products" }}';
 
-    fetch(url, {
-      method,
-      headers: {'Authorization': 'Bearer ' + token},
-      body: formData
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) {
-        alert('Product saved!');
-        window.location.href = '/admin/products';
-      } else {
-        alert(d.error || 'Save failed');
-      }
-    })
-    .catch(() => alert('Network error'));
+    if (hasFile) {
+      const formData = new FormData(form);
+      if (!formData.get('is_active')) formData.append('is_active', 'false');
+      if (!formData.get('is_featured')) formData.append('is_featured', 'false');
+      if (!formData.get('is_new_arrival')) formData.append('is_new_arrival', 'false');
+
+      fetch(url, {
+        method,
+        headers: {'Authorization': 'Bearer ' + token},
+        body: formData
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          alert('Product saved!');
+          window.location.href = '/admin/products';
+        } else {
+          alert(d.error || 'Save failed');
+        }
+      })
+      .catch(() => alert('Network error'));
+    } else {
+      const data = {
+        name: form.name.value.trim(),
+        base_price: form.base_price.value,
+        compare_price: form.compare_price.value || null,
+        category_id: form.category_id.value || null,
+        brand_id: form.brand_id.value || null,
+        description: form.description.value,
+        primary_image: form.primary_image.value.trim() || null,
+        is_active: form.is_active.checked,
+        is_featured: form.is_featured.checked,
+        is_new_arrival: form.is_new_arrival.checked
+      };
+
+      fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          alert('Product saved!');
+          window.location.href = '/admin/products';
+        } else {
+          alert(d.error || 'Save failed');
+        }
+      })
+      .catch(() => alert('Network error'));
+    }
   });
 </script>
 {% endblock %}

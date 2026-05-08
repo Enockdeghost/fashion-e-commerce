@@ -27,6 +27,23 @@
   .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
   .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
   .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+
+  @media (max-width: 1024px) {
+    .admin-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .sidebar { overflow-x: auto; flex-wrap: nowrap; gap: 1.5rem; padding-bottom: 0.5rem; }
+    .sidebar a { white-space: nowrap; }
+  }
+  @media (max-width: 768px) {
+    .admin-page { padding: 4rem 4% 2rem; }
+    .toolbar { flex-direction: column; }
+    .search-input { width: 100%; }
+    .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 650px; font-size: 0.8rem; }
+    th, td { padding: 0.6rem 0.8rem; white-space: nowrap; }
+    .product-thumb { width: 40px; height: 50px; }
+    .pagination { flex-direction: column; gap: 0.8rem; }
+    .btn { padding: 0.6rem 1rem; font-size: 0.6rem; }
+  }
 </style>
 {% endblock %}
 
@@ -110,10 +127,11 @@
       if (d.success && d.data && d.data.products) {
         const prods = d.data.products;
         tbody.innerHTML = prods.length ? prods.map(function(product) {
+          let imgUrl = product.primary_image || '/static/placeholder.png';
           return `
           <tr>
-            <td><img src="${product.primary_image || 'https://via.placeholder.com/50x65/f5f5f0/6b4c3b?text=No+Img'}" class="product-thumb" alt=""></td>
-            <td><strong>${product.name}</strong></td>
+            <td><img src="${imgUrl}" class="product-thumb" alt=""></td>
+            <td><strong>${escapeHtml(product.name)}</strong></td>
             <td style="font-family:monospace;font-size:0.75rem;">${product.sku || '—'}</td>
             <td>TZS ${parseFloat(product.base_price||0).toLocaleString()}</td>
             <td>${product.total_stock != null ? product.total_stock : '—'}</td>
@@ -121,7 +139,7 @@
             <td>
               <a href="/admin/products/${product.id}/edit" class="btn btn-ghost btn-sm">Edit</a>
             </td>
-          </tr>`;
+           </tr>`;
         }).join('') : '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>';
 
         const pg = d.data.pagination;
@@ -147,7 +165,16 @@
     });
   }
 
-  // Load categories for filter dropdown
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
   fetch('/api/categories', {
     headers: {'Authorization': 'Bearer ' + token}
   })

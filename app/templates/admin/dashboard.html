@@ -1,16 +1,13 @@
-<{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Admin Dashboard · Fred Vunjabei{% endblock %}
-{% block head %}>
+{% block head %}
 <style>
-  /* ─────── Dashboard wrapper ─────── */
   .admin-dash {
     display: flex;
     min-height: calc(100vh - 70px);
     background: var(--cream);
     padding-top: 70px;
   }
-
-  /* ─────── Sidebar ─────── */
   .admin-sidebar {
     width: 260px;
     background: var(--brown);
@@ -29,7 +26,6 @@
     from { opacity: 0; transform: translateX(-20px); }
     to { opacity: 1; transform: translateX(0); }
   }
-
   .admin-sidebar a {
     display: flex;
     align-items: center;
@@ -63,7 +59,6 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-
   .sidebar-section-title {
     font-size: 0.6rem;
     letter-spacing: 3px;
@@ -72,8 +67,6 @@
     margin: 1.5rem 0 0.5rem 1.2rem;
     opacity: 0.7;
   }
-
-  /* ─────── Main content ─────── */
   .admin-main {
     flex: 1;
     padding: 2rem;
@@ -83,7 +76,6 @@
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   .admin-header {
     display: flex;
     justify-content: space-between;
@@ -115,8 +107,6 @@
     color: var(--cream);
     border-color: var(--brown);
   }
-
-  /* ─────── Stats cards ─────── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -148,7 +138,6 @@
   .stat-card.green::before { background: #27ae60; }
   .stat-card.blue::before { background: #2980b9; }
   .stat-card.red::before { background: #c0392b; }
-
   .stat-icon {
     font-size: 1.8rem;
     margin-bottom: 0.8rem;
@@ -167,8 +156,6 @@
     text-transform: uppercase;
     color: var(--brown-lt);
   }
-
-  /* ─────── Quick links grid ─────── */
   .quick-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -209,8 +196,6 @@
     letter-spacing: 2px;
     text-transform: uppercase;
   }
-
-  /* ─────── Recent orders table ─────── */
   .recent-orders {
     background: var(--white);
     border: 1px solid var(--parchment);
@@ -244,8 +229,6 @@
     border-bottom: 1px solid rgba(0,0,0,0.04);
     color: var(--brown);
   }
-
-  /* ─────── Mobile hamburger ─────── */
   .mobile-menu-btn {
     display: none;
     background: none;
@@ -259,8 +242,6 @@
     left: 1rem;
     z-index: 1100;
   }
-
-  /* ─────── Responsive ─────── */
   @media (max-width: 768px) {
     .admin-sidebar {
       position: fixed;
@@ -284,30 +265,36 @@
       font-size: 2rem;
       margin-left: 2.5rem;
     }
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    .quick-links {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .orders-table {
+      display: block;
+      overflow-x: auto;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Mobile menu button -->
 <button class="mobile-menu-btn" onclick="document.getElementById('adminSidebar').classList.toggle('open')">
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </button>
 
 <div class="admin-dash">
-  <!-- Sidebar -->
   <aside class="admin-sidebar" id="adminSidebar">
     <div style="text-align:center; margin-bottom:1.5rem;">
       <div style="font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--cream); letter-spacing:4px;">Admin</div>
       <div style="font-size:0.6rem; letter-spacing:2px; color:var(--gold-pale); text-transform:uppercase;">Fred Vunjabei</div>
     </div>
-
     <div class="sidebar-section-title">Overview</div>
     <a href="{{ url_for('frontend.admin_dashboard') }}" class="active">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Dashboard
     </a>
-
     <div class="sidebar-section-title">Catalogue</div>
     <a href="{{ url_for('frontend.admin_products') }}">
       <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
@@ -321,7 +308,6 @@
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72"/></svg>
       Brands
     </a>
-
     <div class="sidebar-section-title">Commerce</div>
     <a href="{{ url_for('frontend.admin_orders') }}">
       <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
@@ -331,7 +317,6 @@
       <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 110 6v2a2 2 0 002 2h16a2 2 0 002-2v-2a3 3 0 110-6V7a2 2 0 00-2-2H4a2 2 0 00-2 2v2z"/></svg>
       Coupons
     </a>
-
     <div class="sidebar-section-title">Content</div>
     <a href="{{ url_for('frontend.admin_banners') }}">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -345,7 +330,6 @@
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Pages & FAQs
     </a>
-
     <div class="sidebar-section-title">System</div>
     <a href="{{ url_for('frontend.admin_admins') }}">
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
@@ -353,14 +337,12 @@
     </a>
   </aside>
 
-  <!-- Main content -->
   <main class="admin-main">
     <div class="admin-header">
       <h1>Dashboard</h1>
       <button class="logout-btn" onclick="logoutAdmin()">Sign Out</button>
     </div>
 
-    <!-- Stats cards -->
     <div class="stats-grid" id="statsGrid">
       <div class="stat-card gold">
         <div class="stat-icon">TZS</div>
@@ -384,7 +366,6 @@
       </div>
     </div>
 
-    <!-- Quick links -->
     <div class="quick-links">
       <a href="{{ url_for('frontend.admin_products') }}" class="quick-link-card">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg>
@@ -424,7 +405,6 @@
       </a>
     </div>
 
-    <!-- Recent orders table -->
     <div class="recent-orders">
       <div class="section-title">Recent Orders</div>
       <table class="orders-table">
@@ -454,7 +434,6 @@
   function formatCurrency(n) { return 'TZS ' + Number(n||0).toLocaleString(); }
   function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
-  // Load dashboard stats
   fetch('/api/dashboard', {headers:{'Authorization':'Bearer '+token}})
   .then(r => r.json())
   .then(d => {
@@ -468,7 +447,6 @@
   })
   .catch(() => {});
 
-  // Load recent orders
   fetch('/api/orders?per_page=5', {headers:{'Authorization':'Bearer '+token}})
   .then(r => r.json())
   .then(d => {

@@ -84,6 +84,26 @@
     color: var(--brown);
     transform: translateY(-2px);
   }
+  @media (max-width: 768px) {
+    .admin-auth-card {
+      padding: 2.5rem 1.5rem;
+      max-width: 100%;
+    }
+    .admin-auth-card .logo {
+      font-size: 1.4rem;
+      letter-spacing: 6px;
+    }
+    .admin-auth-card h2 {
+      font-size: 1.6rem;
+    }
+    .form-group input {
+      font-size: 0.9rem;
+    }
+    .login-btn {
+      padding: 1rem;
+      font-size: 0.6rem;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -114,7 +134,7 @@
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
 
-    fetch('/api/admin/login', {        /* ← calls the cookie‑setting endpoint */
+    fetch('/api/admin/login', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email: email, password: password})
@@ -122,10 +142,7 @@
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.success) {
-        // Still keep the token in localStorage for JavaScript API calls
         localStorage.setItem('admin_token', d.data.access_token);
-        // The server already placed an HttpOnly cookie named 'admin_token'
-        // Redirect to the dashboard – the cookie will be sent automatically
         window.location.href = '/admin/dashboard';
       } else {
         alert(d.error || 'Invalid credentials');
