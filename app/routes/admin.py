@@ -153,9 +153,6 @@ def delete_category(cat_id):
     db.session.delete(cat); db.session.commit()
     return ok(message="Category deleted")
 
-# Brands, Coupons, Banners, Blog, Pages, FAQs, Admins – identical to previous version,
-# just with the same structure (GET, POST, PUT, DELETE) as above.
-# I'll add them back in this message to complete the file.
 
 @admin_bp.route("/brands", methods=["GET"])
 @admin_required
@@ -233,11 +230,12 @@ def delete_coupon(coupon_id):
     db.session.commit()
     return ok(message="Coupon deleted")
 
+
 @admin_bp.route("/banners", methods=["GET"])
 @admin_required
 def list_banners():
-    return ok({"banners":[b.to_dict() for b in Banner.query.order_by(Banner.sort_order, Banner.created_at.desc()).all()]})
-
+    banners = Banner.query.order_by(Banner.sort_order, Banner.created_at.desc()).all()
+    return ok([b.to_dict() for b in banners])
 
 
 @admin_bp.route("/banners/<banner_id>", methods=["DELETE"])

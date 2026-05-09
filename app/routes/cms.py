@@ -5,7 +5,7 @@ from app.utils.security import ok, err, validate_pagination
 cms_bp = Blueprint("cms", __name__, url_prefix="/cms")
 
 
-@cms_bp.route("/banners", methods=["GET"])
+@cms_bp.route("/banners/public", methods=["GET"])
 def get_banners():
     position = request.args.get("position", "homepage_hero")
     banners = (

@@ -492,46 +492,6 @@ def create_app(config_name: str = None) -> Flask:
         db.session.commit()
         return ok({}, "Removed from wishlist")
 
-    BANNER_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'banners')
-    os.makedirs(BANNER_UPLOAD_FOLDER, exist_ok=True)
-
-    @app.route('/api/banners', methods=['POST'])
-    @jwt_required()
-    def direct_create_banner():
-        from app.models import AdminUser, Banner
-        admin_id = get_jwt_identity()
-        admin = AdminUser.query.get(admin_id)
-        if not admin or not admin.is_active:
-            return err("Unauthorised", 401)
-
-        file = request.files.get('file') if request.files else None
-        data = request.form if request.files else (request.get_json(force=True) or {})
-
-        image_url = None
-        if file and file.filename:
-            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-                return err("Invalid image type")
-            save_name = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(BANNER_UPLOAD_FOLDER, save_name))
-            image_url = f"/static/uploads/banners/{save_name}"
-        else:
-            image_url = sanitise_text(data.get("image_url", ""))
-            if not image_url:
-                return err("image_url or file upload is required")
-
-        banner = Banner(
-            title=sanitise_text(data.get("title", "")),
-            subtitle=sanitise_text(data.get("subtitle", "")),
-            image_url=image_url,
-            link_url=sanitise_text(data.get("link_url", "")),
-            position=data.get("position", "homepage_hero"),
-            is_active=str(data.get("is_active", "true")).lower() != "false",
-        )
-        db.session.add(banner)
-        db.session.commit()
-        return ok(banner.to_dict(), "Banner created", 201)
-
     @app.route("/api/admin/login", methods=["POST"])
     def direct_admin_login():
         data = request.get_json(force=True)
