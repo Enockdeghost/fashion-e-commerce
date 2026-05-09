@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin{% endblock %} | Fred Vunjabei</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/admin.css') }}">
+  <script defer src="{{ url_for('static', filename='admin/js/admin.js') }}"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<button class="mobile-btn" onclick="toggleSidebar()" aria-label="Menu">
+  <svg width="22" height="22" viewBox="0 0 24 24">
+    <line x1="3" y1="6"  x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="admin-wrap">
+
+  <aside class="admin-sidebar" id="adminSidebar">
+
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-title">Admin</span>
+      <span class="sidebar-brand-user">Fred Vunjabei</span>
+    </div>
+
+    <div class="sidebar-section">Overview</div>
+    <a href="{{ url_for('frontend.admin_dashboard') }}" {% if request.endpoint == 'frontend.admin_dashboard' %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="sidebar-section">Catalogue</div>
+    <a href="{{ url_for('frontend.admin_products') }}" {% if 'admin_products' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+      <span>Products</span>
+    </a>
+    <a href="{{ url_for('frontend.admin_categories') }}" {% if 'admin_categories' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+      <span>Categories</span>
+    </a>
+    <a href="{{ url_for('frontend.admin_brands') }}" {% if 'admin_brands' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72"/></svg>
+      <span>Brands</span>
+    </a>
+
+    <div class="sidebar-section">Commerce</div>
+    <a href="{{ url_for('frontend.admin_orders') }}" {% if 'admin_orders' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+      <span>Orders</span>
+    </a>
+    <a href="{{ url_for('frontend.admin_coupons') }}" {% if 'admin_coupons' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 110 6v2a2 2 0 002 2h16a2 2 0 002-2v-2a3 3 0 110-6V7a2 2 0 00-2-2H4a2 2 0 00-2 2v2z"/></svg>
+      <span>Coupons</span>
+    </a>
+
+    <div class="sidebar-section">Content</div>
+    <a href="{{ url_for('frontend.admin_banners') }}" {% if 'admin_banners' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>Banners</span>
+    </a>
+    <a href="{{ url_for('frontend.admin_blog_list') }}" {% if 'admin_blog_list' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Blog</span>
+    </a>
+    <a href="{{ url_for('frontend.admin_pages') }}" {% if 'admin_pages' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      <span>Pages &amp; FAQs</span>
+    </a>
+
+    {% if g.admin and g.admin.role == 'super_admin' %}
+    <div class="sidebar-section">System</div>
+    <a href="{{ url_for('frontend.admin_admins') }}" {% if 'admin_admins' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      <span>Admin Users</span>
+    </a>
+    {% endif %}
+
+  </aside>
+
+  <main class="admin-main">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

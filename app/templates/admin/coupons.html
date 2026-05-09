@@ -1,37 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 {% block title %}Coupons | Fred Vunjabei Admin{% endblock %}
 {% block head %}
-<style>
-  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
-  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
-  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
-  .btn-primary { background: var(--gold); color: var(--brown); }
-  .btn-primary:hover { background: var(--gold-lt); }
-  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
-  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
-  .card { background: var(--white); border: 1px solid var(--parchment); }
-  table { width: 100%; border-collapse: collapse; }
-  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
-  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
-  code { background: var(--gold-dim); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem; color: var(--gold); }
-  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
-  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
-  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
-  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
-  .action-link { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); margin-right: 1rem; }
-  .action-link.delete { color: #c0392b; }
-  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; }
-  .modal-backdrop.open { display: flex; }
-  .modal { background: var(--white); border: 1px solid var(--parchment); padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%; }
-  .modal h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; margin-bottom: 1.5rem; }
-  .form-group { margin-bottom: 1rem; }
-  .form-group label { display: block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
-  .form-group input, .form-group select { width: 100%; padding: 0.7rem; border: 1px solid var(--parchment); font-size: 0.85rem; color: var(--brown); outline: none; }
-  .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
-</style>
+
+
 {% endblock %}
 
 {% block content %}

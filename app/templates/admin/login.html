@@ -1,155 +1,280 @@
-{% extends "base.html" %}
-{% block title %}Admin Login | Fred Vunjabei{% endblock %}
-{% block head %}
-<style>
-  .admin-auth-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--brown);
-    padding: 2rem;
-  }
-  .admin-auth-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--cream);
-    padding: 3.5rem 2.5rem;
-    border: 1px solid var(--gold);
-  }
-  .admin-auth-card .logo {
-    text-align: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem;
-    font-weight: 300;
-    letter-spacing: 8px;
-    color: var(--brown);
-    margin-bottom: 2rem;
-  }
-  .admin-auth-card .logo span {
-    color: var(--gold);
-    font-style: italic;
-  }
-  .admin-auth-card h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem;
-    font-weight: 300;
-    text-align: center;
-    color: var(--brown);
-    margin-bottom: 2rem;
-  }
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-  .form-group label {
-    display: block;
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-  }
-  .form-group input {
-    width: 100%;
-    padding: 0.9rem 0;
-    font-size: 0.95rem;
-    border: none;
-    border-bottom: 1px solid var(--parchment);
-    background: transparent;
-    color: var(--brown);
-    font-family: 'Montserrat', sans-serif;
-    outline: none;
-    transition: border-color 0.3s;
-  }
-  .form-group input:focus {
-    border-bottom-color: var(--gold);
-  }
-  .login-btn {
-    width: 100%;
-    padding: 1.1rem;
-    background: var(--brown);
-    color: var(--cream);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.3s;
-    margin-top: 1rem;
-  }
-  .login-btn:hover {
-    background: var(--gold);
-    color: var(--brown);
-    transform: translateY(-2px);
-  }
-  @media (max-width: 768px) {
-    .admin-auth-card {
-      padding: 2.5rem 1.5rem;
-      max-width: 100%;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | Fred Vunjabei</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brown: #3b2a1a;
+      --cream: #faf6f0;
+      --parchment: #ede5d8;
+      --gold: #b8933a;
+      --gold-lt: #f0dfa0;
+      --red: #c0392b;
     }
-    .admin-auth-card .logo {
-      font-size: 1.4rem;
-      letter-spacing: 6px;
-    }
-    .admin-auth-card h2 {
-      font-size: 1.6rem;
-    }
-    .form-group input {
-      font-size: 0.9rem;
-    }
-    .login-btn {
-      padding: 1rem;
-      font-size: 0.6rem;
-    }
-  }
-</style>
-{% endblock %}
 
-{% block content %}
-<div class="admin-auth-page">
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      background: var(--brown);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .admin-auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--cream);
+      padding: 3.5rem 2.5rem;
+      border: 1px solid var(--gold);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo {
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 8px;
+      color: var(--brown);
+      margin-bottom: 2rem;
+    }
+
+    .logo span {
+      color: var(--gold);
+      font-style: italic;
+    }
+
+    h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      text-align: center;
+      color: var(--brown);
+      margin-bottom: 2rem;
+    }
+
+    /* ── Flash message ── */
+    .flash-message {
+      background: rgba(184, 147, 58, 0.1);
+      border: 1px solid var(--gold);
+      color: var(--brown);
+      padding: 0.85rem 1.2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.4px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      border-radius: 4px;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+
+    .flash-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .flash-message.error {
+      background: rgba(192, 57, 43, 0.08);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .flash-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.9rem 0;
+      font-size: 0.95rem;
+      border: none;
+      border-bottom: 1px solid var(--parchment);
+      background: transparent;
+      color: var(--brown);
+      font-family: 'Montserrat', sans-serif;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      border-bottom-color: var(--gold);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 1.1rem;
+      background: var(--brown);
+      color: var(--cream);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      margin-top: 0.5rem;
+    }
+
+    .login-btn:hover {
+      background: var(--gold);
+      color: var(--brown);
+      transform: translateY(-2px);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .admin-auth-card {
+        padding: 2.5rem 1.5rem;
+        max-width: 100%;
+      }
+
+      .logo {
+        font-size: 1.4rem;
+        letter-spacing: 6px;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+      }
+
+      .form-group input {
+        font-size: 0.9rem;
+      }
+
+      .login-btn {
+        padding: 1rem;
+        font-size: 0.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
   <div class="admin-auth-card">
     <div class="logo">Fred <span>Vunjabei</span></div>
     <h2>Admin Panel</h2>
+
+    <!-- Flash message container (hidden by default) -->
+    <div id="flashMessage" class="flash-message">
+      <svg class="flash-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="flashText"></span>
+    </div>
+
     <form id="adminLoginForm" onsubmit="return handleAdminLogin(event)">
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="email" required placeholder="admin@maison.com">
+        <input type="email" id="email" required placeholder="admin@maison.com" autocomplete="email">
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" required placeholder="········">
+        <input type="password" id="password" required placeholder="········" autocomplete="current-password">
       </div>
-      <button type="submit" class="login-btn">Access Panel</button>
+      <button type="submit" class="login-btn" id="loginButton">Access Panel</button>
     </form>
   </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-  function handleAdminLogin(e) {
-    e.preventDefault();
-    var email = document.getElementById('email').value.trim();
-    var password = document.getElementById('password').value;
+  <script>
+    const flashMessage = document.getElementById('flashMessage');
+    const flashText = document.getElementById('flashText');
 
-    fetch('/api/admin/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({email: email, password: password})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success) {
-        localStorage.setItem('admin_token', d.data.access_token);
-        window.location.href = '/admin/dashboard';
-      } else {
-        alert(d.error || 'Invalid credentials');
+    // Utility to show flash message
+    function showFlash(message, type = 'error') {
+      flashText.textContent = message;
+      flashMessage.className = 'flash-message ' + type;
+      // Force reflow to restart animation
+      void flashMessage.offsetWidth;
+      flashMessage.classList.add('show');
+    }
+
+    function hideFlash() {
+      flashMessage.classList.remove('show');
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      hideFlash();
+
+      var email = document.getElementById('email').value.trim();
+      var password = document.getElementById('password').value;
+      var button = document.getElementById('loginButton');
+
+      if (!email || !password) {
+        showFlash('Please enter both email and password');
+        return false;
       }
-    })
-    .catch(function() { alert('Network error'); });
-    return false;
-  }
-</script>
-{% endblock %}
+
+      button.disabled = true;
+      button.textContent = 'Verifying…';
+
+      fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, password: password})
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          localStorage.setItem('admin_token', d.data.access_token);
+          window.location.href = '/admin/dashboard';
+        } else {
+          showFlash(d.error || 'Invalid credentials', 'error');
+          button.disabled = false;
+          button.textContent = 'Access Panel';
+        }
+      })
+      .catch(function() {
+        showFlash('Network error. Please try again.', 'error');
+        button.disabled = false;
+        button.textContent = 'Access Panel';
+      });
+
+      return false;
+    }
+  </script>
+
+</body>
+</html>

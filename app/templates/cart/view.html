@@ -3,14 +3,8 @@
 
 {% block content %}
 
-<!-- ═══════════════════════════════════════════
-     TOAST
-════════════════════════════════════════════ -->
 <div id="fv-toast" aria-live="polite" aria-atomic="true"></div>
 
-<!-- ═══════════════════════════════════════════
-     HERO HEADER
-════════════════════════════════════════════ -->
 <section class="ct-hero">
   <div class="ct-hero__back">
     <a href="/products" class="ct-back-link">← Continue Shopping</a>
@@ -23,9 +17,6 @@
   <div class="ct-hero__line"></div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     MAIN LAYOUT  (items | summary)
-════════════════════════════════════════════ -->
 <section class="ct-section">
   <div class="ct-layout">
 
@@ -83,9 +74,7 @@
 
 {% block scripts %}
 <style>
-/* ════════════════════════════════════════════
-   CSS TOKENS
-════════════════════════════════════════════ */
+
 :root {
   --gold:       #c9a96e;
   --gold-lt:    #e8d5b0;
@@ -98,9 +87,7 @@
   --trans:      0.38s var(--ease-lux);
 }
 
-/* ════════════════════════════════════════════
-   TOAST
-════════════════════════════════════════════ */
+
 #fv-toast {
   position: fixed;
   bottom: 2rem;
@@ -129,9 +116,7 @@
 @keyframes toastIn  { to { opacity:1; transform:translateY(0); } }
 @keyframes toastOut { to { opacity:0; transform:translateY(-8px); } }
 
-/* ════════════════════════════════════════════
-   HERO
-════════════════════════════════════════════ */
+
 .ct-hero {
   padding: 8rem 5% 3rem;
 }
@@ -175,9 +160,6 @@
   opacity: 0.5;
 }
 
-/* ════════════════════════════════════════════
-   LAYOUT
-════════════════════════════════════════════ */
 .ct-section { padding: 2rem 5% 7rem; }
 .ct-layout {
   display: grid;
@@ -189,9 +171,6 @@
   .ct-layout { grid-template-columns: 1fr; }
 }
 
-/* ════════════════════════════════════════════
-   CART ITEM ROW
-════════════════════════════════════════════ */
 .ct-item {
   display: grid;
   grid-template-columns: 110px 1fr auto;
@@ -319,9 +298,7 @@
   margin-top: 0.2rem;
 }
 
-/* ════════════════════════════════════════════
-   ORDER SUMMARY SIDEBAR
-════════════════════════════════════════════ */
+
 .ct-summary {
   position: sticky;
   top: 6rem;
@@ -396,9 +373,7 @@
 }
 .ct-continue-link:hover { color: var(--gold); }
 
-/* ════════════════════════════════════════════
-   SKELETON
-════════════════════════════════════════════ */
+
 .ct-sk-row {
   display: grid;
   grid-template-columns: 110px 1fr;
@@ -419,9 +394,7 @@
 .sk-w60  { width:60%; }
 .sk-w40  { width:40%; }
 
-/* ════════════════════════════════════════════
-   EMPTY / ERROR STATES
-════════════════════════════════════════════ */
+
 .ct-empty, .ct-error {
   text-align: center;
   padding: 5rem 2rem;
@@ -442,9 +415,7 @@
 .ct-empty__sub { color: var(--muted); font-size: 0.88rem; margin-bottom: 2rem; }
 .ct-error__msg { color: var(--muted); margin-bottom: 1.5rem; }
 
-/* ════════════════════════════════════════════
-   SHARED BUTTONS
-════════════════════════════════════════════ */
+
 .ct-btn {
   display: inline-block;
   padding: 0.85rem 2.2rem;
@@ -462,9 +433,7 @@
 .ct-btn--outline { color:var(--ink); border-color:var(--ink); }
 .ct-btn--outline:hover { background:var(--ink); color:#fff; }
 
-/* ════════════════════════════════════════════
-   RESPONSIVE
-════════════════════════════════════════════ */
+
 @media(max-width:600px){
   .ct-item { grid-template-columns: 80px 1fr; }
   .ct-item__price { grid-column: 2; }

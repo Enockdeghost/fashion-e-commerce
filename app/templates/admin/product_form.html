@@ -1,39 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 {% block title %}{% if product %}Edit{% else %}New{% endif %} Product | Fred Vunjabei Admin{% endblock %}
 {% block head %}
-<style>
-  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
-  .admin-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
-  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
-  .form-card { background: var(--white); border: 1px solid var(--parchment); padding: 2.5rem; max-width: 800px; }
-  .form-group { margin-bottom: 1.5rem; }
-  .form-group label { display: block; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
-  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid var(--parchment); font-size: 0.9rem; color: var(--brown); outline: none; }
-  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
-  .btn { padding: 0.8rem 2rem; border: none; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
-  .btn-primary { background: var(--gold); color: var(--brown); }
-  .btn-primary:hover { background: var(--gold-lt); }
-  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
-  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
-  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
-  .current-image { max-width: 300px; margin-top: 0.5rem; border: 1px solid var(--parchment); display: block; }
-  .file-input-wrapper { position: relative; display: inline-block; }
-  .file-input-wrapper input[type="file"] { opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; }
-  .file-input-btn { display: inline-block; padding: 0.6rem 1.2rem; background: var(--off-white); border: 1px solid var(--parchment); font-size: 0.75rem; cursor: pointer; }
-  .file-name { font-size: 0.8rem; color: var(--brown-lt); margin-top: 0.3rem; }
-  @media (max-width: 768px) {
-    .admin-page { padding: 4rem 4% 2rem; }
-    .form-card { padding: 1.5rem; max-width: 100%; }
-    .form-row { grid-template-columns: 1fr; }
-    .btn-row { flex-direction: column; }
-    .btn-row .btn { width: 100%; text-align: center; }
-    .current-image { max-width: 100%; }
-    .file-input-wrapper { width: 100%; }
-    .file-input-btn { width: 100%; text-align: center; display: block; }
-  }
-</style>
+
 {% endblock %}
 
 {% block content %}

@@ -1,58 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 {% block title %}Orders | Fred Vunjabei Admin{% endblock %}
 {% block head %}
-<style>
-  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
-  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
-  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; }
-  .btn-primary { background: var(--gold); color: var(--brown); }
-  .btn-primary:hover { background: var(--gold-lt); }
-  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
-  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
-  .btn-sm { padding: 0.4rem 1rem; font-size: 0.6rem; }
-  .toolbar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .search-input { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; width: 260px; background: var(--white); color: var(--brown); outline: none; }
-  .search-input:focus { border-color: var(--gold); }
-  .filter-select { padding: 0.6rem 1rem; border: 1px solid var(--parchment); font-size: 0.8rem; background: var(--white); color: var(--brown); outline: none; }
-  .card { background: var(--white); border: 1px solid var(--parchment); }
-  table { width: 100%; border-collapse: collapse; }
-  th { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.5rem; text-align: left; border-bottom: 1px solid var(--parchment); }
-  td { padding: 0.8rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 0.85rem; color: var(--brown); }
-  .status-badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; }
-  .status-pending { background: rgba(230,126,34,0.1); color: #e67e22; }
-  .status-paid { background: rgba(39,174,96,0.1); color: #27ae60; }
-  .status-processing { background: rgba(41,128,185,0.1); color: #2980b9; }
-  .status-shipped { background: rgba(142,68,173,0.1); color: #8e44ad; }
-  .status-delivered { background: rgba(39,174,96,0.1); color: #27ae60; }
-  .status-cancelled { background: rgba(192,57,43,0.1); color: #c0392b; }
-  .status-refunded { background: rgba(0,0,0,0.05); color: var(--brown-lt); }
-  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-top: 1px solid var(--parchment); font-size: 0.75rem; }
-  .pag-btn { background: var(--off-white); border: 1px solid var(--parchment); padding: 0.3rem 0.7rem; border-radius: 4px; font-size: 0.7rem; color: var(--brown-lt); cursor: pointer; }
-  .pag-btn.active { background: var(--gold); color: var(--brown); border-color: var(--gold); }
-  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
-  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
-  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
-  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
-  .order-detail-btn { background: none; border: none; font-size: 0.7rem; color: var(--gold); cursor: pointer; text-decoration: underline; }
 
-  @media (max-width: 1024px) {
-    .admin-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    .sidebar { overflow-x: auto; flex-wrap: nowrap; gap: 1.5rem; padding-bottom: 0.5rem; }
-    .sidebar a { white-space: nowrap; }
-  }
-  @media (max-width: 768px) {
-    .admin-page { padding: 4rem 4% 2rem; }
-    .toolbar { flex-direction: column; }
-    .search-input { width: 100%; }
-    .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { min-width: 600px; font-size: 0.8rem; }
-    th, td { padding: 0.6rem 0.8rem; white-space: nowrap; }
-    .pagination { flex-direction: column; gap: 0.8rem; }
-    .btn { padding: 0.6rem 1rem; font-size: 0.6rem; }
-    .modal-backdrop > div { width: 95%; padding: 1.5rem; }
-  }
-</style>
 {% endblock %}
 
 {% block content %}
