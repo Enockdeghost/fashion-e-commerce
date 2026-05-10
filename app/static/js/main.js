@@ -15,6 +15,42 @@
   });
   setTimeout(hidePreloader, 3500);
 
+  function showToast(message, type) {
+    type = type || 'success';
+    var container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+
+    var toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    
+    var iconSvg = type === 'success'
+      ? '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+      : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+
+    toast.innerHTML = '<span class="toast-icon">' + iconSvg + '</span><span>' + (message || '') + '</span>';
+    container.appendChild(toast);
+
+    setTimeout(function() { toast.classList.add('show'); }, 10);
+
+    setTimeout(function() {
+      toast.classList.remove('show');
+      toast.addEventListener('transitionend', function() {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      });
+    }, 4000);
+  }
+
+  window.showSuccessToast = function(msg) { showToast(msg, 'success'); };
+  window.showErrorToast = function(msg) { showToast(msg, 'error'); };
+
+  window.alert = function(msg) {
+    showToast(msg, 'success');
+  };
+
   function generateToken() {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       try {
@@ -281,7 +317,7 @@
     var pw = (document.getElementById('auth-pw') || {}).value || '';
 
     if (!email || !pw) {
-      showAuthError('Please enter your email and password.');
+      showErrorToast('Please enter your email and password.');
       return;
     }
 
@@ -308,12 +344,13 @@
         window.FV.user = d.data.user || {};
         renderNavAuth();
         closeAuthModal();
+        showSuccessToast('Signed in successfully');
       } else {
-        showAuthError(d.error || 'Invalid email or password.');
+        showErrorToast(d.error || 'Invalid email or password.');
       }
     }).catch(function() {
       setLoadingBtn('', 'signin-btn-text', false, 'Sign In');
-      showAuthError('Connection error. Please try again.');
+      showErrorToast('Connection error. Please try again.');
     });
   };
 
@@ -326,12 +363,12 @@
     var pw = (document.getElementById('reg-pw') || {}).value || '';
 
     if (!email || !pw) {
-      showAuthError('Email and password are required.');
+      showErrorToast('Email and password are required.');
       return;
     }
 
     if (pw.length < 8) {
-      showAuthError('Password must be at least 8 characters.');
+      showErrorToast('Password must be at least 8 characters.');
       return;
     }
 
@@ -361,12 +398,13 @@
         window.FV.user = d.data.user || {};
         renderNavAuth();
         closeAuthModal();
+        showSuccessToast('Account created successfully');
       } else {
-        showAuthError(d.error || 'Registration failed. Please try again.');
+        showErrorToast(d.error || 'Registration failed. Please try again.');
       }
     }).catch(function() {
       setLoadingBtn('', 'reg-btn-text', false, 'Create Account');
-      showAuthError('Connection error. Please try again.');
+      showErrorToast('Connection error. Please try again.');
     });
   };
 
@@ -384,6 +422,7 @@
     window.FV.user = null;
     renderNavAuth();
     closeAuthModal();
+    showSuccessToast('Signed out');
 
     if (window.location.pathname.startsWith('/account')) window.location.href = '/';
   };
@@ -451,8 +490,13 @@
       }).then(function(d) {
         if (d.success) {
           updateCartBadge();
+          showSuccessToast('Added to cart');
+        } else {
+          showErrorToast(d.error || 'Could not add to cart');
         }
-      }).catch(function() {});
+      }).catch(function() {
+        showErrorToast('Could not add to cart');
+      });
     } else if (action === 'wishlist') {
       var wToken = localStorage.getItem('wishlist_token') || generateToken();
       localStorage.setItem('wishlist_token', wToken);
@@ -469,7 +513,15 @@
         })
       }).then(function(r) {
         return r.json();
-      }).then(function(d) {}).catch(function() {});
+      }).then(function(d) {
+        if (d.success) {
+          showSuccessToast('Added to wishlist');
+        } else {
+          showErrorToast(d.error || 'Could not add to wishlist');
+        }
+      }).catch(function() {
+        showErrorToast('Could not add to wishlist');
+      });
     }
   });
 
@@ -546,6 +598,5 @@
       }
     }).catch(function() {});
   }
-  
   
 })();
