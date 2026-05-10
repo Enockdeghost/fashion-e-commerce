@@ -10,6 +10,7 @@ from app.utils.security import (
     admin_required, roles_required, ok, err,
     sanitise_text, sanitise_html, validate_pagination,
 )
+from app.utils.image_utils import convert_to_webp          
 from sqlalchemy import func, extract
 import os, uuid
 from werkzeug.utils import secure_filename
@@ -111,10 +112,7 @@ def get_order(order_id):
     ).first_or_404()
     return ok(order.to_dict(full=True))
 
-# ─── CATEGORIES, BRANDS, COUPONS, BANNERS, BLOG, PAGES, FAQS, ADMINS
-# (same as previous version, all routes work)
-# I'll provide the remaining routes below to keep the file complete.
-
+# ─── CATEGORIES ──────────────────────────────────
 @admin_bp.route("/categories", methods=["GET"])
 @admin_required
 def list_categories():
@@ -153,7 +151,7 @@ def delete_category(cat_id):
     db.session.delete(cat); db.session.commit()
     return ok(message="Category deleted")
 
-
+# ─── BRANDS ──────────────────────────────────────
 @admin_bp.route("/brands", methods=["GET"])
 @admin_required
 def list_brands():
@@ -190,6 +188,7 @@ def delete_brand(brand_id):
     db.session.commit()
     return ok(message="Brand deleted")
 
+# ─── COUPONS ────────────────────────────────────
 @admin_bp.route("/coupons", methods=["GET"])
 @admin_required
 def list_coupons():
@@ -230,14 +229,75 @@ def delete_coupon(coupon_id):
     db.session.commit()
     return ok(message="Coupon deleted")
 
-
+# ─── BANNERS (GET list) ─────────────────────────
 @admin_bp.route("/banners", methods=["GET"])
 @admin_required
 def list_banners():
     banners = Banner.query.order_by(Banner.sort_order, Banner.created_at.desc()).all()
     return ok([b.to_dict() for b in banners])
 
+# ─── BANNERS (CREATE – with WebP) ──────────────
+@admin_bp.route("/banners", methods=["POST"])
+@roles_required("super_admin", "manager")
+def create_banner():
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
 
+    image_url = None
+    try:
+        if file and file.filename:
+            image_url = convert_to_webp(file, upload_subfolder='banners')
+        else:
+            url = sanitise_text(data.get("image_url", ""))
+            if not url:
+                return err("Image file or image_url is required")
+            image_url = convert_to_webp(url, upload_subfolder='banners')
+    except (ValueError, RuntimeError) as exc:
+        return err(str(exc))
+
+    banner = Banner(
+        title=sanitise_text(data.get("title", "")),
+        subtitle=sanitise_text(data.get("subtitle", "")),
+        image_url=image_url,
+        link_url=sanitise_text(data.get("link_url", "")),
+        position=sanitise_text(data.get("position", "hero")),
+        is_active=str(data.get("is_active", "true")).lower() != "false",
+    )
+    db.session.add(banner)
+    db.session.commit()
+    return ok(banner.to_dict(), "Banner created", 201)
+
+# ─── BANNERS (UPDATE – with WebP) ──────────────
+@admin_bp.route("/banners/<banner_id>", methods=["PUT"])
+@roles_required("super_admin", "manager")
+def update_banner(banner_id):
+    banner = Banner.query.get_or_404(banner_id)
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
+
+    if file and file.filename:
+        try:
+            banner.image_url = convert_to_webp(file, upload_subfolder='banners')
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc))
+    elif data.get("image_url"):
+        try:
+            banner.image_url = convert_to_webp(data.get("image_url"), upload_subfolder='banners')
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc))
+
+    for field in ["title", "subtitle", "link_url", "position"]:
+        if field in data:
+            setattr(banner, field, sanitise_text(data[field]))
+    if "sort_order" in data:
+        banner.sort_order = int(data.get("sort_order", 0))
+    if "is_active" in data:
+        banner.is_active = str(data.get("is_active")).lower() not in ("false", "0", "no")
+
+    db.session.commit()
+    return ok(banner.to_dict(), "Banner updated")
+
+# ─── BANNERS (DELETE) ──────────────────────────
 @admin_bp.route("/banners/<banner_id>", methods=["DELETE"])
 @roles_required("super_admin")
 def delete_banner(banner_id):
@@ -245,6 +305,7 @@ def delete_banner(banner_id):
     db.session.commit()
     return ok(message="Banner deleted")
 
+# ─── BLOG ──────────────────────────────────────
 @admin_bp.route("/blog", methods=["GET"])
 @admin_required
 def list_blog_posts():
@@ -287,6 +348,7 @@ def delete_blog_post(post_id):
     db.session.commit()
     return ok(message="Blog post deleted")
 
+# ─── PAGES ──────────────────────────────────────
 @admin_bp.route("/pages", methods=["GET"])
 @admin_required
 def list_pages():
@@ -321,6 +383,7 @@ def delete_page(page_id):
     db.session.commit()
     return ok(message="Page deleted")
 
+# ─── FAQS ───────────────────────────────────────
 @admin_bp.route("/faqs", methods=["GET"])
 @admin_required
 def list_faqs():
@@ -354,6 +417,7 @@ def delete_faq(faq_id):
     db.session.commit()
     return ok(message="FAQ deleted")
 
+# ─── ADMINS ────────────────────────────────────
 @admin_bp.route("/admins", methods=["GET"])
 @roles_required("super_admin")
 def list_admins():
@@ -391,66 +455,3 @@ def delete_admin(admin_id):
     db.session.delete(AdminUser.query.get_or_404(admin_id))
     db.session.commit()
     return ok(message="Admin deleted")
-
-
-
-@admin_bp.route("/banners", methods=["POST"])
-@roles_required("super_admin", "manager")
-def create_banner():
-    # Accept multipart or JSON
-    file = request.files.get('file') if request.files else None
-    data = request.form if request.files else (request.get_json(force=True) or {})
-
-    image_url = None
-    if file and file.filename:
-        filename = secure_filename(file.filename)
-        ext = filename.rsplit('.', 1)[-1].lower()
-        if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-            return err("Invalid image type")
-        save_name = f"{uuid.uuid4().hex}.{ext}"
-        file.save(os.path.join(UPLOAD_FOLDER, save_name))
-        image_url = f"/static/uploads/banners/{save_name}"
-    else:
-        image_url = sanitise_text(data.get("image_url", ""))
-    if not image_url:
-        return err("Image file or image_url is required")
-
-    banner = Banner(
-        title=sanitise_text(data.get("title", "")),
-        subtitle=sanitise_text(data.get("subtitle", "")),
-        image_url=image_url,
-        link_url=sanitise_text(data.get("link_url", "")),
-        position=sanitise_text(data.get("position", "homepage_hero")),
-        is_active=str(data.get("is_active", "true")).lower() != "false",
-    )
-    db.session.add(banner)
-    db.session.commit()
-    return ok(banner.to_dict(), "Banner created", 201)
-
-@admin_bp.route("/banners/<banner_id>", methods=["PUT"])
-@roles_required("super_admin", "manager")
-def update_banner(banner_id):
-    banner = Banner.query.get_or_404(banner_id)
-    file = request.files.get('file') if request.files else None
-    data = request.form if request.files else (request.get_json(force=True) or {})
-
-    if file and file.filename:
-        filename = secure_filename(file.filename)
-        ext = filename.rsplit('.', 1)[-1].lower()
-        if ext in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-            save_name = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(UPLOAD_FOLDER, save_name))
-            banner.image_url = f"/static/uploads/banners/{save_name}"
-    elif data.get("image_url"):
-        banner.image_url = sanitise_text(data.get("image_url"))
-
-    for field in ["title", "subtitle", "link_url", "position"]:
-        if field in data:
-            setattr(banner, field, sanitise_text(data[field]))
-    if "sort_order" in data:
-        banner.sort_order = int(data.get("sort_order", 0))
-    if "is_active" in data:
-        banner.is_active = str(data.get("is_active")).lower() not in ("false", "0", "no")
-
-    db.session.commit()
-    return ok(banner.to_dict(), "Banner updated")

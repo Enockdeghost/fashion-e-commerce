@@ -3,6 +3,7 @@ from .config import config
 from .extensions import db, migrate, jwt, limiter, cors, cache
 from .routes import register_blueprints
 from .utils.security import add_security_headers, ok, err, sanitise_text, sanitise_html, is_valid_email
+from .utils.image_utils import convert_to_webp          # <-- NEW IMPORT
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from .models import User
 import os
@@ -116,16 +117,17 @@ def create_app(config_name: str = None) -> Flask:
         if not title:
             return err("Title is required")
 
+        # ── convert to WebP ──
         cover_url = None
-        if file and file.filename:
-            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-                return err("Invalid image type")
-            save_name = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(BLOG_UPLOAD_FOLDER, save_name))
-            cover_url = f"/static/uploads/blog/{save_name}"
-        else:
-            cover_url = sanitise_text(data.get("cover_image_url", ""))
+        try:
+            if file and file.filename:
+                cover_url = convert_to_webp(file, upload_subfolder='blog')
+            else:
+                url = sanitise_text(data.get("cover_image_url", ""))
+                if url:
+                    cover_url = convert_to_webp(url, upload_subfolder='blog')
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc) or "Invalid image file or URL")
 
         post = BlogPost(
             title=title,
@@ -235,18 +237,17 @@ def create_app(config_name: str = None) -> Flask:
         if not name or not price:
             return err("Name and base_price are required")
 
+        # ── convert to WebP ──
         primary_image = None
-        if file and file.filename:
-            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-                return err("Invalid image type")
-            save_name = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(UPLOAD_PRODUCT_FOLDER, save_name))
-            primary_image = f"/static/uploads/products/{save_name}"
-        else:
-            primary_image = sanitise_text(data.get("primary_image", ""))
-            if primary_image and not primary_image.startswith("http"):
-                primary_image = f"/static{primary_image}"
+        try:
+            if file and file.filename:
+                primary_image = convert_to_webp(file, upload_subfolder='products')
+            else:
+                url = sanitise_text(data.get("primary_image", ""))
+                if url:
+                    primary_image = convert_to_webp(url, upload_subfolder='products')
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc) or "Invalid image file or URL")
 
         product = Product(
             name=name,
@@ -340,14 +341,12 @@ def create_app(config_name: str = None) -> Flask:
         if "is_active" in data:
             product.is_active = bool(data["is_active"])
 
+        # ── convert new image to WebP if provided ──
         if file and file.filename:
-            ext = secure_filename(file.filename).rsplit('.', 1)[-1].lower()
-            if ext not in ('jpg', 'jpeg', 'png', 'webp', 'gif'):
-                return err("Invalid image type")
-            save_name = f"{uuid.uuid4().hex}.{ext}"
-            file.save(os.path.join(UPLOAD_PRODUCT_FOLDER, save_name))
-            new_image_url = f"/static/uploads/products/{save_name}"
-
+            try:
+                new_image_url = convert_to_webp(file, upload_subfolder='products')
+            except (ValueError, RuntimeError) as exc:
+                return err(str(exc) or "Invalid image file")
             primary_image_obj = ProductImage.query.filter_by(product_id=product.id, is_primary=True).first()
             if primary_image_obj:
                 primary_image_obj.url = new_image_url
@@ -362,14 +361,18 @@ def create_app(config_name: str = None) -> Flask:
                 db.session.add(new_img)
         else:
             primary_image_url = sanitise_text(data.get("primary_image", ""))
-            if primary_image_url and primary_image_url != getattr(product, 'primary_image', None):
+            if primary_image_url:
+                try:
+                    new_image_url = convert_to_webp(primary_image_url, upload_subfolder='products')
+                except (ValueError, RuntimeError) as exc:
+                    return err(str(exc) or "Invalid image URL")
                 existing_primary = ProductImage.query.filter_by(product_id=product.id, is_primary=True).first()
                 if existing_primary:
-                    existing_primary.url = primary_image_url
+                    existing_primary.url = new_image_url
                 else:
                     new_img = ProductImage(
                         product_id=product.id,
-                        url=primary_image_url,
+                        url=new_image_url,
                         is_primary=True,
                         alt_text=product.name,
                         sort_order=0
@@ -491,6 +494,46 @@ def create_app(config_name: str = None) -> Flask:
         db.session.delete(entry)
         db.session.commit()
         return ok({}, "Removed from wishlist")
+
+    BANNER_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'banners')
+    os.makedirs(BANNER_UPLOAD_FOLDER, exist_ok=True)
+
+    @app.route('/api/banners', methods=['POST'])
+    @jwt_required()
+    def direct_create_banner():
+        from app.models import AdminUser, Banner
+        admin_id = get_jwt_identity()
+        admin = AdminUser.query.get(admin_id)
+        if not admin or not admin.is_active:
+            return err("Unauthorised", 401)
+
+        file = request.files.get('file') if request.files else None
+        data = request.form if request.files else (request.get_json(force=True) or {})
+
+        # ── convert to WebP ──
+        image_url = None
+        try:
+            if file and file.filename:
+                image_url = convert_to_webp(file, upload_subfolder='banners')
+            else:
+                url = sanitise_text(data.get("image_url", ""))
+                if not url:
+                    return err("image_url or file upload is required")
+                image_url = convert_to_webp(url, upload_subfolder='banners')
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc))
+
+        banner = Banner(
+            title=sanitise_text(data.get("title", "")),
+            subtitle=sanitise_text(data.get("subtitle", "")),
+            image_url=image_url,
+            link_url=sanitise_text(data.get("link_url", "")),
+            position=data.get("position", "hero"),
+            is_active=str(data.get("is_active", "true")).lower() != "false",
+        )
+        db.session.add(banner)
+        db.session.commit()
+        return ok(banner.to_dict(), "Banner created", 201)
 
     @app.route("/api/admin/login", methods=["POST"])
     def direct_admin_login():
