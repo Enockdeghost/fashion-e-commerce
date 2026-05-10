@@ -10,6 +10,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from slugify import slugify
+from flask_assets import Environment, Bundle
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -27,6 +28,27 @@ def create_app(config_name: str = None) -> Flask:
     limiter.init_app(app)
     cors.init_app(app, resources={r"/api/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
     cache.init_app(app)
+
+
+    assets = Environment(app)
+    assets.init_app(app)
+
+    # Public storefront JS
+    js = Bundle(
+        'js/main.js',
+        filters='jsmin',
+        output='gen/packed.min.js'
+    )
+    assets.register('js_all', js)
+
+    # Admin JS (separate bundle)
+    admin_js = Bundle(
+        'admin/js/admin.js',
+        filters='jsmin',
+        output='gen/admin.packed.min.js'
+    )
+    assets.register('admin_js', admin_js)
+
 
     @app.route('/api/categories', methods=['GET'])
     def direct_list_categories():

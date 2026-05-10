@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='admin/css/admin.css') }}">
-  <script defer src="{{ url_for('static', filename='admin/js/admin.js') }}"></script>
+  {% assets "admin_js" %}<script defer src="{{ ASSET_URL }}"></script>{% endassets %}
   {% block head %}{% endblock %}
 </head>
 <body>
