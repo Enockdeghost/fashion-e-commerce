@@ -11,7 +11,6 @@ import uuid
 from werkzeug.utils import secure_filename
 from slugify import slugify
 from flask_assets import Environment, Bundle
-# from app.utils.obfuscator_filter import JSObfuscator
 
 
 def create_app(config_name: str = None) -> Flask:
@@ -34,7 +33,7 @@ def create_app(config_name: str = None) -> Flask:
     assets = Environment(app)
     assets.init_app(app)
 
-    # Public storefront JavaScript (minified & obfuscated)
+    # Public storefront JavaScript 
     js = Bundle(
         'js/main.js',
         filters='jsmin',
@@ -49,6 +48,21 @@ def create_app(config_name: str = None) -> Flask:
         output='gen/admin.packed.min.js'
     )
     assets.register('admin_js', admin_js)
+
+
+    css = Bundle(
+    'css/style.css',
+    filters='cssmin',
+    output='gen/packed.min.css'
+    )
+    assets.register('css_all', css)
+
+    admin_css = Bundle(
+        'admin/css/admin.css',
+        filters='cssmin',
+        output='gen/admin.packed.min.css'
+    )
+    assets.register('admin_css', admin_css)
 
     @app.route('/api/categories', methods=['GET'])
     def direct_list_categories():

@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <title>{% block title %}Fred Vunjabei | Haute Couture{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Luxury fashion house inspired by Tanzanian heritage.{% endblock %}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% assets "css_all" %}<link rel="stylesheet" href="{{ ASSET_URL }}">{% endassets %}
   {% assets "js_all" %}<script defer src="{{ ASSET_URL }}"></script>{% endassets %}
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
