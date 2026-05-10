@@ -1,0 +1,127 @@
+
+{% extends "admin/base.html" %}
+{% block title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+  <h1>Site Settings</h1>
+</div>
+
+<div class="form-card">
+  <form id="settingsForm" enctype="multipart/form-data" onsubmit="return saveSettings(event)">
+    <div class="form-group">
+      <label>Company Name</label>
+      <input type="text" id="site_name" name="site_name" value="{{ site_name }}">
+    </div>
+
+    <div class="form-group">
+      <label>Logo Upload</label>
+      <div class="file-input-wrapper">
+        <input type="file" id="logoFile" name="file" accept="image/*">
+        <span class="file-input-btn">Choose File</span>
+      </div>
+      <span class="file-name" id="fileName"></span>
+      <img id="logoPreview" class="current-image"
+           {% if site_logo %}src="{{ site_logo }}"
+           {% else %}style="display:none"
+           {% endif %} alt="Logo Preview">
+    </div>
+
+    <div class="form-group">
+      <label>Or paste Logo URL</label>
+      <input type="url" id="logoUrl" name="site_logo" placeholder="https://…"
+             value="{{ site_logo if site_logo else '' }}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const adminToken = localStorage.getItem('admin_token');
+  if (!adminToken) { window.location.href = '/admin'; }
+
+  const logoFileInput = document.getElementById('logoFile');
+  const fileNameSpan = document.getElementById('fileName');
+  const logoPreview = document.getElementById('logoPreview');
+  const logoUrlInput = document.getElementById('logoUrl');
+
+  logoFileInput.addEventListener('change', function() {
+    const file = logoFileInput.files[0];
+    if (file) {
+      fileNameSpan.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        logoPreview.src = e.target.result;
+        logoPreview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+      logoUrlInput.value = '';
+    }
+  });
+
+  logoUrlInput.addEventListener('input', function() {
+    if (this.value) {
+      logoPreview.src = this.value;
+      logoPreview.style.display = 'block';
+      logoFileInput.value = '';
+      fileNameSpan.textContent = '';
+    }
+  });
+
+  function saveSettings(e) {
+    e.preventDefault();
+    const hasFile = logoFileInput.files.length > 0;
+    const siteName = document.getElementById('site_name').value.trim();
+
+    if (hasFile) {
+      const formData = new FormData();
+      formData.append('site_name', siteName);
+      formData.append('file', logoFileInput.files[0]);
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + adminToken },
+        body: formData
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          showSuccessToast('Settings saved!');
+          location.reload();
+        } else {
+          showErrorToast(d.error || 'Save failed');
+        }
+      })
+      .catch(() => showErrorToast('Network error'));
+    } else {
+      const data = {
+        site_name: siteName,
+        site_logo: logoUrlInput.value.trim() || null
+      };
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + adminToken
+        },
+        body: JSON.stringify(data)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          showSuccessToast('Settings saved!');
+          location.reload();
+        } else {
+          showErrorToast(d.error || 'Save failed');
+        }
+      })
+      .catch(() => showErrorToast('Network error'));
+    }
+    return false;
+  }
+</script>
+{% endblock %}

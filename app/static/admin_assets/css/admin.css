@@ -2900,3 +2900,13 @@ td {
     display: block;
   }
 }
+
+.current-image {
+  max-width: 220px;
+  max-height: 80px;
+  object-fit: contain;
+  border: 1px solid var(--parchment);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: var(--white);
+}

@@ -3,13 +3,15 @@ from .config import config
 from .extensions import db, migrate, jwt, limiter, cors, cache
 from .routes import register_blueprints
 from .utils.security import add_security_headers, ok, err, sanitise_text, sanitise_html, is_valid_email
-from .utils.image_utils import convert_to_webp          # <-- NEW IMPORT
+from .utils.image_utils import convert_to_webp          
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from .models import User
 import os
 import uuid
 from werkzeug.utils import secure_filename
 from slugify import slugify
+from app.models.settings import SiteSettings
+
 from flask_assets import Environment, Bundle
 
 
@@ -33,7 +35,7 @@ def create_app(config_name: str = None) -> Flask:
     assets = Environment(app)
     assets.init_app(app)
 
-    # Public storefront JavaScript 
+    # Public storefront JavaScript
     js = Bundle(
         'js/main.js',
         filters='jsmin',
@@ -41,28 +43,31 @@ def create_app(config_name: str = None) -> Flask:
     )
     assets.register('js_all', js)
 
-    # Admin JavaScript (separate bundle, also minified)
+    # Public storefront CSS
+    css = Bundle(
+        'css/style.css',
+        filters='cssmin',
+        output='gen/packed.min.css'
+    )
+    assets.register('css_all', css)
+
+    # Admin CSS
+    admin_css = Bundle(
+        'admin_assets/css/admin.css',
+        filters='cssmin',
+        output='gen/admin.packed.min.css'
+    )
+    assets.register('admin_css', admin_css)
+
+    # Admin JavaScript
     admin_js = Bundle(
-        'admin/js/admin.js',
+        'admin_assets/js/admin.js',
         filters='jsmin',
         output='gen/admin.packed.min.js'
     )
     assets.register('admin_js', admin_js)
 
-
-    css = Bundle(
-    'css/style.css',
-    filters='cssmin',
-    output='gen/packed.min.css'
-    )
-    assets.register('css_all', css)
-
-    admin_css = Bundle(
-        'admin/css/admin.css',
-        filters='cssmin',
-        output='gen/admin.packed.min.css'
-    )
-    assets.register('admin_css', admin_css)
+   
 
     @app.route('/api/categories', methods=['GET'])
     def direct_list_categories():
@@ -627,6 +632,15 @@ def create_app(config_name: str = None) -> Flask:
     @app.route("/health", methods=["GET"])
     def health():
         return jsonify({"status": "ok"}), 200
+    
+
+    # change company name route
+    @app.context_processor
+    def inject_site_settings():
+        return {
+            'site_name': SiteSettings.get('site_name', 'Fred Vunjabei'),
+            'site_logo': SiteSettings.get('site_logo', '')
+            }
 
     return app
 

@@ -5,12 +5,13 @@ from app.extensions import db
 from app.models import (
     AdminUser, Product, ProductVariant, Order, OrderItem,
     Coupon, Banner, BlogPost, Page, FAQ, Category, Brand, AbandonedCart,
+    SiteSettings,                          # <-- added
 )
 from app.utils.security import (
     admin_required, roles_required, ok, err,
     sanitise_text, sanitise_html, validate_pagination,
 )
-from app.utils.image_utils import convert_to_webp          
+from app.utils.image_utils import convert_to_webp   # <-- added
 from sqlalchemy import func, extract
 import os, uuid
 from werkzeug.utils import secure_filename
@@ -229,14 +230,13 @@ def delete_coupon(coupon_id):
     db.session.commit()
     return ok(message="Coupon deleted")
 
-# ─── BANNERS (GET list) ─────────────────────────
+# ─── BANNERS ────────────────────────────────────
 @admin_bp.route("/banners", methods=["GET"])
 @admin_required
 def list_banners():
     banners = Banner.query.order_by(Banner.sort_order, Banner.created_at.desc()).all()
     return ok([b.to_dict() for b in banners])
 
-# ─── BANNERS (CREATE – with WebP) ──────────────
 @admin_bp.route("/banners", methods=["POST"])
 @roles_required("super_admin", "manager")
 def create_banner():
@@ -267,7 +267,6 @@ def create_banner():
     db.session.commit()
     return ok(banner.to_dict(), "Banner created", 201)
 
-# ─── BANNERS (UPDATE – with WebP) ──────────────
 @admin_bp.route("/banners/<banner_id>", methods=["PUT"])
 @roles_required("super_admin", "manager")
 def update_banner(banner_id):
@@ -297,7 +296,6 @@ def update_banner(banner_id):
     db.session.commit()
     return ok(banner.to_dict(), "Banner updated")
 
-# ─── BANNERS (DELETE) ──────────────────────────
 @admin_bp.route("/banners/<banner_id>", methods=["DELETE"])
 @roles_required("super_admin")
 def delete_banner(banner_id):
@@ -455,3 +453,25 @@ def delete_admin(admin_id):
     db.session.delete(AdminUser.query.get_or_404(admin_id))
     db.session.commit()
     return ok(message="Admin deleted")
+
+# ─── SITE SETTINGS ─────────────────────────────
+@admin_bp.route("/settings", methods=["POST"])
+@roles_required("super_admin", "admin")
+def save_settings():
+    file = request.files.get('file') if request.files else None
+    data = request.form if request.files else (request.get_json(force=True) or {})
+
+    if 'site_name' in data:
+        SiteSettings.set('site_name', sanitise_text(data['site_name']))
+
+    if file and file.filename:
+        try:
+            logo_url = convert_to_webp(file, upload_subfolder='site')
+            SiteSettings.set('site_logo', logo_url)
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc) or "Invalid logo file")
+    elif 'site_logo' in data:
+        logo_url = sanitise_text(data['site_logo'])
+        SiteSettings.set('site_logo', logo_url)
+
+    return ok(message="Settings saved")

@@ -27,6 +27,12 @@ def register_blueprints(app: Flask):
     # Customer auth – provides /api/auth/login, /api/auth/register, /api/auth/me
     app.register_blueprint(auth_bp, url_prefix="/api")
 
+    # Admin management (dashboard, CRUD) – FIXED: static folder added for asset resolution
+    app.register_blueprint(admin_bp,
+                           url_prefix="/api",
+                           static_folder=app.static_folder,
+                           static_url_path=app.static_url_path)
+
     # Products & catalogue
     app.register_blueprint(products_bp, url_prefix="/api")
     app.register_blueprint(cat_bp, url_prefix="/api")
@@ -58,8 +64,7 @@ def register_blueprints(app: Flask):
     # Media uploads
     app.register_blueprint(media_bp, url_prefix="/api")
 
-    # Admin management (dashboard, CRUD)
-    app.register_blueprint(admin_bp, url_prefix="/api")
+    # Notifications
     app.register_blueprint(notifications_bp, url_prefix="/api")
 
     # Analytics

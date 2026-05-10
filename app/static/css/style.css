@@ -2175,7 +2175,16 @@ footer {
     margin-top: 2rem;
   }
 }
-
+@media (max-width: 1024px) {
+  .brand-story-img::after {
+    background: linear-gradient(
+      to top,
+      rgba(26, 15, 0, 0.55) 0%,
+      rgba(26, 15, 0, 0.15) 60%,
+      transparent 100%
+    );
+  }
+}
 
 /* ── TOAST NOTIFICATION ── */
 .toast-container {
@@ -2250,5 +2259,129 @@ footer {
   }
   .toast {
     max-width: 100%;
+  }
+}
+
+
+/* ── Desktop (logo + name, compact height) ── */
+.brand-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 3rem;
+  background: rgba(26, 15, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(184, 147, 58, 0.3);
+  box-shadow: 0 0 22px rgba(184, 147, 58, 0.09);
+  text-decoration: none;
+  max-width: 300px;
+  animation: brandBreathe 5s ease-in-out infinite;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.brand-block:hover {
+  box-shadow: 0 0 35px rgba(184, 147, 58, 0.3);
+  border-color: rgba(184, 147, 58, 0.65);
+}
+
+/* circular logo */
+.brand-block img {
+  height: 36px;
+  width: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 147, 58, 0.45);
+  box-shadow: 0 0 12px rgba(184, 147, 58, 0.25);
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+
+/* shimmering brand name */
+.brand-block .brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.25rem;
+  font-weight: 300;
+  letter-spacing: 3.5px;
+  color: var(--cream, #faf6f0);
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+  background: linear-gradient(90deg, #f0dfa0, #b8933a, #f0dfa0);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerText 4s linear infinite;
+}
+
+/* keyframes */
+@keyframes brandBreathe {
+  0%, 100% { border-color: rgba(184,147,58,0.25); box-shadow: 0 0 20px rgba(184,147,58,0.06); }
+  50%      { border-color: rgba(184,147,58,0.8);  box-shadow: 0 0 35px rgba(184,147,58,0.22); }
+}
+@keyframes logoGlow {
+  from { box-shadow: 0 0 10px rgba(184,147,58,0.35); }
+  to   { box-shadow: 0 0 22px rgba(184,147,58,0.7); }
+}
+@keyframes shimmerText {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+
+@media (max-width: 1024px) {
+  :root { --nav-h: 64px; }
+
+  nav {
+    padding: 1rem 5%;
+    justify-content: space-between;
+  }
+  nav.scrolled { padding: .85rem 5%; }
+
+  .nav-left,
+  .nav-right li:not(.nav-cart-wrap):not(.nav-wish-wrap) { display: none; }
+
+  /* Hamburger visible, moved to the left */
+  .hamburger {
+    display: flex;
+    order: -1;               /* forces it to the far left */
+    margin-left: -2px;       /* tiny nudge for elegance */
+  }
+
+  /* Logo‑only, no background */
+  .brand-block {
+    position: static;
+    transform: none;
+    flex: 0 0 auto;
+    padding: 0;
+    gap: 0;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    animation: none;
+    max-width: none;
+  }
+
+  .brand-block .brand-name { display: none; }
+
+  .brand-block img {
+    height: 44px;
+    width: 44px;
+    background: transparent;
+    border-radius: 50%;
+    border: 1px solid rgba(184,147,58,0.5);
+    box-shadow: 0 0 14px rgba(184,147,58,0.4);
+    animation: logoGlow 3s ease-in-out infinite alternate;
+  }
+}
+
+/* Small phones – even smaller logo */
+@media (max-width: 480px) {
+  .brand-block img {
+    height: 36px;
+    width: 36px;
+    box-shadow: 0 0 10px rgba(184,147,58,0.35);
   }
 }

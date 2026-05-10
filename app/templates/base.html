@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +7,7 @@
   <meta name="theme-color" content="#1a0f00"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <title>{% block title %}Fred Vunjabei | Haute Couture{% endblock %}</title>
+  <title>{% block title %}{{ site_name }} | Haute Couture{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Luxury fashion house inspired by Tanzanian heritage.{% endblock %}">
   {% assets "css_all" %}<link rel="stylesheet" href="{{ ASSET_URL }}">{% endassets %}
   {% assets "js_all" %}<script defer src="{{ ASSET_URL }}"></script>{% endassets %}
@@ -14,7 +15,65 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Montserrat:wght@200;300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-   
+    /* ── Luxury Brand Block (nav & footer) ── */
+    .brand-block {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.4rem 1.2rem;
+      border-radius: 3rem;
+      background: rgba(26, 15, 0, 0.25);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(184, 147, 58, 0.3);
+      box-shadow: 0 0 20px rgba(184, 147, 58, 0.08);
+      animation: brandPulse 4s ease-in-out infinite;
+      transition: box-shadow 0.4s ease, border-color 0.4s ease;
+      text-decoration: none;
+      max-width: 320px;
+    }
+
+    .brand-block:hover {
+      box-shadow: 0 0 30px rgba(184, 147, 58, 0.25);
+      border-color: rgba(184, 147, 58, 0.6);
+    }
+
+    .brand-block img {
+      max-height: 42px;
+      max-width: 90px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .brand-block .brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      color: var(--cream, #faf6f0);
+      white-space: nowrap;
+      text-transform: uppercase;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    @keyframes brandPulse {
+      0%, 100% { border-color: rgba(184, 147, 58, 0.3); }
+      50%      { border-color: rgba(184, 147, 58, 0.7); }
+    }
+
+    @media (max-width: 768px) {
+      .brand-block {
+        padding: 0.3rem 0.9rem;
+        gap: 0.5rem;
+      }
+      .brand-block img {
+        max-height: 32px;
+      }
+      .brand-block .brand-name {
+        font-size: 1rem;
+        letter-spacing: 2px;
+      }
+    }
   </style>
   {% block head %}{% endblock %}
   {% block extra_css %}{% endblock %}
@@ -25,9 +84,15 @@
   <div class="cursor-ring" id="cursorRing"></div>
 
   <div id="preloader">
-    <div class="preloader-logo">Fred <span>Vunjabei</span></div>
+    <div class="preloader-logo">
+      {% if site_logo %}
+        <img src="{{ site_logo }}" alt="{{ site_name }}" style="max-width:180px;">
+      {% else %}
+        Fred <span>Vunjabei</span>
+      {% endif %}
+    </div>
     <div class="preloader-line"></div>
-    <div class="preloader-sub">Haute Couture · Dar es Salaam · Est. 2025</div>
+    <div class="preloader-sub">Haute Couture · Dar es Salaam · Est. 2026</div>
   </div>
 
   <nav id="nav">
@@ -37,7 +102,13 @@
       <li><a href="{{ url_for('frontend.lookbook') }}">Lookbook</a></li>
     </ul>
 
-    <a href="{{ url_for('frontend.index') }}" class="nav-logo">Fred <span>Vunjabei</span></a>
+    <!-- ═══ LUXURY BRAND BLOCK (Logo + Name always together) ═══ -->
+    <a href="{{ url_for('frontend.index') }}" class="brand-block">
+      {% if site_logo %}
+        <img src="{{ site_logo }}" alt="{{ site_name }}">
+      {% endif %}
+      <span class="brand-name">{{ site_name }}</span>
+    </a>
 
     <ul class="nav-right">
       <li class="nav-hide-sm"><a href="{{ url_for('frontend.index') }}#designers">Maisons</a></li>
@@ -90,7 +161,13 @@
   <footer>
     <div class="footer-top">
       <div class="footer-brand-col">
-        <span class="footer-logo">Fred <span>Vunjabei</span></span>
+        <!-- ═══ LUXURY BRAND BLOCK IN FOOTER (same design, no link) ═══ -->
+        <span class="brand-block">
+          {% if site_logo %}
+            <img src="{{ site_logo }}" alt="{{ site_name }}">
+          {% endif %}
+          <span class="brand-name">{{ site_name }}</span>
+        </span>
         <p>Redefining African luxury from the heart of Tanzania.</p>
         <div class="footer-social">
           <a href="#" aria-label="Instagram">
@@ -135,7 +212,7 @@
     </div>
     <div class="footer-divider"></div>
     <div class="footer-bottom">
-      <p>&copy; {{ now.year if now else '2025' }} Fred Vunjabei. Tous droits réservés.</p>
+      <p>&copy; {{ now.year if now else '2025' }} {{ site_name }}. Tous droits réservés.</p>
       <div class="footer-bottom-links">
         <a href="{{ url_for('frontend.cms_page', slug='privacy') }}">Privacy</a>
         <a href="{{ url_for('frontend.cms_page', slug='terms') }}">Terms</a>

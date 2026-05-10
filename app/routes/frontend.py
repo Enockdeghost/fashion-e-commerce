@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, g
 from datetime import datetime, timezone
 from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
@@ -18,6 +18,7 @@ def admin_required(f):
             admin = AdminUser.query.get(admin_id)
             if not admin or not admin.is_active:
                 raise Exception("Not authorised")
+            g.admin = admin         
         except Exception:
             return redirect(url_for('frontend.admin_login'))
         return f(*args, **kwargs)
@@ -228,3 +229,12 @@ def admin_pages():
 @admin_required
 def admin_admins():
     return render_template('admin/admins.html', now=_now())
+
+@frontend_bp.route('/admin/settings')
+@admin_required
+def admin_settings():
+    from app.models.settings import SiteSettings
+    return render_template('admin/settings.html',
+                           site_name=SiteSettings.get('site_name', 'Fred Vunjabei'),
+                           site_logo=SiteSettings.get('site_logo', ''),
+                           now=_now())

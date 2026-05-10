@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% block title %}Dashboard | Fred Vunjabei Admin{% endblock %}
+{% block title %}Dashboard | {{ site_name }} Admin{% endblock %}
 {% block head %}
 </head>
 <body>
@@ -72,6 +72,11 @@
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
       <span>Admin Users</span>
     </a>
+    <!-- ═══ SETTINGS LINK ADDED HERE ═══ -->
+    <a href="{{ url_for('frontend.admin_settings') }}">
+      <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Settings</span>
+    </a>
 
   </aside>
 
@@ -142,6 +147,11 @@
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         <span class="quick-link-title">Admin Users</span>
       </a>
+      <!-- ═══ SETTINGS QUICK LINK ADDED HERE ═══ -->
+      <a href="{{ url_for('frontend.admin_settings') }}" class="quick-link-card" id="settingsLink">
+        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span class="quick-link-title">Settings</span>
+      </a>
     </div>
 
     <div class="recent-orders">
@@ -168,33 +178,20 @@
 
 </div>
 
+{% block scripts %}
 <script>
-  const token = localStorage.getItem('admin_token');
-  if (!token) { window.location.href = '/admin'; }
+  // token is already declared globally by admin.js – do not redeclare
 
-  function toggleSidebar() {
-    const s    = document.getElementById('adminSidebar');
-    const o    = document.getElementById('overlay');
-    const open = s.classList.toggle('open');
-    o.classList.toggle('on', open);
-    document.body.style.overflow = open ? 'hidden' : '';
-  }
-
-  function formatCurrency(n) {
-    return 'TZS ' + Number(n || 0).toLocaleString();
-  }
-
-  function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-  }
-
+  function formatCurrency(n) { return 'TZS ' + Number(n||0).toLocaleString(); }
+  function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
   function badgeClass(s) {
     const m = { pending:'badge-pending', confirmed:'badge-confirmed', delivered:'badge-delivered', cancelled:'badge-cancelled' };
-    return m[(s || 'pending').toLowerCase()] || 'badge-pending';
+    return m[(s||'pending').toLowerCase()] || 'badge-pending';
   }
 
-  fetch('/api/dashboard', { headers: { 'Authorization': 'Bearer ' + token } })
+  // Guard: only fetch stats if the stat elements exist (dashboard only)
+  if (document.getElementById('statRevenue')) {
+    fetch('/api/dashboard', {headers:{'Authorization':'Bearer '+token}})
     .then(r => r.json())
     .then(d => {
       if (d.success && d.data && d.data.stats) {
@@ -206,15 +203,18 @@
       }
     })
     .catch(() => {});
+  }
 
-  fetch('/api/orders?per_page=5', { headers: { 'Authorization': 'Bearer ' + token } })
+  // Guard: only fetch orders if the table exists
+  const ordersTbody = document.getElementById('recentOrdersBody');
+  if (ordersTbody) {
+    fetch('/api/orders?per_page=5', {headers:{'Authorization':'Bearer '+token}})
     .then(r => r.json())
     .then(d => {
-      const tb = document.getElementById('recentOrdersBody');
       if (d.success && d.data && d.data.orders && d.data.orders.length) {
-        tb.innerHTML = d.data.orders.map(o => `
+        ordersTbody.innerHTML = d.data.orders.map(o => `
           <tr>
-            <td>${o.order_number}</td>
+            <td style="font-family:monospace;">${o.order_number}</td>
             <td>${o.customer_name || 'Guest'}</td>
             <td>${formatCurrency(o.total)}</td>
             <td><span class="badge ${badgeClass(o.status)}">${o.status || 'pending'}</span></td>
@@ -222,19 +222,20 @@
           </tr>
         `).join('');
       } else {
-        tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--brown-lt);">No orders yet.</td></tr>';
+        ordersTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--brown-lt);">No orders yet.</td></tr>';
       }
     })
     .catch(() => {
-      document.getElementById('recentOrdersBody').innerHTML =
-        '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--brown-lt);">Could not load orders.</td></tr>';
+      if (ordersTbody) ordersTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2.5rem;color:var(--brown-lt);">Could not load orders.</td></tr>';
     });
+  }
 
   function logoutAdmin() {
     localStorage.removeItem('admin_token');
     window.location.href = '/admin';
   }
 </script>
+{% endblock %}
 
 </body>
 {% endblock %}

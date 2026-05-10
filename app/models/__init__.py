@@ -15,6 +15,7 @@ from .shipping import ShippingZone, ShippingRate
 from .tag import Tag
 from .wishlist import Wishlist
 from .user import User
+from .settings import SiteSettings
 
 # Define Collection if it doesn't exist as a separate model
 # It might be used in product associations
@@ -72,5 +73,6 @@ __all__ = [
     '_uuid',
     '_now',
     '_gen_order_number',
-    '_gen_sku'
+    '_gen_sku',
+    'SiteSettings'
 ]
