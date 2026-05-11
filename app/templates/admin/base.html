@@ -67,6 +67,11 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       <span>Banners</span>
     </a>
+
+    <a href="{{ url_for('frontend.admin_homepage_content') }}" {% if 'admin_homepage_content' in request.endpoint %}class="active"{% endif %}>
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span>Homepage Content</span>
+    </a>
     <a href="{{ url_for('frontend.admin_blog_list') }}" {% if 'admin_blog_list' in request.endpoint %}class="active"{% endif %}>
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span>Blog</span>

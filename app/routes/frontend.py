@@ -2,34 +2,46 @@ from flask import Blueprint, render_template, request, redirect, url_for, g
 from datetime import datetime, timezone
 from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-from app.models import Product, Category, Brand, Banner, BlogPost, Page, AdminUser
+from app.models import (
+    Product, Category, Brand, Banner, BlogPost, Page, AdminUser
+)
 
 frontend_bp = Blueprint('frontend', __name__)
 
 def _now():
     return datetime.now(timezone.utc)
 
+# ── Updated admin page protector (reads JWT from cookie OR header) ──
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
-            verify_jwt_in_request(locations=["cookies"])
+            # Check both the "admin_token" cookie and the "Authorization" header
+            verify_jwt_in_request(locations=["cookies", "headers"])
             admin_id = get_jwt_identity()
             admin = AdminUser.query.get(admin_id)
             if not admin or not admin.is_active:
                 raise Exception("Not authorised")
-            g.admin = admin         
+            g.admin = admin
         except Exception:
             return redirect(url_for('frontend.admin_login'))
         return f(*args, **kwargs)
     return decorated
+
+# ═══════════════════════════════════════════
+#  PUBLIC PAGES
+# ═══════════════════════════════════════════
 
 @frontend_bp.route('/')
 def index():
     banners = Banner.query.filter_by(is_active=True).all()
     categories = Category.query.filter_by(is_active=True, parent_id=None).all()
     products = Product.query.filter_by(is_active=True, is_deleted=False, is_featured=True).limit(6).all()
-    return render_template('index.html', banners=banners, categories=categories, products=products, now=_now())
+    return render_template('index.html',
+                           banners=banners,
+                           categories=categories,
+                           products=products,
+                           now=_now())
 
 @frontend_bp.route('/login', methods=['GET'])
 def login():
@@ -56,7 +68,8 @@ def products():
     if brand_slug:
         product_query = product_query.filter(Product.brand.has(slug=brand_slug))
     products_list = product_query.order_by(Product.created_at.desc()).limit(24).all()
-    return render_template('products/list.html', products=products_list, categories=categories, brands=brands, category_name=category_name, now=_now())
+    return render_template('products/list.html', products=products_list, categories=categories,
+                           brands=brands, category_name=category_name, now=_now())
 
 @frontend_bp.route('/products/<product_slug>')
 def product_detail(product_slug):
@@ -121,15 +134,21 @@ def search():
     query = request.args.get('q', '')
     return render_template('search/results.html', query=query, now=_now())
 
-@frontend_bp.route('/admin')
+# ═══════════════════════════════════════════
+#  ADMIN PAGES (independent login page)
+# ═══════════════════════════════════════════
+
+@frontend_bp.route('/admin', methods=['GET'])
 def admin_login():
     return render_template('admin/login.html', now=_now())
 
+# ── Dashboard ──
 @frontend_bp.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
     return render_template('admin/dashboard.html', now=_now())
 
+# ── Products ──
 @frontend_bp.route('/admin/products')
 @admin_required
 def admin_products():
@@ -146,11 +165,13 @@ def admin_product_edit(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('admin/product_form.html', product=product, now=_now())
 
+# ── Orders ──
 @frontend_bp.route('/admin/orders')
 @admin_required
 def admin_orders():
     return render_template('admin/orders.html', now=_now())
 
+# ── Categories ──
 @frontend_bp.route('/admin/categories')
 @admin_required
 def admin_categories():
@@ -167,6 +188,7 @@ def admin_category_edit(category_id):
     category = Category.query.get_or_404(category_id)
     return render_template('admin/category_form.html', category=category, now=_now())
 
+# ── Brands ──
 @frontend_bp.route('/admin/brands')
 @admin_required
 def admin_brands():
@@ -183,11 +205,13 @@ def admin_brand_edit(brand_id):
     brand = Brand.query.get_or_404(brand_id)
     return render_template('admin/brand_form.html', brand=brand, now=_now())
 
+# ── Coupons ──
 @frontend_bp.route('/admin/coupons')
 @admin_required
 def admin_coupons():
     return render_template('admin/coupons.html', now=_now())
 
+# ── Banners ──
 @frontend_bp.route('/admin/banners')
 @admin_required
 def admin_banners():
@@ -204,6 +228,7 @@ def admin_banner_edit(banner_id):
     banner = Banner.query.get_or_404(banner_id)
     return render_template('admin/banner_form.html', banner=banner, now=_now())
 
+# ── Blog (admin) ──
 @frontend_bp.route('/admin/blog')
 @admin_required
 def admin_blog_list():
@@ -220,16 +245,21 @@ def admin_blog_edit(post_id):
     post = BlogPost.query.get_or_404(post_id)
     return render_template('admin/blog_form.html', post=post, now=_now())
 
+# ── Pages & FAQs ──
 @frontend_bp.route('/admin/pages')
 @admin_required
 def admin_pages():
     return render_template('admin/pages.html', now=_now())
 
+# ── Admin Users (super admin only) ──
 @frontend_bp.route('/admin/admins')
 @admin_required
 def admin_admins():
+    if g.admin.role != "super_admin":
+        return redirect(url_for('frontend.admin_dashboard'))
     return render_template('admin/admins.html', now=_now())
 
+# ── Settings ──
 @frontend_bp.route('/admin/settings')
 @admin_required
 def admin_settings():
@@ -237,4 +267,24 @@ def admin_settings():
     return render_template('admin/settings.html',
                            site_name=SiteSettings.get('site_name', 'Fred Vunjabei'),
                            site_logo=SiteSettings.get('site_logo', ''),
+                           now=_now())
+
+# ── Homepage Content ──
+@frontend_bp.route('/admin/homepage-content')
+@admin_required
+def admin_homepage_content():
+    from app.models.settings import SiteSettings
+    editorial_image = SiteSettings.get('editorial_image', '')
+    editorial_eyebrow = SiteSettings.get('editorial_eyebrow', 'The Editorial')
+    editorial_title = SiteSettings.get('editorial_title', 'The Art of <em>Effortless</em> Grandeur')
+    editorial_text = SiteSettings.get('editorial_text', 'A season where heritage meets the future.')
+    editorial_season = SiteSettings.get('editorial_season', 'SS25')
+    press_logos_raw = SiteSettings.get("homepage_press", "")
+    return render_template('admin/homepage_content.html',
+                           editorial_image=editorial_image,
+                           editorial_eyebrow=editorial_eyebrow,
+                           editorial_title=editorial_title,
+                           editorial_text=editorial_text,
+                           editorial_season=editorial_season,
+                           press_logos_raw=press_logos_raw,
                            now=_now())

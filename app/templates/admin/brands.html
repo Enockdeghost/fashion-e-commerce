@@ -1,8 +1,5 @@
 {% extends "admin/base.html" %}
-{% block title %}Brands | {{ site_name }} Admin{% endblock %}
-{% block head %}
-
-{% endblock %}
+{% block title %}Brands{% endblock %}
 
 {% block content %}
 <div class="admin-page">
@@ -19,48 +16,18 @@
 
   <div class="admin-header">
     <h1>Brands</h1>
-    <button class="btn btn-primary" onclick="openBrandModal()">+ Add Brand</button>
+    <a href="{{ url_for('frontend.admin_brand_new') }}" class="btn btn-primary">+ Add Brand</a>
   </div>
 
   <div class="card">
     <table>
       <thead>
-        <tr><th>Logo</th><th>Name</th><th>Slug</th><th>Active</th><th>Actions</th></tr>
+        <tr><th>Name</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody id="brandsTableBody">
-        <tr><td colspan="5" style="text-align:center;padding:2rem;">Loading brands…</td></tr>
+        <tr><td colspan="3" style="text-align:center;padding:2rem;">Loading brands…</td></tr>
       </tbody>
     </table>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="brandModal">
-  <div class="modal">
-    <h2 id="brandModalTitle">New Brand</h2>
-    <form id="brandForm">
-      <input type="hidden" id="brandId">
-      <div class="form-group">
-        <label>Name *</label>
-        <input type="text" id="brandName" required>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="brandDesc">
-      </div>
-      <div class="form-group">
-        <label>Logo URL</label>
-        <input type="url" id="brandLogoUrl" placeholder="https://…">
-      </div>
-      <div class="form-group">
-        <label style="display: flex; align-items: center; gap: 0.5rem;">
-          <input type="checkbox" id="brandActive" checked> Active
-        </label>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeBrandModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Brand</button>
-      </div>
-    </form>
   </div>
 </div>
 {% endblock %}
@@ -77,88 +44,38 @@
     .then(r => r.json())
     .then(d => {
       const tbody = document.getElementById('brandsTableBody');
-      if (d.success && d.data) {
-        const brands = Array.isArray(d.data) ? d.data : (d.data.brands || []);
-        tbody.innerHTML = brands.length ? brands.map(b => `
+      if (d.success && d.data && d.data.length) {
+        tbody.innerHTML = d.data.map(b => `
           <tr>
-            <td><img src="${b.logo_url || 'https://via.placeholder.com/80x36/f5f5f0/6b4c3b?text=No+Logo'}" class="thumb" alt=""></td>
-            <td><strong>${b.name}</strong></td>
-            <td style="font-family:monospace;font-size:0.75rem;">${b.slug}</td>
+            <td>${b.name || ''}</td>
             <td><span style="color:${b.is_active ? '#27ae60' : '#c0392b'};">${b.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
-              <a href="#" class="action-link" onclick="editBrand('${b.id}')">Edit</a>
-              <a href="#" class="action-link delete" onclick="deleteBrand('${b.id}')">Delete</a>
+              <a href="/admin/brands/${b.id}/edit" class="btn btn-ghost btn-sm">Edit</a>
+              <button class="btn btn-danger btn-sm" onclick="deleteBrand('${b.id}')">Delete</button>
             </td>
           </tr>
-        `).join('') : '<tr><td colspan="5" style="text-align:center;">No brands yet.</td></tr>';
-      }
-    });
-  }
-
-  function openBrandModal(brand) {
-    document.getElementById('brandModalTitle').textContent = brand ? 'Edit Brand' : 'New Brand';
-    document.getElementById('brandId').value = brand ? brand.id : '';
-    document.getElementById('brandName').value = brand ? brand.name : '';
-    document.getElementById('brandDesc').value = brand ? (brand.description || '') : '';
-    document.getElementById('brandLogoUrl').value = brand ? (brand.logo_url || '') : '';
-    document.getElementById('brandActive').checked = brand ? brand.is_active : true;
-    document.getElementById('brandModal').classList.add('open');
-  }
-
-  function closeBrandModal() {
-    document.getElementById('brandModal').classList.remove('open');
-  }
-
-  document.getElementById('brandForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const id = document.getElementById('brandId').value;
-    const payload = {
-      name: document.getElementById('brandName').value.trim(),
-      description: document.getElementById('brandDesc').value.trim(),
-      logo_url: document.getElementById('brandLogoUrl').value.trim(),
-      is_active: document.getElementById('brandActive').checked,
-    };
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `/api/brands/${id}` : '/api/brands';
-
-    fetch(url, {
-      method,
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-      body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) {
-        alert('Brand saved!');
-        closeBrandModal();
-        loadBrands();
+        `).join('');
       } else {
-        alert(d.error || 'Save failed');
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No brands found.</td></tr>';
       }
+    })
+    .catch(() => {
+      document.getElementById('brandsTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center;">Failed to load.</td></tr>';
     });
-  });
-
-  async function editBrand(id) {
-    const res = await fetch('/api/brands', {
-      headers: {'Authorization': 'Bearer ' + token}
-    });
-    const d = await res.json();
-    const brands = Array.isArray(d.data) ? d.data : (d.data?.brands || []);
-    const brand = brands.find(b => b.id === id);
-    if (brand) openBrandModal(brand);
   }
 
-  function deleteBrand(id) {
+  async function deleteBrand(brandId) {
     if (!confirm('Delete this brand?')) return;
-    fetch('/api/brands/' + id, {
+    const resp = await fetch('/api/brands/' + brandId, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer ' + token}
-    })
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) { alert('Deleted.'); loadBrands(); }
-      else alert(d.error || 'Delete failed');
     });
+    const data = await resp.json();
+    if (data.success) {
+      loadBrands();
+    } else {
+      alert(data.error || 'Delete failed');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', loadBrands);

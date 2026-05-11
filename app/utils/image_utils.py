@@ -19,8 +19,16 @@ def _allowed_file(filename: str) -> bool:
 
 def _download_image(url: str, timeout: int = 10) -> BytesIO:
     headers = {'User-Agent': 'FredVunjabei/1.0'}
-    resp = requests.get(url, headers=headers, timeout=timeout, stream=True)
-    resp.raise_for_status()
+    try:
+        resp = requests.get(url, headers=headers, timeout=timeout, stream=True)
+        resp.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        raise ValueError("Image download failed – check the URL or your internet connection.")
+    except requests.exceptions.Timeout:
+        raise ValueError("Image download timed out – please try again later.")
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Image download failed: {e}")
+        raise ValueError("Could not fetch the image – the server may be down.")
 
     content_type = resp.headers.get('Content-Type', '')
     if content_type and content_type not in ALLOWED_MIMES:

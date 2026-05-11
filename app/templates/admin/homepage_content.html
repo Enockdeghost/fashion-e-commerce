@@ -1,0 +1,306 @@
+{% extends "admin/base.html" %}
+{% block title %}Homepage Content{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+  <h1>Homepage Content</h1>
+</div>
+
+<!-- LOOKBOOK -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Lookbook</h2>
+  <div id="lookbookItems"></div>
+  <form id="addLookbookItem" enctype="multipart/form-data" onsubmit="return addItem(event, 'lookbook')">
+    <div class="form-group">
+      <input type="text" name="title" placeholder="Title" required style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="label" placeholder="Label (e.g. Evening)" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <div class="file-input-wrapper">
+        <input type="file" name="file" accept="image/*" id="lookbookFile">
+        <span class="file-input-btn">Choose File</span>
+      </div>
+      <span class="file-name"></span>
+      <img id="lookbookPreview" class="current-image" style="display:none; max-width:200px;">
+      <input type="url" name="image_url" placeholder="Or paste image URL" style="width:100%; margin-top:0.5rem;">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Look</button>
+  </form>
+</div>
+
+<!-- PILLARS -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Pillars</h2>
+  <div id="pillarItems"></div>
+  <form id="addPillarItem" onsubmit="return addItem(event, 'pillars')">
+    <div class="form-group">
+      <input type="text" name="title" placeholder="Title" required style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="text" placeholder="Description" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="icon" placeholder="Icon (HTML or emoji)" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Pillar</button>
+  </form>
+</div>
+
+<!-- DESIGNERS -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Designers</h2>
+  <div id="designerItems"></div>
+  <form id="addDesignerItem" enctype="multipart/form-data" onsubmit="return addItem(event, 'designers')">
+    <div class="form-group">
+      <input type="text" name="name" placeholder="Name" required style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="brand" placeholder="Brand" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="origin" placeholder="Origin" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <div class="file-input-wrapper">
+        <input type="file" name="file" accept="image/*" id="designerFile">
+        <span class="file-input-btn">Choose File</span>
+      </div>
+      <span class="file-name"></span>
+      <img id="designerPreview" class="current-image" style="display:none; max-width:200px;">
+      <input type="url" name="image_url" placeholder="Or paste image URL" style="width:100%; margin-top:0.5rem;">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Designer</button>
+  </form>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Testimonials</h2>
+  <div id="testimonialItems"></div>
+  <form id="addTestimonialItem" onsubmit="return addItem(event, 'testimonials')">
+    <div class="form-group">
+      <input type="text" name="name" placeholder="Name" required style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="role" placeholder="Role (e.g. Client)" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <input type="text" name="stars" placeholder="Stars (ex: ★★★★★)" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <textarea name="quote" placeholder="Testimonial text" rows="3" style="width:100%; margin-bottom:0.5rem;"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Add Testimonial</button>
+  </form>
+</div>
+
+<!-- PRESS LOGOS -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Press Logos</h2>
+  <p class="small" style="margin-bottom:0.5rem;">Enter each publication name on a new line.</p>
+  <form id="pressForm" onsubmit="return savePress(event)">
+    <textarea id="pressLogos" name="logos" rows="5" style="width:100%; margin-bottom:0.5rem;">{{ press_logos_raw }}</textarea>
+    <button type="submit" class="btn btn-primary">Save Press Logos</button>
+  </form>
+</div>
+
+<!-- EDITORIAL -->
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Editorial</h2>
+  <div id="editorialPreviewContainer" style="margin-bottom:1rem;">
+    <img id="editorialPreviewImage" class="current-image" 
+         {% if editorial_image %}src="{{ editorial_image }}"{% else %}style="display:none;"{% endif %} 
+         alt="Editorial Preview" style="max-width:100%; max-height:250px; object-fit:cover;">
+  </div>
+  <form id="editorialForm" enctype="multipart/form-data" onsubmit="return saveEditorial(event)">
+    <div class="form-group">
+      <label>Eyebrow</label>
+      <input type="text" name="eyebrow" placeholder="The Editorial" value="{{ editorial_eyebrow }}" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <label>Title (HTML allowed)</label>
+      <input type="text" name="title" placeholder="The Art of <em>Effortless</em> Grandeur" value="{{ editorial_title }}" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="text" placeholder="A season where heritage meets the future." rows="3" style="width:100%; margin-bottom:0.5rem;">{{ editorial_text }}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Season</label>
+      <input type="text" name="season" placeholder="SS25" value="{{ editorial_season }}" style="width:100%; margin-bottom:0.5rem;">
+    </div>
+    <div class="form-group">
+      <div class="file-input-wrapper">
+        <input type="file" name="file" accept="image/*" id="editorialFile">
+        <span class="file-input-btn">Choose File</span>
+      </div>
+      <span class="file-name"></span>
+      <input type="url" name="image_url" placeholder="Or paste image URL" value="{{ editorial_image }}" style="width:100%; margin-top:0.5rem;">
+    </div>
+    <button type="submit" class="btn btn-primary">Save Editorial</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const token = localStorage.getItem('admin_token');
+  if (!token) { window.location.href = '/admin'; }
+
+  function fetchItems(section) {
+    fetch(`/api/admin/homepage-items?section=${section}`, {headers:{'Authorization':'Bearer '+token}})
+      .then(r=>r.json())
+      .then(d=>{
+        if (d.success) renderList(section, d.data);
+      });
+  }
+
+  function renderList(section, items) {
+    const container = document.getElementById(section+'Items');
+    if (!container) return;
+    if (!items || !items.length) {
+      container.innerHTML = '<p style="color:var(--brown-lt);">No items yet.</p>';
+      return;
+    }
+    container.innerHTML = items.map((item, i) => `
+      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${item.title || item.name || ''}</strong>
+          ${item.image ? `<img src="${item.image}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">` : ''}
+          ${item.url ? `<img src="${item.url}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">` : ''}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteItem('${section}', ${i})">X</button>
+      </div>
+    `).join('');
+  }
+
+  async function addItem(e, section) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    formData.append('section', section);
+    
+    const resp = await fetch('/api/admin/homepage-items', {
+      method: 'POST',
+      headers: {'Authorization': 'Bearer '+token},
+      body: formData
+    });
+    const data = await resp.json();
+    if (data.success) {
+      form.reset();
+      const previewId = section + 'Preview';
+      const preview = document.getElementById(previewId);
+      if (preview) preview.style.display = 'none';
+      const urlField = form.querySelector('input[type="url"]');
+      if (urlField) urlField.value = '';
+      fetchItems(section);
+    } else {
+      alert(data.error || 'Save failed');
+    }
+    return false;
+  }
+
+  async function deleteItem(section, index) {
+    if (!confirm('Delete this item?')) return;
+    const resp = await fetch(`/api/admin/homepage-items?section=${section}&index=${index}`, {
+      method: 'DELETE',
+      headers: {'Authorization': 'Bearer '+token}
+    });
+    const data = await resp.json();
+    if (data.success) fetchItems(section);
+  }
+
+  async function savePress(e) {
+    e.preventDefault();
+    const logos = document.getElementById('pressLogos').value.trim();
+    const resp = await fetch('/api/admin/homepage-items/press', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token},
+      body: JSON.stringify({logos: logos})
+    });
+    const data = await resp.json();
+    if (data.success) alert('Saved');
+  }
+
+  async function saveEditorial(e) {
+    e.preventDefault();
+    const form = e.target;
+    const hasFile = document.getElementById('editorialFile').files.length > 0;
+    const urlField = form.querySelector('input[name="image_url"]');
+    const method = 'POST';
+    const endpoint = '/api/admin/homepage-items/editorial';
+
+    if (hasFile) {
+      const formData = new FormData(form);
+      formData.append('section', 'editorial');
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {'Authorization': 'Bearer '+token},
+        body: formData
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert('Editorial saved!');
+        location.reload();
+      } else {
+        alert(data.error || 'Save failed');
+      }
+    } else {
+      const payload = {
+        eyebrow: form.eyebrow.value.trim(),
+        title: form.title.value.trim(),
+        text: form.text.value.trim(),
+        season: form.season.value.trim(),
+        image_url: urlField.value.trim() || null
+      };
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+token
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.success) {
+        alert('Editorial saved!');
+        location.reload();
+      } else {
+        alert(data.error || 'Save failed');
+      }
+    }
+    return false;
+  }
+
+  document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      const previewId = this.id.replace('File', 'Preview');
+      const preview = document.getElementById(previewId);
+      reader.onload = e => {
+        if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+      };
+      reader.readAsDataURL(file);
+      const urlField = this.closest('form').querySelector('input[type="url"]');
+      if (urlField) urlField.value = '';
+      const fileNameSpan = this.closest('.form-group').querySelector('.file-name');
+      if (fileNameSpan) fileNameSpan.textContent = file.name;
+    });
+  });
+
+  document.querySelectorAll('input[type="url"]').forEach(input => {
+    input.addEventListener('input', function() {
+      if (this.value) {
+        const previewId = this.closest('form').querySelector('img[id$="Preview"]');
+        if (previewId) { previewId.src = this.value; previewId.style.display = 'block'; }
+      }
+    });
+  });
+
+  ['lookbook','pillars','designers','testimonials'].forEach(fetchItems);
+</script>
+{% endblock %}

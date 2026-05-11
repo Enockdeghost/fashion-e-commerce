@@ -15,6 +15,7 @@ from app.utils.image_utils import convert_to_webp   # <-- added
 from sqlalchemy import func, extract
 import os, uuid
 from werkzeug.utils import secure_filename
+import json
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin/manage")
@@ -176,9 +177,12 @@ def create_brand():
 def update_brand(brand_id):
     brand = Brand.query.get_or_404(brand_id)
     data = request.get_json(force=True)
-    if "name" in data: brand.name = sanitise_text(data["name"]); brand.slug = slugify(data["name"])
-    for f in ["description","logo_url","is_active"]:
-        if f in data: setattr(brand, f, data[f] if f!="is_active" else bool(data[f]))
+    if "name" in data:
+        brand.name = sanitise_text(data["name"])
+        brand.slug = slugify(data["name"])
+    for f in ["description", "logo_url", "is_active"]:
+        if f in data:
+            setattr(brand, f, data[f] if f != "is_active" else bool(data[f]))
     db.session.commit()
     return ok(brand.to_dict(), "Brand updated")
 
@@ -475,3 +479,107 @@ def save_settings():
         SiteSettings.set('site_logo', logo_url)
 
     return ok(message="Settings saved")
+
+
+
+@admin_bp.route("/homepage-items", methods=["GET"])
+@admin_required
+def list_homepage_items():
+    section = request.args.get("section")
+    if not section:
+        return err("section is required")
+    raw = SiteSettings.get(f"homepage_{section}", "[]")
+    try:
+        items = json.loads(raw)
+    except Exception:
+        items = []
+    return ok(items)
+
+
+@admin_bp.route("/homepage-items", methods=["POST"])
+@roles_required("super_admin", "admin")
+def add_homepage_item():
+    file = request.files.get('file')
+    section = request.form.get('section')
+    if not section:
+        return err("section is required")
+
+    raw = SiteSettings.get(f"homepage_{section}", "[]")
+    try:
+        items = json.loads(raw)
+    except Exception:
+        items = []
+
+    image_url = None
+    if file and file.filename:
+        try:
+            image_url = convert_to_webp(file, upload_subfolder=f"homepage/{section}")
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc))
+    else:
+        image_url = sanitise_text(request.form.get("image_url", ""))
+
+    if section == "lookbook":
+        item = {"url": image_url, "title": request.form.get("title", ""), "label": request.form.get("label", "")}
+    elif section == "designers":
+        item = {"image": image_url, "name": request.form.get("name", ""), "brand": request.form.get("brand", ""), "origin": request.form.get("origin", "")}
+    elif section == "pillars":
+        item = {"icon": request.form.get("icon", ""), "title": request.form.get("title", ""), "text": request.form.get("text", "")}
+    elif section == "testimonials":
+        item = {"stars": request.form.get("stars", ""), "quote": request.form.get("quote", ""), "name": request.form.get("name", ""), "role": request.form.get("role", ""), "initial": request.form.get("name", "")[0].upper() if request.form.get("name") else ""}
+    else:
+        return err("Invalid section")
+
+    items.append(item)
+    SiteSettings.set(f"homepage_{section}", json.dumps(items, ensure_ascii=False))
+    return ok(message="Item added", status=201)
+
+
+@admin_bp.route("/homepage-items", methods=["DELETE"])
+@roles_required("super_admin", "admin")
+def delete_homepage_item():
+    section = request.args.get("section")
+    index = request.args.get("index", -1, type=int)
+    if not section or index < 0:
+        return err("section and index are required")
+    raw = SiteSettings.get(f"homepage_{section}", "[]")
+    try:
+        items = json.loads(raw)
+    except Exception:
+        items = []
+    if 0 <= index < len(items):
+        items.pop(index)
+        SiteSettings.set(f"homepage_{section}", json.dumps(items, ensure_ascii=False))
+    return ok(message="Deleted")
+
+
+@admin_bp.route("/homepage-items/press", methods=["POST"])
+@roles_required("super_admin", "admin")
+def save_press():
+    data = request.get_json(force=True)
+    logos = data.get("logos", "")
+    logo_list = [l.strip() for l in logos.split("\n") if l.strip()]
+    SiteSettings.set("homepage_press", json.dumps(logo_list, ensure_ascii=False))
+    return ok(message="Press logos saved")
+
+
+@admin_bp.route("/homepage-items/editorial", methods=["POST"])
+@roles_required("super_admin", "admin")
+def save_editorial():
+    file = request.files.get('file')
+    data = request.form if request.files else (request.get_json(force=True) or {})
+
+    if file and file.filename:
+        try:
+            image_url = convert_to_webp(file, upload_subfolder="homepage/editorial")
+            SiteSettings.set("editorial_image", image_url)
+        except (ValueError, RuntimeError) as exc:
+            return err(str(exc))
+    elif "image_url" in data:
+        SiteSettings.set("editorial_image", sanitise_text(data["image_url"]))
+
+    for field in ["eyebrow", "title", "text", "season"]:
+        if field in data:
+            SiteSettings.set(f"editorial_{field}", sanitise_text(data[field]))
+
+    return ok(message="Editorial saved")
