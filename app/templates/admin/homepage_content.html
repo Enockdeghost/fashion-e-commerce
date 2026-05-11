@@ -149,9 +149,9 @@
   const token = localStorage.getItem('admin_token');
   if (!token) { window.location.href = '/admin'; }
 
-  // Changed base URL to include /manage
+  // All routes are directly under /api (blueprint prefix)
   function fetchItems(section) {
-    fetch(`/api/admin/manage/homepage-items?section=${section}`, {headers:{'Authorization':'Bearer '+token}})
+    fetch(`/api/homepage-items?section=${section}`, {headers:{'Authorization':'Bearer '+token}})
       .then(r=>r.json())
       .then(d=>{
         if (d.success) renderList(section, d.data);
@@ -183,7 +183,7 @@
     const formData = new FormData(form);
     formData.append('section', section);
     
-    const resp = await fetch(`/api/admin/manage/homepage-items`, {
+    const resp = await fetch('/api/homepage-items', {
       method: 'POST',
       headers: {'Authorization': 'Bearer '+token},
       body: formData
@@ -205,7 +205,7 @@
 
   async function deleteItem(section, index) {
     if (!confirm('Delete this item?')) return;
-    const resp = await fetch(`/api/admin/manage/homepage-items?section=${section}&index=${index}`, {
+    const resp = await fetch(`/api/homepage-items?section=${section}&index=${index}`, {
       method: 'DELETE',
       headers: {'Authorization': 'Bearer '+token}
     });
@@ -216,7 +216,7 @@
   async function savePress(e) {
     e.preventDefault();
     const logos = document.getElementById('pressLogos').value.trim();
-    const resp = await fetch('/api/admin/manage/homepage-items/press', {
+    const resp = await fetch('/api/homepage-items/press', {
       method: 'POST',
       headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token},
       body: JSON.stringify({logos: logos})
@@ -233,7 +233,7 @@
 
     if (hasFile) {
       const formData = new FormData(form);
-      const resp = await fetch('/api/admin/manage/homepage-items/editorial', {
+      const resp = await fetch('/api/homepage-items/editorial', {
         method: 'POST',
         headers: {'Authorization': 'Bearer '+token},
         body: formData
@@ -253,7 +253,7 @@
         season: form.season.value.trim(),
         image_url: urlField.value.trim() || null
       };
-      const resp = await fetch('/api/admin/manage/homepage-items/editorial', {
+      const resp = await fetch('/api/homepage-items/editorial', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
