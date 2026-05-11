@@ -11,12 +11,10 @@ frontend_bp = Blueprint('frontend', __name__)
 def _now():
     return datetime.now(timezone.utc)
 
-# ── Updated admin page protector (reads JWT from cookie OR header) ──
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
-            # Check both the "admin_token" cookie and the "Authorization" header
             verify_jwt_in_request(locations=["cookies", "headers"])
             admin_id = get_jwt_identity()
             admin = AdminUser.query.get(admin_id)
@@ -28,19 +26,51 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ═══════════════════════════════════════════
-#  PUBLIC PAGES
-# ═══════════════════════════════════════════
 
 @frontend_bp.route('/')
 def index():
+    from app.models import Banner, Category, Product
+    from app.models.settings import SiteSettings
+    import json
+
+    # ── existing data ──
     banners = Banner.query.filter_by(is_active=True).all()
     categories = Category.query.filter_by(is_active=True, parent_id=None).all()
     products = Product.query.filter_by(is_active=True, is_deleted=False, is_featured=True).limit(6).all()
+
+    # ── dynamic homepage sections (from SiteSettings) ──
+    try: lookbook_images  = json.loads(SiteSettings.get("homepage_lookbook", "[]"))
+    except: lookbook_images = []
+    try: pillars           = json.loads(SiteSettings.get("homepage_pillars", "[]"))
+    except: pillars = []
+    try: designers         = json.loads(SiteSettings.get("homepage_designers", "[]"))
+    except: designers = []
+    try: testimonials      = json.loads(SiteSettings.get("homepage_testimonials", "[]"))
+    except: testimonials = []
+    try: press_logos       = json.loads(SiteSettings.get("homepage_press", "[]"))
+    except: press_logos = []
+
+    # ── editorial (single block) ──
+    editorial_image   = SiteSettings.get("editorial_image", 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1800&q=85')
+    editorial_eyebrow = SiteSettings.get("editorial_eyebrow", 'The Editorial')
+    editorial_title   = SiteSettings.get("editorial_title", 'The Art of <em>Effortless</em> Grandeur')
+    editorial_text    = SiteSettings.get("editorial_text", 'A season where heritage meets the future.')
+    editorial_season  = SiteSettings.get("editorial_season", 'SS25')
+
     return render_template('index.html',
                            banners=banners,
                            categories=categories,
                            products=products,
+                           lookbook_images=lookbook_images,
+                           pillars=pillars,
+                           designers=designers,
+                           testimonials=testimonials,
+                           press_logos=press_logos,
+                           editorial_image=editorial_image,
+                           editorial_eyebrow=editorial_eyebrow,
+                           editorial_title=editorial_title,
+                           editorial_text=editorial_text,
+                           editorial_season=editorial_season,
                            now=_now())
 
 @frontend_bp.route('/login', methods=['GET'])
@@ -134,9 +164,6 @@ def search():
     query = request.args.get('q', '')
     return render_template('search/results.html', query=query, now=_now())
 
-# ═══════════════════════════════════════════
-#  ADMIN PAGES (independent login page)
-# ═══════════════════════════════════════════
 
 @frontend_bp.route('/admin', methods=['GET'])
 def admin_login():
