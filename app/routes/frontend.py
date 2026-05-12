@@ -4,8 +4,10 @@ from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from app.models import (
     Product, Category, Brand, Banner, BlogPost, Page, AdminUser
+       ,SiteSettings
+    
 )
-
+import json
 frontend_bp = Blueprint('frontend', __name__)
 
 def _now():
@@ -296,22 +298,27 @@ def admin_settings():
                            site_logo=SiteSettings.get('site_logo', ''),
                            now=_now())
 
-# ── Homepage Content ──
+
 @frontend_bp.route('/admin/homepage-content')
 @admin_required
 def admin_homepage_content():
     from app.models.settings import SiteSettings
-    editorial_image = SiteSettings.get('editorial_image', '')
-    editorial_eyebrow = SiteSettings.get('editorial_eyebrow', 'The Editorial')
-    editorial_title = SiteSettings.get('editorial_title', 'The Art of <em>Effortless</em> Grandeur')
-    editorial_text = SiteSettings.get('editorial_text', 'A season where heritage meets the future.')
-    editorial_season = SiteSettings.get('editorial_season', 'SS25')
-    press_logos_raw = SiteSettings.get("homepage_press", "")
+    import json
+
+    # Parse all JSON lists
+    def parse_json(key):
+        try:    return json.loads(SiteSettings.get(key, "[]"))
+        except: return []
+
     return render_template('admin/homepage_content.html',
-                           editorial_image=editorial_image,
-                           editorial_eyebrow=editorial_eyebrow,
-                           editorial_title=editorial_title,
-                           editorial_text=editorial_text,
-                           editorial_season=editorial_season,
-                           press_logos_raw=press_logos_raw,
+                           lookbooks=parse_json("homepage_lookbook"),
+                           pillars=parse_json("homepage_pillars"),
+                           designers=parse_json("homepage_designers"),
+                           testimonials=parse_json("homepage_testimonials"),
+                           press_logos_raw=SiteSettings.get("homepage_press", ""),
+                           editorial_image=SiteSettings.get("editorial_image", ""),
+                           editorial_eyebrow=SiteSettings.get("editorial_eyebrow", ""),
+                           editorial_title=SiteSettings.get("editorial_title", ""),
+                           editorial_text=SiteSettings.get("editorial_text", ""),
+                           editorial_season=SiteSettings.get("editorial_season", ""),
                            now=_now())

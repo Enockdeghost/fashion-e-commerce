@@ -1,4 +1,3 @@
-
 {% extends "admin/base.html" %}
 {% block title %}Homepage Content{% endblock %}
 
@@ -7,9 +6,24 @@
   <h1>Homepage Content</h1>
 </div>
 
+<!-- LOOKBOOK -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Lookbook</h2>
-  <div id="lookbookItems"></div>
+  <div id="lookbookItems">
+    {% if lookbooks %}
+      {% for l in lookbooks %}
+      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>{{ l.title }}</strong>
+          {% if l.url %}<img src="{{ l.url }}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">{% endif %}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteItem('lookbook', {{ loop.index0 }})">X</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--brown-lt);">No lookbook items yet.</p>
+    {% endif %}
+  </div>
   <form id="addLookbookItem" enctype="multipart/form-data" onsubmit="return addItem(event, 'lookbook')">
     <div class="form-group">
       <input type="text" name="title" placeholder="Title" required style="width:100%; margin-bottom:0.5rem;">
@@ -30,9 +44,24 @@
   </form>
 </div>
 
+<!-- PILLARS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Pillars</h2>
-  <div id="pillarItems"></div>
+  <div id="pillarItems">
+    {% if pillars %}
+      {% for p in pillars %}
+      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>{{ p.title }}</strong>
+          {% if p.icon %}<span style="margin-left:0.5rem;">{{ p.icon | safe }}</span>{% endif %}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteItem('pillars', {{ loop.index0 }})">X</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--brown-lt);">No pillars yet.</p>
+    {% endif %}
+  </div>
   <form id="addPillarItem" onsubmit="return addItem(event, 'pillars')">
     <div class="form-group">
       <input type="text" name="title" placeholder="Title" required style="width:100%; margin-bottom:0.5rem;">
@@ -47,9 +76,24 @@
   </form>
 </div>
 
+<!-- DESIGNERS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Designers</h2>
-  <div id="designerItems"></div>
+  <div id="designerItems">
+    {% if designers %}
+      {% for d in designers %}
+      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>{{ d.name }}</strong>
+          {% if d.image %}<img src="{{ d.image }}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">{% endif %}
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteItem('designers', {{ loop.index0 }})">X</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--brown-lt);">No designers yet.</p>
+    {% endif %}
+  </div>
   <form id="addDesignerItem" enctype="multipart/form-data" onsubmit="return addItem(event, 'designers')">
     <div class="form-group">
       <input type="text" name="name" placeholder="Name" required style="width:100%; margin-bottom:0.5rem;">
@@ -73,9 +117,24 @@
   </form>
 </div>
 
+<!-- TESTIMONIALS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Testimonials</h2>
-  <div id="testimonialItems"></div>
+  <div id="testimonialItems">
+    {% if testimonials %}
+      {% for t in testimonials %}
+      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>{{ t.name }}</strong>
+          <span style="margin-left:0.5rem; color:var(--gold);">{{ t.stars }}</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="deleteItem('testimonials', {{ loop.index0 }})">X</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--brown-lt);">No testimonials yet.</p>
+    {% endif %}
+  </div>
   <form id="addTestimonialItem" onsubmit="return addItem(event, 'testimonials')">
     <div class="form-group">
       <input type="text" name="name" placeholder="Name" required style="width:100%; margin-bottom:0.5rem;">
@@ -93,6 +152,7 @@
   </form>
 </div>
 
+<!-- PRESS LOGOS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Press Logos</h2>
   <p class="small" style="margin-bottom:0.5rem;">Enter each publication name on a new line.</p>
@@ -102,6 +162,7 @@
   </form>
 </div>
 
+<!-- EDITORIAL -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Editorial</h2>
   <div id="editorialPreviewContainer" style="margin-bottom:1rem;">
@@ -141,158 +202,144 @@
 
 {% block scripts %}
 <script>
-  const token = localStorage.getItem('admin_token');
-  if (!token) { window.location.href = '/admin'; }
+  var tk = localStorage.getItem('admin_token');
+  if (!tk) { window.location.href = '/admin'; }
 
-  function fetchItems(section) {
-    fetch(`/api/homepage-items?section=${section}`, {headers:{'Authorization':'Bearer '+token}})
-      .then(r=>r.json())
-      .then(d=>{
-        if (d.success) renderList(section, d.data);
-      });
-  }
-
-  function renderList(section, items) {
-    const container = document.getElementById(section+'Items');
-    if (!container) return;
-    if (!items || !items.length) {
-      container.innerHTML = '<p style="color:var(--brown-lt);">No items yet.</p>';
-      return;
-    }
-    container.innerHTML = items.map((item, i) => `
-      <div style="border-bottom:1px solid var(--parchment); padding:0.5rem 0; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <strong>${item.title || item.name || ''}</strong>
-          ${item.image ? `<img src="${item.image}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">` : ''}
-          ${item.url ? `<img src="${item.url}" style="height:30px; margin-left:1rem; vertical-align:middle; border-radius:4px;">` : ''}
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="deleteItem('${section}', ${i})">X</button>
-      </div>
-    `).join('');
+  function notify(msg, type) {
+    if (type === 'error' && typeof showErrorToast === 'function') showErrorToast(msg);
+    else if (type === 'success' && typeof showSuccessToast === 'function') showSuccessToast(msg);
+    else alert(msg);
   }
 
   async function addItem(e, section) {
     e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
+    var form = e.target;
+    var formData = new FormData(form);
     formData.append('section', section);
     
-    const resp = await fetch(`/api/homepage-items`, {
-      method: 'POST',
-      headers: {'Authorization': 'Bearer '+token},
-      body: formData
-    });
-    const data = await resp.json();
-    if (data.success) {
-      form.reset();
-      const previewId = section + 'Preview';
-      const preview = document.getElementById(previewId);
-      if (preview) preview.style.display = 'none';
-      const urlField = form.querySelector('input[type="url"]');
-      if (urlField) urlField.value = '';
-      fetchItems(section);
-    } else {
-      alert(data.error || 'Save failed');
+    try {
+      var resp = await fetch('/api/homepage-items', {
+        method: 'POST',
+        headers: {'Authorization': 'Bearer '+tk},
+        body: formData
+      });
+      var data = await resp.json();
+      if (data.success) {
+        location.reload();    // reload to show updated server-rendered list
+      } else {
+        notify(data.error || 'Save failed', 'error');
+      }
+    } catch (err) {
+      notify('Network error', 'error');
     }
     return false;
   }
 
   async function deleteItem(section, index) {
     if (!confirm('Delete this item?')) return;
-    const resp = await fetch(`/api/homepage-items?section=${section}&index=${index}`, {
-      method: 'DELETE',
-      headers: {'Authorization': 'Bearer '+token}
-    });
-    const data = await resp.json();
-    if (data.success) fetchItems(section);
+    try {
+      var resp = await fetch('/api/homepage-items?section='+section+'&index='+index, {
+        method: 'DELETE',
+        headers: {'Authorization': 'Bearer '+tk}
+      });
+      var data = await resp.json();
+      if (data.success) {
+        location.reload();    // reload to update server-rendered list
+      } else {
+        notify(data.error || 'Delete failed', 'error');
+      }
+    } catch (err) {
+      notify('Network error', 'error');
+    }
   }
 
   async function savePress(e) {
     e.preventDefault();
-    const logos = document.getElementById('pressLogos').value.trim();
-    const resp = await fetch('/api/homepage-items/press', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+token},
-      body: JSON.stringify({logos: logos})
-    });
-    const data = await resp.json();
-    if (data.success) alert('Saved');
+    var logos = document.getElementById('pressLogos').value.trim();
+    try {
+      var resp = await fetch('/api/homepage-items/press', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+tk},
+        body: JSON.stringify({logos: logos})
+      });
+      var data = await resp.json();
+      if (data.success) notify('Saved', 'success');
+      else notify(data.error || 'Save failed', 'error');
+    } catch (err) {
+      notify('Network error', 'error');
+    }
   }
 
   async function saveEditorial(e) {
     e.preventDefault();
-    const form = e.target;
-    const hasFile = document.getElementById('editorialFile').files.length > 0;
-    const urlField = form.querySelector('input[name="image_url"]');
+    var form = e.target;
+    var hasFile = document.getElementById('editorialFile').files.length > 0;
+    var urlField = form.querySelector('input[name="image_url"]');
 
-    if (hasFile) {
-      const formData = new FormData(form);
-      const resp = await fetch('/api/homepage-items/editorial', {
-        method: 'POST',
-        headers: {'Authorization': 'Bearer '+token},
-        body: formData
-      });
-      const data = await resp.json();
+    try {
+      var resp;
+      if (hasFile) {
+        var formData = new FormData(form);
+        resp = await fetch('/api/homepage-items/editorial', {
+          method: 'POST',
+          headers: {'Authorization': 'Bearer '+tk},
+          body: formData
+        });
+      } else {
+        var payload = {
+          eyebrow: form.eyebrow.value.trim(),
+          title: form.title.value.trim(),
+          text: form.text.value.trim(),
+          season: form.season.value.trim(),
+          image_url: urlField.value.trim() || null
+        };
+        resp = await fetch('/api/homepage-items/editorial', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer '+tk
+          },
+          body: JSON.stringify(payload)
+        });
+      }
+      var data = await resp.json();
       if (data.success) {
-        alert('Editorial saved!');
+        notify('Editorial saved!', 'success');
         location.reload();
       } else {
-        alert(data.error || 'Save failed');
+        notify(data.error || 'Save failed', 'error');
       }
-    } else {
-      const payload = {
-        eyebrow: form.eyebrow.value.trim(),
-        title: form.title.value.trim(),
-        text: form.text.value.trim(),
-        season: form.season.value.trim(),
-        image_url: urlField.value.trim() || null
-      };
-      const resp = await fetch('/api/homepage-items/editorial', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer '+token
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if (data.success) {
-        alert('Editorial saved!');
-        location.reload();
-      } else {
-        alert(data.error || 'Save failed');
-      }
+    } catch (err) {
+      notify('Network error', 'error');
     }
     return false;
   }
 
-  document.querySelectorAll('input[type="file"]').forEach(input => {
+  document.querySelectorAll('input[type="file"]').forEach(function(input) {
     input.addEventListener('change', function() {
-      const file = this.files[0];
+      var file = this.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      const previewId = this.id.replace('File', 'Preview');
-      const preview = document.getElementById(previewId);
-      reader.onload = e => {
+      var reader = new FileReader();
+      var previewId = this.id.replace('File', 'Preview');
+      var preview = document.getElementById(previewId);
+      reader.onload = function(e) {
         if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
       };
       reader.readAsDataURL(file);
-      const urlField = this.closest('form').querySelector('input[type="url"]');
+      var urlField = this.closest('form').querySelector('input[type="url"]');
       if (urlField) urlField.value = '';
-      const fileNameSpan = this.closest('.form-group').querySelector('.file-name');
+      var fileNameSpan = this.closest('.form-group').querySelector('.file-name');
       if (fileNameSpan) fileNameSpan.textContent = file.name;
     });
   });
 
-  document.querySelectorAll('input[type="url"]').forEach(input => {
+  document.querySelectorAll('input[type="url"]').forEach(function(input) {
     input.addEventListener('input', function() {
       if (this.value) {
-        const previewId = this.closest('form').querySelector('img[id$="Preview"]');
+        var previewId = this.closest('form').querySelector('img[id$="Preview"]');
         if (previewId) { previewId.src = this.value; previewId.style.display = 'block'; }
       }
     });
   });
-
-  ['lookbook','pillars','designers','testimonials'].forEach(fetchItems);
 </script>
 {% endblock %}

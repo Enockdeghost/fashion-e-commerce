@@ -48,11 +48,6 @@
     <span class="quick-link-title">Banners</span>
   </a>
 
-  <a href="{{ url_for('frontend.admin_homepage_content') }}" {% if 'admin_homepage_content' in request.endpoint %}class="active"{% endif %}>
-    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    <span>Homepage Content</span>
-  </a>
-  
   <a href="{{ url_for('frontend.admin_categories') }}" class="quick-link-card">
     <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
     <span class="quick-link-title">Categories</span>
