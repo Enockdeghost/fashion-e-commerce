@@ -1,3 +1,4 @@
+
 {% extends "admin/base.html" %}
 {% block title %}Homepage Content{% endblock %}
 
@@ -6,7 +7,6 @@
   <h1>Homepage Content</h1>
 </div>
 
-<!-- LOOKBOOK -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Lookbook</h2>
   <div id="lookbookItems"></div>
@@ -30,7 +30,6 @@
   </form>
 </div>
 
-<!-- PILLARS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Pillars</h2>
   <div id="pillarItems"></div>
@@ -48,7 +47,6 @@
   </form>
 </div>
 
-<!-- DESIGNERS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Designers</h2>
   <div id="designerItems"></div>
@@ -75,7 +73,6 @@
   </form>
 </div>
 
-<!-- TESTIMONIALS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Testimonials</h2>
   <div id="testimonialItems"></div>
@@ -96,7 +93,6 @@
   </form>
 </div>
 
-<!-- PRESS LOGOS -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Press Logos</h2>
   <p class="small" style="margin-bottom:0.5rem;">Enter each publication name on a new line.</p>
@@ -106,7 +102,6 @@
   </form>
 </div>
 
-<!-- EDITORIAL -->
 <div class="form-card" style="margin-bottom:2rem;">
   <h2 style="margin-bottom:1rem;">Editorial</h2>
   <div id="editorialPreviewContainer" style="margin-bottom:1rem;">
@@ -149,7 +144,6 @@
   const token = localStorage.getItem('admin_token');
   if (!token) { window.location.href = '/admin'; }
 
-  // All routes are directly under /api (blueprint prefix)
   function fetchItems(section) {
     fetch(`/api/homepage-items?section=${section}`, {headers:{'Authorization':'Bearer '+token}})
       .then(r=>r.json())
@@ -183,7 +177,7 @@
     const formData = new FormData(form);
     formData.append('section', section);
     
-    const resp = await fetch('/api/homepage-items', {
+    const resp = await fetch(`/api/homepage-items`, {
       method: 'POST',
       headers: {'Authorization': 'Bearer '+token},
       body: formData

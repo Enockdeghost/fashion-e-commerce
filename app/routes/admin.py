@@ -5,17 +5,16 @@ from app.extensions import db
 from app.models import (
     AdminUser, Product, ProductVariant, Order, OrderItem,
     Coupon, Banner, BlogPost, Page, FAQ, Category, Brand, AbandonedCart,
-    SiteSettings,                          # <-- added
+    SiteSettings,
 )
 from app.utils.security import (
     admin_required, roles_required, ok, err,
     sanitise_text, sanitise_html, validate_pagination,
 )
-from app.utils.image_utils import convert_to_webp   # <-- added
+from app.utils.image_utils import convert_to_webp
 from sqlalchemy import func, extract
-import os, uuid
+import os, uuid, json
 from werkzeug.utils import secure_filename
-import json
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin/manage")
@@ -177,12 +176,9 @@ def create_brand():
 def update_brand(brand_id):
     brand = Brand.query.get_or_404(brand_id)
     data = request.get_json(force=True)
-    if "name" in data:
-        brand.name = sanitise_text(data["name"])
-        brand.slug = slugify(data["name"])
-    for f in ["description", "logo_url", "is_active"]:
-        if f in data:
-            setattr(brand, f, data[f] if f != "is_active" else bool(data[f]))
+    if "name" in data: brand.name = sanitise_text(data["name"]); brand.slug = slugify(data["name"])
+    for f in ["description","logo_url","is_active"]:
+        if f in data: setattr(brand, f, data[f] if f!="is_active" else bool(data[f]))
     db.session.commit()
     return ok(brand.to_dict(), "Brand updated")
 
@@ -480,8 +476,7 @@ def save_settings():
 
     return ok(message="Settings saved")
 
-
-
+# ─── HOMEPAGE CONTENT ──────────────────────────
 @admin_bp.route("/homepage-items", methods=["GET"])
 @admin_required
 def list_homepage_items():
@@ -494,7 +489,6 @@ def list_homepage_items():
     except Exception:
         items = []
     return ok(items)
-
 
 @admin_bp.route("/homepage-items", methods=["POST"])
 @roles_required("super_admin", "admin")
@@ -534,7 +528,6 @@ def add_homepage_item():
     SiteSettings.set(f"homepage_{section}", json.dumps(items, ensure_ascii=False))
     return ok(message="Item added", status=201)
 
-
 @admin_bp.route("/homepage-items", methods=["DELETE"])
 @roles_required("super_admin", "admin")
 def delete_homepage_item():
@@ -552,7 +545,6 @@ def delete_homepage_item():
         SiteSettings.set(f"homepage_{section}", json.dumps(items, ensure_ascii=False))
     return ok(message="Deleted")
 
-
 @admin_bp.route("/homepage-items/press", methods=["POST"])
 @roles_required("super_admin", "admin")
 def save_press():
@@ -561,7 +553,6 @@ def save_press():
     logo_list = [l.strip() for l in logos.split("\n") if l.strip()]
     SiteSettings.set("homepage_press", json.dumps(logo_list, ensure_ascii=False))
     return ok(message="Press logos saved")
-
 
 @admin_bp.route("/homepage-items/editorial", methods=["POST"])
 @roles_required("super_admin", "admin")
