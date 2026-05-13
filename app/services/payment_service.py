@@ -1,7 +1,4 @@
-"""
-Tigo Money payment integration.
-Handles: initiate payment, query status, webhook verification, refund.
-"""
+
 import hmac
 import hashlib
 import requests

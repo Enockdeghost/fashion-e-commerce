@@ -1,7 +1,4 @@
-"""
-Email notification service using SendGrid.
-Handles: order confirmation, shipping, payment receipts, admin alerts.
-"""
+
 import sendgrid
 from sendgrid.helpers.mail import Mail, To, From, Subject, HtmlContent
 from flask import current_app

@@ -4,8 +4,6 @@
 
 {% block meta_description %}{{ meta_description or 'Luxury fashion house inspired by Tanzanian heritage.' }}{% endblock %}
 
-
-
 {% block content %}
 <section class="hero">
   {% set hero_banner = banners|selectattr('position','equalto','hero')|first|default(None) %}
