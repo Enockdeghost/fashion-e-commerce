@@ -1,7 +1,38 @@
 {% extends "admin/base.html" %}
 {% block title %}Banners | {{ site_name }} Admin{% endblock %}
-{% block head %}
 
+{% block head %}
+<style>
+  .admin-page { padding: 6rem 5% 4rem; background: var(--cream); min-height: 100vh; }
+  .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .admin-header h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; color: var(--brown); }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 6px; font-size: 0.65rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; text-decoration: none; }
+  .btn-primary { background: var(--gold); color: var(--brown); }
+  .btn-primary:hover { background: var(--gold-lt); }
+  .btn-ghost { background: transparent; color: var(--brown-lt); border: 1px solid var(--parchment); }
+  .btn-ghost:hover { background: var(--off-white); color: var(--brown); }
+  .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.6rem; }
+  .btn-danger { background: #c0392b; color: #fff; }
+  .btn-danger:hover { background: #e74c3c; }
+  .card { background: var(--white); border: 1px solid var(--parchment); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); padding: 1rem 1.2rem; text-align: left; border-bottom: 1px solid var(--parchment); }
+  td { padding: 0.8rem 1.2rem; border-bottom: 1px solid rgba(0,0,0,0.03); font-size: 0.85rem; color: var(--brown); vertical-align: middle; }
+  .banner-thumb { width: 70px; height: 40px; object-fit: cover; border-radius: 4px; background: var(--off-white); }
+  .badge-position { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 12px; font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  .badge-hero { background: rgba(184,147,58,0.12); color: var(--gold); border: 1px solid var(--gold); }
+  .badge-brand { background: rgba(59,42,26,0.08); color: var(--brown); border: 1px solid var(--brown-lt); }
+  .back-link { display: block; margin-bottom: 1.5rem; font-size: 0.65rem; letter-spacing: 2px; color: var(--brown-lt); }
+  .sidebar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--parchment); padding-bottom: 1rem; }
+  .sidebar a { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--brown-lt); padding: 0.5rem 0; border-bottom: 2px solid transparent; text-decoration: none; }
+  .sidebar a.active, .sidebar a:hover { color: var(--gold); border-bottom-color: var(--gold); }
+  @media (max-width: 768px) {
+    .admin-page { padding: 4rem 4% 2rem; }
+    .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 650px; }
+    th, td { padding: 0.6rem 0.8rem; white-space: nowrap; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -37,29 +68,42 @@
 
 {% block scripts %}
 <script>
-  const token = localStorage.getItem('admin_token');
-  if (!token) { window.location.href = '/admin'; }
+  var tk = localStorage.getItem('admin_token');
+  if (!tk) { window.location.href = '/admin'; }
 
   function loadBanners() {
     fetch('/api/banners', {
-      headers: {'Authorization': 'Bearer ' + token}
+      headers: {'Authorization': 'Bearer ' + tk}
     })
     .then(r => r.json())
     .then(d => {
       const tbody = document.getElementById('bannersTableBody');
       if (d.success && Array.isArray(d.data) && d.data.length) {
-        tbody.innerHTML = d.data.map(b => `
+        tbody.innerHTML = d.data.map(b => {
+          // Determine badge class for position
+          let positionBadge = '';
+          if (b.position === 'hero') {
+            positionBadge = '<span class="badge-position badge-hero">Hero</span>';
+          } else if (b.position === 'brand_story') {
+            positionBadge = '<span class="badge-position badge-brand">Brand Story</span>';
+          } else {
+            positionBadge = b.position || '—';
+          }
+
+          return `
           <tr>
             <td><img src="${b.image_url}" class="banner-thumb" alt=""></td>
             <td>${b.title || '—'}</td>
-            <td>${b.position || '—'}</td>
+            <td>${positionBadge}</td>
             <td><span style="color:${b.is_active ? '#27ae60' : '#c0392b'};">${b.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
               <a href="/admin/banners/${b.id}/edit" class="btn btn-ghost btn-sm">Edit</a>
               <button class="btn btn-danger btn-sm" onclick="deleteBanner('${b.id}')">Delete</button>
+              <button class="btn btn-primary btn-sm" onclick="makeHero('${b.id}')">Set as Hero</button>
+              <button class="btn btn-primary btn-sm" onclick="makeBrandStory('${b.id}')">Set as Brand Story</button>
             </td>
-          </tr>
-        `).join('');
+          </tr>`;
+        }).join('');
       } else {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No banners found.</td></tr>';
       }
@@ -74,17 +118,40 @@
     try {
       const resp = await fetch(`/api/banners/${bannerId}`, {
         method: 'DELETE',
-        headers: {'Authorization': 'Bearer ' + token}
+        headers: {'Authorization': 'Bearer ' + tk}
       });
       const data = await resp.json();
-      if (data.success) {
-        loadBanners(); // refresh the list
-      } else {
-        alert(data.error || 'Delete failed');
-      }
-    } catch (err) {
-      alert('Network error');
-    }
+      if (data.success) { loadBanners(); }
+      else { alert(data.error || 'Delete failed'); }
+    } catch (err) { alert('Network error'); }
+  }
+
+  async function makeHero(bannerId) {
+    if (!confirm('Set this banner as the Homepage Hero?')) return;
+    try {
+      const resp = await fetch(`/api/banners/${bannerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
+        body: JSON.stringify({ position: 'hero', is_active: true })
+      });
+      const data = await resp.json();
+      if (data.success) { loadBanners(); }
+      else { alert(data.error || 'Failed'); }
+    } catch (err) { alert('Network error'); }
+  }
+
+  async function makeBrandStory(bannerId) {
+    if (!confirm('Set this banner\'s image as the Brand Story background?')) return;
+    try {
+      const resp = await fetch(`/api/banners/${bannerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk },
+        body: JSON.stringify({ position: 'brand_story', is_active: true })
+      });
+      const data = await resp.json();
+      if (data.success) { loadBanners(); }
+      else { alert(data.error || 'Failed'); }
+    } catch (err) { alert('Network error'); }
   }
 
   document.addEventListener('DOMContentLoaded', loadBanners);

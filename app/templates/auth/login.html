@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Sign In | Fred Vunjabei{% endblock %}
+{% block title %}Sign In | {{ site_name }}{% endblock %}
 {% block head %}
 <style>
   .auth-page {
@@ -56,9 +56,7 @@
     outline: none;
     transition: border-color 0.3s;
   }
-  .form-group input:focus {
-    border-bottom-color: var(--gold);
-  }
+  .form-group input:focus { border-bottom-color: var(--gold); }
   .auth-btn {
     width: 100%;
     padding: 1.2rem;
@@ -73,11 +71,7 @@
     transition: background 0.3s, transform 0.3s;
     margin-top: 1rem;
   }
-  .auth-btn:hover {
-    background: var(--gold);
-    color: var(--brown);
-    transform: translateY(-2px);
-  }
+  .auth-btn:hover { background: var(--gold); color: var(--brown); transform: translateY(-2px); }
   .auth-link {
     text-align: center;
     margin-top: 2rem;
@@ -89,9 +83,7 @@
     border-bottom: 1px solid transparent;
     transition: border-color 0.3s;
   }
-  .auth-link a:hover {
-    border-bottom-color: var(--gold);
-  }
+  .auth-link a:hover { border-bottom-color: var(--gold); }
   .back-home {
     display: block;
     text-align: center;
@@ -101,13 +93,9 @@
     text-transform: uppercase;
     color: var(--brown-lt);
   }
-  .back-home:hover {
-    color: var(--gold);
-  }
+  .back-home:hover { color: var(--gold); }
   @media (max-width: 480px) {
-    .auth-card {
-      padding: 2.5rem 1.5rem;
-    }
+    .auth-card { padding: 2.5rem 1.5rem; }
   }
 </style>
 {% endblock %}
@@ -120,16 +108,16 @@
     <form id="loginForm" onsubmit="return handleLogin(event)">
       <div class="form-group">
         <label>Email Address</label>
-        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+        <input type="email" id="email" placeholder="you@example.com" required>
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" name="password" placeholder="········" required>
+        <input type="password" id="password" placeholder="········" required>
       </div>
       <button type="submit" class="auth-btn">Sign In</button>
     </form>
     <p class="auth-link">
-      Don't have an account? <a href="{{ url_for('frontend.register') }}">Create one</a>
+      New to {{ site_name }}? <a href="{{ url_for('frontend.register') }}">Create account</a>
     </p>
     <a href="{{ url_for('frontend.index') }}" class="back-home">← Back to Home</a>
   </div>
@@ -138,14 +126,17 @@
 
 {% block scripts %}
 <script>
+  // Uses the global showSuccessToast / showErrorToast from your main.js
   function handleLogin(e) {
     e.preventDefault();
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
+
     if (!email || !password) {
-      alert('Please fill in all fields.');
+      showErrorToast('Please enter both email and password.');
       return false;
     }
+
     fetch('/api/auth/login', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -155,12 +146,19 @@
     .then(function(d) {
       if (d.success) {
         localStorage.setItem('user_token', d.data.access_token);
-        window.location.href = '/dashboard';
+        localStorage.setItem('fv_user', JSON.stringify(d.data.user || {}));
+        showSuccessToast('Signed in successfully');
+        setTimeout(function() {
+          window.location.href = '/dashboard';
+        }, 800);
       } else {
-        alert(d.error || 'Invalid credentials');
+        showErrorToast(d.error || 'Invalid email or password.');
       }
     })
-    .catch(function() { alert('Something went wrong.'); });
+    .catch(function() {
+      showErrorToast('Network error. Please try again.');
+    });
+
     return false;
   }
 </script>

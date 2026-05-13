@@ -524,6 +524,29 @@ def create_app(config_name: str = None) -> Flask:
         db.session.add(entry)
         db.session.commit()
         return ok({"wishlist": entry.to_dict(), "token": token}, "Added to wishlist")
+    
+    @app.route('/api/cart/update/', methods=['PATCH'])
+    def direct_cart_update_trailing():
+        data = request.get_json(force=True)
+        item_id = data.get('item_id')
+        quantity = int(data.get('quantity', 1))
+
+        if not item_id:
+            return err("item_id is required")
+
+        from app.models import CartItem
+        item = CartItem.query.get(item_id)
+        if not item:
+            return err("Cart item not found", 404)
+        
+        if quantity < 1:
+            db.session.delete(item)
+            db.session.commit()
+            return ok(message="Item removed")
+        
+        item.quantity = quantity
+        db.session.commit()
+        return ok({"item": item.to_dict()}, "Quantity updated")
 
     @app.route('/api/wishlist/<item_id>', methods=['DELETE'])
     @app.route('/api/wishlist/<item_id>/', methods=['DELETE'])
