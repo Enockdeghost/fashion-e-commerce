@@ -67,5 +67,5 @@ def register_blueprints(app: Flask):
     # Notifications
     app.register_blueprint(notifications_bp, url_prefix="/api")
 
-    # Analytics
+    # Analytics blurpint
     app.register_blueprint(analytics_bp, url_prefix="/api")
