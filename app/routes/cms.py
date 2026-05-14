@@ -43,7 +43,7 @@ def get_page(slug):
     page = Page.query.filter_by(slug=slug, is_published=True).first_or_404()
     return ok(page.to_dict())
 
-
+# faqs endpoint, with optional category filter and sorted by sort_order
 @cms_bp.route("/faqs", methods=["GET"])
 def get_faqs():
     category = request.args.get("category")
