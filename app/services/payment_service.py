@@ -1,10 +1,11 @@
-
+# this is imagination API client for Tigo Money, a popular mobile money service in Tanzania. so unaweza KUWEKA api yako
+# It provides methods to initiate payments, query status, and verify webhooks. but not actual code, just a placeholder to show where payment logic would go.
 import hmac
 import hashlib
 import requests
 import logging
 from flask import current_app
-from datetime import datetime
+from datetime import datetime   
 
 log = logging.getLogger(__name__)
 
