@@ -49,7 +49,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(payments_bp, url_prefix="/api")
     app.register_blueprint(checkout_bp, url_prefix="/api")
 
-    # Inventory
+    # Inventory blueprint
     app.register_blueprint(inventory_bp, url_prefix="/api")
 
     # Search
