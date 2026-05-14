@@ -6,10 +6,7 @@ from app.extensions import db
 
 
 def search_products(query: str, page: int = 1, per_page: int = 20) -> dict:
-    """
-    Search for active, non‑deleted products.
-    Returns {'items': [...], 'total': int}.
-    """
+    
     # 1) Try Elasticsearch
     try:
         result = _elasticsearch_search(query, page, per_page)
@@ -18,7 +15,7 @@ def search_products(query: str, page: int = 1, per_page: int = 20) -> dict:
     except Exception:
         pass
 
-    # 2) SQL fallback
+
     return _sql_search(query, page, per_page)
 
 
