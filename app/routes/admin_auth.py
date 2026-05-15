@@ -9,7 +9,7 @@ from app.utils.security import ok, err, sanitise_text
 from datetime import datetime, timezone
 
 admin_auth_bp = Blueprint("admin_auth", __name__, url_prefix="/admin")
-
+# anza hapa, hii ni blueprint ya admin authentication, inatoa endpoints za login, token refresh, na user info. inatumia JWT kwa authentication.
 
 @admin_auth_bp.route("/login", methods=["POST"])
 def login():
