@@ -1,0 +1,134 @@
+{% extends "admin/base.html" %}
+{% block title %}Transport Options{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+  <h1>Transport Options</h1>
+</div>
+
+<div class="form-card" style="margin-bottom:2rem;">
+  <h2 style="margin-bottom:1rem;">Add / Edit Transport</h2>
+  <form id="transportForm" onsubmit="return saveTransport(event)">
+    <input type="hidden" name="id" id="transport_id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" name="name" id="t_name" required>
+      </div>
+      <div class="form-group">
+        <label>Cost (TZS) *</label>
+        <input type="number" name="cost" id="t_cost" step="0.01" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>City (optional – leave empty for all cities)</label>
+        <input type="text" name="city" id="t_city" placeholder="e.g. Dar es Salaam">
+      </div>
+      <div class="form-group">
+        <label>Estimated Delivery</label>
+        <input type="text" name="estimated_days" id="t_days" placeholder="2-3 days">
+      </div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" name="is_active" id="t_active" checked> Active</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Transport</button>
+    <button type="button" class="btn btn-ghost" onclick="clearForm()">Clear</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Cost</th><th>City</th><th>Days</th><th>Active</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="transportTableBody">
+      <tr><td colspan="6" style="text-align:center;">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var tk = localStorage.getItem('admin_token');
+  if (!tk) { window.location.href = '/admin'; }
+
+  function loadTransports() {
+    fetch('/api/transports', {headers: {'Authorization': 'Bearer ' + tk}})
+    .then(r => r.json())
+    .then(d => {
+      const tbody = document.getElementById('transportTableBody');
+      if (d.success && d.data.length) {
+        tbody.innerHTML = d.data.map(t => `
+          <tr>
+            <td>${t.name}</td>
+            <td>TZS ${Number(t.cost).toLocaleString()}</td>
+            <td>${t.city || 'All cities'}</td>
+            <td>${t.estimated_days || '—'}</td>
+            <td><span style="color:${t.is_active?'#27ae60':'#c0392b'};">${t.is_active ? 'Yes' : 'No'}</span></td>
+            <td>
+              <button class="btn btn-ghost btn-sm" onclick='editTransport(${JSON.stringify(t)})'>Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteTransport('${t.id}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No transport options.</td></tr>';
+      }
+    });
+  }
+
+  function editTransport(t) {
+    document.getElementById('transport_id').value = t.id;
+    document.getElementById('t_name').value = t.name;
+    document.getElementById('t_cost').value = t.cost;
+    document.getElementById('t_city').value = t.city || '';
+    document.getElementById('t_days').value = t.estimated_days || '';
+    document.getElementById('t_active').checked = t.is_active;
+  }
+
+  function clearForm() {
+    document.getElementById('transportForm').reset();
+    document.getElementById('transport_id').value = '';
+  }
+
+  async function saveTransport(e) {
+    e.preventDefault();
+    const id = document.getElementById('transport_id').value;
+    const payload = {
+      name: document.getElementById('t_name').value.trim(),
+      cost: parseFloat(document.getElementById('t_cost').value),
+      city: document.getElementById('t_city').value.trim() || null,
+      estimated_days: document.getElementById('t_days').value.trim(),
+      is_active: document.getElementById('t_active').checked
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/transports/${id}` : '/api/transports';
+
+    const resp = await fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.success) {
+      clearForm();
+      loadTransports();
+    } else {
+      alert(data.error || 'Save failed');
+    }
+    return false;
+  }
+
+  async function deleteTransport(id) {
+    if (!confirm('Delete this transport?')) return;
+    await fetch('/api/transports/' + id, { method: 'DELETE', headers: {'Authorization': 'Bearer ' + tk} });
+    loadTransports();
+  }
+
+  document.addEventListener('DOMContentLoaded', loadTransports);
+</script>
+{% endblock %}
